@@ -1,0 +1,126 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Table {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  table_number       String    @unique @db.VarChar(50)
+  capacity           Int
+  location           String?   @db.VarChar(100)
+  description        String?   @db.Text
+  status             String    @default("active") @db.VarChar(20)
+  qr_token           String?   @db.VarChar(500)
+  qr_token_created_at DateTime? @db.Timestamp(6)
+  created_at         DateTime  @default(now()) @db.Timestamp(6)
+  updated_at         DateTime  @updatedAt @db.Timestamp(6)
+
+  @@index([status])
+  @@index([location])
+  @@map("tables")
+}
+
+model MenuCategory {
+  id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id String     @db.Uuid
+  name          String     @db.VarChar(50)
+  description   String?    @db.Text
+  display_order Int        @default(0)
+  status        String     @default("active") @db.VarChar(20)
+  created_at    DateTime   @default(now()) @db.Timestamp(6)
+  updated_at    DateTime   @updatedAt @db.Timestamp(6)
+  
+  menu_items    MenuItem[]
+
+  @@unique([restaurant_id, name])
+  @@index([restaurant_id])
+  @@index([status])
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id                   String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id        String              @db.Uuid
+  category_id          String              @db.Uuid
+  name                 String              @db.VarChar(80)
+  description          String?             @db.Text
+  price                Decimal             @db.Decimal(12, 2)
+  prep_time_minutes    Int                 @default(0)
+  status               String              @db.VarChar(20)
+  is_chef_recommended  Boolean             @default(false)
+  is_deleted           Boolean             @default(false)
+  created_at           DateTime            @default(now()) @db.Timestamp(6)
+  updated_at           DateTime            @updatedAt @db.Timestamp(6)
+  
+  category             MenuCategory        @relation(fields: [category_id], references: [id])
+  photos               MenuItemPhoto[]
+  modifier_groups      MenuItemModifierGroup[]
+
+  @@index([restaurant_id])
+  @@index([category_id])
+  @@index([status])
+  @@map("menu_items")
+}
+
+model MenuItemPhoto {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menu_item_id String   @db.Uuid
+  url          String   @db.Text
+  is_primary   Boolean  @default(false)
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  
+  menu_item    MenuItem @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+
+  @@index([menu_item_id])
+  @@map("menu_item_photos")
+}
+
+model ModifierGroup {
+  id              String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  restaurant_id   String                    @db.Uuid
+  name            String                    @db.VarChar(80)
+  selection_type  String                    @db.VarChar(20)
+  is_required     Boolean                   @default(false)
+  min_selections  Int                       @default(0)
+  max_selections  Int                       @default(0)
+  display_order   Int                       @default(0)
+  status          String                    @default("active") @db.VarChar(20)
+  created_at      DateTime                  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime                  @updatedAt @db.Timestamp(6)
+  
+  options         ModifierOption[]
+  menu_items      MenuItemModifierGroup[]
+
+  @@map("modifier_groups")
+}
+
+model ModifierOption {
+  id               String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  group_id         String        @db.Uuid
+  name             String        @db.VarChar(80)
+  price_adjustment Decimal       @default(0) @db.Decimal(12, 2)
+  status           String        @default("active") @db.VarChar(20)
+  created_at       DateTime      @default(now()) @db.Timestamp(6)
+  
+  group            ModifierGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@index([group_id])
+  @@map("modifier_options")
+}
+
+model MenuItemModifierGroup {
+  menu_item_id String        @db.Uuid
+  group_id     String        @db.Uuid
+  
+  menu_item    MenuItem      @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+  modifier_group ModifierGroup @relation(fields: [group_id], references: [id], onDelete: Cascade)
+
+  @@id([menu_item_id, group_id])
+  @@map("menu_item_modifier_groups")
+}
