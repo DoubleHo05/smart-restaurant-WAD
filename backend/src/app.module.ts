@@ -11,6 +11,7 @@ import { MenuPhotosModule } from './menu-photos/menu-photos.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ModifierGroupsModule } from './modifier-groups/modifier-groups.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
     CategoriesModule,
     ModifierGroupsModule,
     MenuItemsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
