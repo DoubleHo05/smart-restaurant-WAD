@@ -12,6 +12,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ModifierGroupsModule } from './modifier-groups/modifier-groups.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AuthModule } from './auth/auth.module';
     ModifierGroupsModule,
     MenuItemsModule,
     AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
