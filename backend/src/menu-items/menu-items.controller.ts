@@ -9,12 +9,18 @@ import {
   Param,
   Query,
   ValidationPipe,
+  UseGuards,
 } from '@nestjs/common';
 import { MenuItemsService } from './menu-items.service';
 import { CreateItemDto } from './dto/create-item.dto';
 import { UpdateItemDto } from './dto/update-item.dto';
 import { QueryItemsDto } from './dto/query-items.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('api/admin/menu/items')
 export class MenuItemsController {
   constructor(private readonly menuItemsService: MenuItemsService) {}
@@ -39,18 +45,21 @@ export class MenuItemsController {
   async findAll(@Query() allQuery: any) {
     // Extract and remove restaurant_id from query
     const { restaurant_id, ...queryParams } = allQuery;
-    
+
     // Default restaurant ID for testing
     const effectiveRestaurantId =
       restaurant_id || 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-    
+
     // Validate the remaining query parameters
-    const validationPipe = new ValidationPipe({ transform: true, whitelist: true });
+    const validationPipe = new ValidationPipe({
+      transform: true,
+      whitelist: true,
+    });
     const query = await validationPipe.transform(queryParams, {
       type: 'query',
       metatype: QueryItemsDto,
     });
-    
+
     return this.menuItemsService.findAll(effectiveRestaurantId, query);
   }
 
@@ -81,10 +90,7 @@ export class MenuItemsController {
    * Update item status
    */
   @Patch(':id/status')
-  async updateStatus(
-    @Param('id') id: string,
-    @Body('status') status: string,
-  ) {
+  async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.menuItemsService.updateStatus(id, status);
   }
 

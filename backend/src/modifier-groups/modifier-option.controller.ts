@@ -1,6 +1,20 @@
-import { Controller, Get, Put, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ModifierGroupsService } from './modifier-groups.service';
 import { UpdateModifierOptionDto } from './dto/update-modifier-option.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('api/admin/menu/modifier-options')
 export class ModifierOptionController {
   constructor(private readonly service: ModifierGroupsService) {}
