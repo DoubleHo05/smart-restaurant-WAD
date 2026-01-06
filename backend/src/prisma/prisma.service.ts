@@ -13,6 +13,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public modifierGroup: PrismaClient['modifierGroup'];
   public modifierOption: PrismaClient['modifierOption'];
   public menuItemModifierGroup: PrismaClient['menuItemModifierGroup'];
+  public user: PrismaClient['user'];
+  public role: PrismaClient['role'];
+  public userRole: PrismaClient['userRole'];
 
   private client: PrismaClient;
   private pool: Pool;
@@ -36,6 +39,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.modifierGroup = this.client.modifierGroup;
     this.modifierOption = this.client.modifierOption;
     this.menuItemModifierGroup = this.client.menuItemModifierGroup;
+    this.user = this.client.user;
+    this.role = this.client.role;
+    this.userRole = this.client.userRole;
   }
 
   async onModuleInit() {

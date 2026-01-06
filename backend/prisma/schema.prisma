@@ -124,3 +124,45 @@ model MenuItemModifierGroup {
   @@id([menu_item_id, group_id])
   @@map("menu_item_modifier_groups")
 }
+
+model Role {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String   @unique @db.VarChar(50) // 'super_admin', 'admin', 'waiter', 'kitchen', 'customer'
+  description String? @db.Text
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  
+  user_roles UserRole[]
+
+  @@map("roles")
+}
+
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  password_hash String    @db.VarChar(255)
+  full_name     String?   @db.VarChar(100)
+  phone         String?   @db.VarChar(20)
+  status        String    @default("active") @db.VarChar(20) // 'active', 'inactive', 'suspended'
+  is_deleted    Boolean   @default(false)
+  created_at    DateTime  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime  @updatedAt @db.Timestamp(6)
+  last_login_at DateTime? @db.Timestamp(6)
+  
+  user_roles    UserRole[]
+
+  @@index([email])
+  @@index([status])
+  @@map("users")
+}
+
+model UserRole {
+  user_id    String   @db.Uuid
+  role_id    String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [role_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, role_id])
+  @@map("user_roles")
+}
