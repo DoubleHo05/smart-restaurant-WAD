@@ -1,63 +1,16 @@
-import axios from "axios";
+import axiosInstance from "./axiosConfig";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+import {
+  Table,
+  CreateTableData,
+  UpdateTableData,
+  QrTokenResponse,
+  MenuResponse,
+  MenuItem,
+} from "../types/tables.types";
+// Types
+const api = axiosInstance;
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-export interface Table {
-  id: string;
-  table_number: string;
-  capacity: number;
-  location?: string;
-  description?: string;
-  status: string;
-  qr_token?: string;
-  qr_token_created_at?: Date;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface CreateTableData {
-  table_number: string;
-  capacity: number;
-  location?: string;
-  description?: string;
-}
-
-export interface UpdateTableData {
-  table_number?: string;
-  capacity?: number;
-  location?: string;
-  description?: string;
-}
-
-export interface QrTokenResponse {
-  token: string;
-  qrUrl: string;
-  tableNumber: string;
-}
-export interface MenuResponse {
-  success: boolean;
-  message: string;
-  tableInfo: {
-    id: string;
-    number: string;
-    capacity: number;
-    location?: string;
-  };
-  menu: MenuItem[];
-}
-export interface MenuItem {
-  id: number;
-  name: string;
-  price: number;
-  image?: string;
-}
 
 export const tablesApi = {
   // Get all tables with optional filters
