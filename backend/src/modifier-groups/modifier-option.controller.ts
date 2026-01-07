@@ -14,10 +14,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
 @Controller('api/admin/menu/modifier-options')
 export class ModifierOptionController {
-  constructor(private readonly service: ModifierGroupsService) {}
+  constructor(private readonly service: ModifierGroupsService) { }
   /**
    * GET /api/admin/menu/modifier-options/:id
    * Get single option details (optional endpoint)
@@ -31,6 +30,7 @@ export class ModifierOptionController {
    * Update option (name, price_adjustment, status)
    */
   @Put(':id')
+  @Roles('admin', 'super_admin')
   async update(@Param('id') id: string, @Body() dto: UpdateModifierOptionDto) {
     return this.service.updateOption(id, dto);
   }
@@ -39,6 +39,7 @@ export class ModifierOptionController {
    * Soft delete option (set status = inactive)
    */
   @Delete(':id')
+  @Roles('admin', 'super_admin')
   async remove(@Param('id') id: string) {
     return this.service.deleteOption(id);
   }

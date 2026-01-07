@@ -5,7 +5,7 @@ import type {
     ModifierOption,
     CreateModifierGroupData,
     CreateModifierOptionData,
-} from "../api/modifiersApi";
+} from "../types/modifiers.types";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";
 import "../App.css";

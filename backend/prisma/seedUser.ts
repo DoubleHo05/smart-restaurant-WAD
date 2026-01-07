@@ -15,7 +15,9 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  // Create roles
+  // 1. Create roles
+  // Thứ tự trong mảng roles:
+  // [0]: super_admin, [1]: admin, [2]: waiter, [3]: kitchen, [4]: customer
   const roles = await Promise.all([
     prisma.role.upsert({
       where: { name: 'super_admin' },
@@ -47,8 +49,12 @@ async function main() {
     }),
   ]);
 
-  // Create super admin user
+  // Common password for seeding
   const hashedPassword = await bcrypt.hash('Admin@123', 10);
+
+  // ==========================================
+  // 2. Create SUPER ADMIN User
+  // ==========================================
   const superAdmin = await prisma.user.upsert({
     where: { email: 'superadmin@restaurant.com' },
     update: {},
@@ -60,7 +66,7 @@ async function main() {
     },
   });
 
-  // Assign super_admin role
+  // Assign super_admin role (roles[0])
   await prisma.userRole.upsert({
     where: {
       user_id_role_id: {
@@ -75,9 +81,41 @@ async function main() {
     },
   });
 
+  // ==========================================
+  // 3. Create RESTAURANT ADMIN User (Mới thêm)
+  // ==========================================
+  const adminUser = await prisma.user.upsert({
+    where: { email: 'admin@restaurant.com' },
+    update: {},
+    create: {
+      email: 'admin@restaurant.com',
+      password_hash: hashedPassword, // Dùng chung pass Admin@123
+      full_name: 'Restaurant Manager',
+      status: 'active',
+    },
+  });
+
+  // Assign admin role (roles[1])
+  await prisma.userRole.upsert({
+    where: {
+      user_id_role_id: {
+        user_id: adminUser.id,
+        role_id: roles[1].id, // Lưu ý: roles[1] là admin
+      },
+    },
+    update: {},
+    create: {
+      user_id: adminUser.id,
+      role_id: roles[1].id,
+    },
+  });
+
   console.log('✅ Seed completed!');
-  console.log('📧 Super Admin Email: superadmin@restaurant.com');
-  console.log('🔑 Super Admin Password: Admin@123');
+  console.log('-----------------------------------');
+  console.log('📧 Super Admin: superadmin@restaurant.com');
+  console.log('📧 Restaurant Admin: admin@restaurant.com');
+  console.log('🔑 Password (All): Admin@123');
+  console.log('-----------------------------------');
 }
 
 main()

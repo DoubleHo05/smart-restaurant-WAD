@@ -4,13 +4,10 @@ import type {
   MenuItem,
   CreateMenuItemData,
   UpdateMenuItemData,
-} from "../api/menuItemsApi";
-import axios from "axios";
+} from "../types/menuItems.types";
+import axiosInstance from "../api/axiosConfig";
 import ImageUpload from "../components/ImageUpload";
 import "../App.css";
-
-// Import category and modifier APIs
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 interface Category {
   id: string;
@@ -25,7 +22,6 @@ interface ModifierGroup {
 }
 
 export default function MenuItemsManagement() {
-  const RESTAURANT_ID = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
 
   // Data states
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -53,7 +49,6 @@ export default function MenuItemsManagement() {
 
   // Form data
   const [formData, setFormData] = useState<CreateMenuItemData>({
-    restaurant_id: RESTAURANT_ID,
     category_id: "",
     name: "",
     description: "",
@@ -68,7 +63,7 @@ export default function MenuItemsManagement() {
   const loadMenuItems = async () => {
     try {
       setLoading(true);
-      const response = await menuItemsApi.getAll(RESTAURANT_ID, {
+      const response = await menuItemsApi.getAll({
         search: debouncedSearch?.trim() || undefined,
         category_id: categoryFilter || undefined,
         status: statusFilter || undefined,
@@ -93,8 +88,8 @@ export default function MenuItemsManagement() {
   // Load categories
   const loadCategories = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/admin/menu/categories?status=active`
+      const response = await axiosInstance.get(
+        `/api/admin/menu/categories?status=active`
       );
       setCategories(response.data);
     } catch (err) {
@@ -105,8 +100,8 @@ export default function MenuItemsManagement() {
   // Load modifier groups
   const loadModifierGroups = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/admin/menu/modifier-groups?status=active`
+      const response = await axiosInstance.get(
+        `/api/admin/menu/modifier-groups?status=active`
       );
       setModifierGroups(response.data);
     } catch (err) {
@@ -236,7 +231,6 @@ export default function MenuItemsManagement() {
       const detailedItem = await menuItemsApi.getOne(item.id);
       setSelectedItem(detailedItem);
       setFormData({
-        restaurant_id: RESTAURANT_ID,
         category_id: detailedItem.category.id,
         name: detailedItem.name,
         description: detailedItem.description || "",
@@ -256,7 +250,6 @@ export default function MenuItemsManagement() {
   // Reset form
   const resetForm = () => {
     setFormData({
-      restaurant_id: RESTAURANT_ID,
       category_id: "",
       name: "",
       description: "",
@@ -293,34 +286,44 @@ export default function MenuItemsManagement() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: "1400px", margin: "0 auto", padding: "20px" }}>
-      <div className="header" style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        marginBottom: "30px",
-        padding: "20px",
-        background: "#1e293b",
-        borderRadius: "12px",
-        borderBottom: "2px solid #6366f1",
-        boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)"
-      }}>
+    <div
+      className="container"
+      style={{ maxWidth: "1400px", margin: "0 auto", padding: "20px" }}
+    >
+      <div
+        className="header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "30px",
+          padding: "20px",
+          background: "#1e293b",
+          borderRadius: "12px",
+          borderBottom: "2px solid #6366f1",
+          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
+        }}
+      >
         <div>
-          <h1 style={{ 
-            margin: 0, 
-            fontSize: "2em", 
-            fontWeight: "700",
-            background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text"
-          }}>
+          <h1
+            style={{
+              margin: 0,
+              fontSize: "2em",
+              fontWeight: "700",
+              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
             🍽️ Menu Items
           </h1>
-          <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>Manage your restaurant menu items ({totalItems} items)</p>
+          <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>
+            Manage your restaurant menu items ({totalItems} items)
+          </p>
         </div>
-        <button 
-          className="btn btn-primary" 
+        <button
+          className="btn btn-primary"
           onClick={() => setShowCreateModal(true)}
           style={{
             background: "#6366f1",
@@ -332,17 +335,19 @@ export default function MenuItemsManagement() {
             borderRadius: "8px",
             cursor: "pointer",
             boxShadow: "0 4px 6px rgba(99, 102, 241, 0.4)",
-            transition: "all 0.3s ease"
+            transition: "all 0.3s ease",
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.background = "#4f46e5";
             e.currentTarget.style.transform = "translateY(-2px)";
-            e.currentTarget.style.boxShadow = "0 6px 12px rgba(99, 102, 241, 0.5)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 12px rgba(99, 102, 241, 0.5)";
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.background = "#6366f1";
             e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 4px 6px rgba(99, 102, 241, 0.4)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 6px rgba(99, 102, 241, 0.4)";
           }}
         >
           ➕ Add New Item
@@ -350,25 +355,29 @@ export default function MenuItemsManagement() {
       </div>
 
       {/* Filters */}
-      <div style={{ 
-        background: "#1e293b",
-        borderRadius: "12px",
-        padding: "25px",
-        marginBottom: "25px",
-        border: "1px solid #334155",
-        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)"
-      }}>
+      <div
+        style={{
+          background: "#1e293b",
+          borderRadius: "12px",
+          padding: "25px",
+          marginBottom: "25px",
+          border: "1px solid #334155",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+        }}
+      >
         {/* Search Bar */}
         <div style={{ marginBottom: "20px" }}>
           <div style={{ position: "relative" }}>
-            <span style={{
-              position: "absolute",
-              left: "15px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontSize: "20px",
-              color: searchQuery !== debouncedSearch ? "#fbbf24" : "#6366f1"
-            }}>
+            <span
+              style={{
+                position: "absolute",
+                left: "15px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontSize: "20px",
+                color: searchQuery !== debouncedSearch ? "#fbbf24" : "#6366f1",
+              }}
+            >
               {searchQuery !== debouncedSearch ? "⏳" : "🔍"}
             </span>
             <input
@@ -378,20 +387,23 @@ export default function MenuItemsManagement() {
               onChange={(e) => {
                 setSearchQuery(e.target.value);
               }}
-              style={{ 
+              style={{
                 width: "100%",
                 padding: "15px 15px 15px 50px",
                 fontSize: "16px",
-                border: `1px solid ${searchQuery !== debouncedSearch ? "#fbbf24" : "#334155"}`,
+                border: `1px solid ${
+                  searchQuery !== debouncedSearch ? "#fbbf24" : "#334155"
+                }`,
                 borderRadius: "8px",
                 outline: "none",
                 transition: "all 0.3s ease",
                 background: "#0f172a",
-                color: "#f1f5f9"
+                color: "#f1f5f9",
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#6366f1";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(99, 102, 241, 0.1)";
+                e.currentTarget.style.boxShadow =
+                  "0 0 0 3px rgba(99, 102, 241, 0.1)";
               }}
               onBlur={(e) => {
                 e.currentTarget.style.borderColor = "#334155";
@@ -402,9 +414,25 @@ export default function MenuItemsManagement() {
         </div>
 
         {/* Filter Controls */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "15px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "15px",
+          }}
+        >
           <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#cbd5e1", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: "600",
+                color: "#cbd5e1",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               📂 Category
             </label>
             <select
@@ -413,7 +441,7 @@ export default function MenuItemsManagement() {
                 setCategoryFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ 
+              style={{
                 width: "100%",
                 padding: "12px 15px",
                 fontSize: "14px",
@@ -423,7 +451,7 @@ export default function MenuItemsManagement() {
                 cursor: "pointer",
                 background: "#0f172a",
                 color: "#f1f5f9",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#6366f1";
@@ -442,7 +470,17 @@ export default function MenuItemsManagement() {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#cbd5e1", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: "600",
+                color: "#cbd5e1",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               📊 Status
             </label>
             <select
@@ -451,7 +489,7 @@ export default function MenuItemsManagement() {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ 
+              style={{
                 width: "100%",
                 padding: "12px 15px",
                 fontSize: "14px",
@@ -461,7 +499,7 @@ export default function MenuItemsManagement() {
                 cursor: "pointer",
                 background: "#0f172a",
                 color: "#f1f5f9",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#6366f1";
@@ -478,7 +516,17 @@ export default function MenuItemsManagement() {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#cbd5e1", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: "600",
+                color: "#cbd5e1",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               ⭐ Recommendation
             </label>
             <select
@@ -487,7 +535,7 @@ export default function MenuItemsManagement() {
                 setChefRecommendedFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ 
+              style={{
                 width: "100%",
                 padding: "12px 15px",
                 fontSize: "14px",
@@ -497,7 +545,7 @@ export default function MenuItemsManagement() {
                 cursor: "pointer",
                 background: "#0f172a",
                 color: "#f1f5f9",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#6366f1";
@@ -513,7 +561,17 @@ export default function MenuItemsManagement() {
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: "600", color: "#cbd5e1", fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "8px",
+                fontWeight: "600",
+                color: "#cbd5e1",
+                fontSize: "14px",
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+              }}
+            >
               🔄 Sort By
             </label>
             <select
@@ -522,7 +580,7 @@ export default function MenuItemsManagement() {
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ 
+              style={{
                 width: "100%",
                 padding: "12px 15px",
                 fontSize: "14px",
@@ -532,7 +590,7 @@ export default function MenuItemsManagement() {
                 cursor: "pointer",
                 background: "#0f172a",
                 color: "#f1f5f9",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
               }}
               onFocus={(e) => {
                 e.currentTarget.style.borderColor = "#6366f1";
@@ -553,20 +611,26 @@ export default function MenuItemsManagement() {
       </div>
 
       {/* Results count */}
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        marginBottom: "20px",
-        padding: "15px 20px",
-        background: "#1e293b",
-        borderRadius: "8px",
-        fontSize: "14px",
-        fontWeight: "500",
-        color: "#cbd5e1",
-        border: "1px solid #334155"
-      }}>
-        <span>📊 Showing <strong style={{ color: "#6366f1" }}>{items.length}</strong> of <strong style={{ color: "#6366f1" }}>{totalItems}</strong> items</span>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          padding: "15px 20px",
+          background: "#1e293b",
+          borderRadius: "8px",
+          fontSize: "14px",
+          fontWeight: "500",
+          color: "#cbd5e1",
+          border: "1px solid #334155",
+        }}
+      >
+        <span>
+          📊 Showing{" "}
+          <strong style={{ color: "#6366f1" }}>{items.length}</strong> of{" "}
+          <strong style={{ color: "#6366f1" }}>{totalItems}</strong> items
+        </span>
         {searchQuery && (
           <span style={{ color: "#a855f7" }}>
             🔍 Search results for "{searchQuery}"
@@ -576,17 +640,19 @@ export default function MenuItemsManagement() {
 
       {/* Error */}
       {error && (
-        <div style={{ 
-          color: "#fee2e2", 
-          padding: "15px 20px", 
-          background: "#7f1d1d", 
-          borderRadius: "8px", 
-          marginBottom: "20px",
-          border: "1px solid #dc2626",
-          display: "flex",
-          alignItems: "center",
-          gap: "10px"
-        }}>
+        <div
+          style={{
+            color: "#fee2e2",
+            padding: "15px 20px",
+            background: "#7f1d1d",
+            borderRadius: "8px",
+            marginBottom: "20px",
+            border: "1px solid #dc2626",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
           <span style={{ fontSize: "20px" }}>⚠️</span>
           <span>{error}</span>
         </div>
@@ -594,64 +660,150 @@ export default function MenuItemsManagement() {
 
       {/* Loading */}
       {loading && (
-        <div style={{
-          textAlign: "center",
-          padding: "40px",
-          background: "#1e293b",
-          borderRadius: "12px",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-          border: "1px solid #334155"
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "40px",
+            background: "#1e293b",
+            borderRadius: "12px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+            border: "1px solid #334155",
+          }}
+        >
           <div style={{ fontSize: "40px", marginBottom: "10px" }}>⏳</div>
-          <p style={{ color: "#a855f7", fontWeight: "500" }}>Loading menu items...</p>
+          <p style={{ color: "#a855f7", fontWeight: "500" }}>
+            Loading menu items...
+          </p>
         </div>
       )}
 
       {/* Table */}
       {!loading && items.length > 0 && (
-        <div style={{
-          background: "#1e293b",
-          borderRadius: "12px",
-          overflow: "hidden",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-          border: "1px solid #334155"
-        }}>
-          <table style={{ 
-            width: "100%", 
-            borderCollapse: "collapse",
-            fontSize: "14px"
-          }}>
+        <div
+          style={{
+            background: "#1e293b",
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+            border: "1px solid #334155",
+          }}
+        >
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "14px",
+            }}
+          >
             <thead>
-              <tr style={{ 
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                color: "white"
-              }}>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Photo</th>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Name</th>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Category</th>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Price</th>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Prep Time</th>
-                <th style={{ padding: "16px", textAlign: "left", fontWeight: "600" }}>Status</th>
-                <th style={{ padding: "16px", textAlign: "center", fontWeight: "600" }}>Chef</th>
-                <th style={{ padding: "16px", textAlign: "center", fontWeight: "600" }}>Mods</th>
-                <th style={{ padding: "16px", textAlign: "center", fontWeight: "600" }}>Actions</th>
+              <tr
+                style={{
+                  background:
+                    "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+                  color: "white",
+                }}
+              >
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Photo
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Name
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Category
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Price
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Prep Time
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "left",
+                    fontWeight: "600",
+                  }}
+                >
+                  Status
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "600",
+                  }}
+                >
+                  Chef
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "600",
+                  }}
+                >
+                  Mods
+                </th>
+                <th
+                  style={{
+                    padding: "16px",
+                    textAlign: "center",
+                    fontWeight: "600",
+                  }}
+                >
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item, index) => (
-                <tr key={item.id} style={{
-                  borderBottom: "1px solid #334155",
-                  background: index % 2 === 0 ? "#1e293b" : "#0f172a",
-                  transition: "all 0.2s ease"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#1e40af30";
-                  e.currentTarget.style.transform = "scale(1.005)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = index % 2 === 0 ? "#1e293b" : "#0f172a";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
+                <tr
+                  key={item.id}
+                  style={{
+                    borderBottom: "1px solid #334155",
+                    background: index % 2 === 0 ? "#1e293b" : "#0f172a",
+                    transition: "all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#1e40af30";
+                    e.currentTarget.style.transform = "scale(1.005)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background =
+                      index % 2 === 0 ? "#1e293b" : "#0f172a";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
                 >
                   <td style={{ padding: "16px" }}>
                     {item.primaryPhoto ? (
@@ -663,7 +815,7 @@ export default function MenuItemsManagement() {
                           height: "60px",
                           objectFit: "cover",
                           borderRadius: "10px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
@@ -675,13 +827,14 @@ export default function MenuItemsManagement() {
                         style={{
                           width: "60px",
                           height: "60px",
-                          background: "linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)",
+                          background:
+                            "linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)",
                           borderRadius: "10px",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           fontSize: "28px",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                         }}
                       >
                         🍽️
@@ -689,7 +842,13 @@ export default function MenuItemsManagement() {
                     )}
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <div style={{ fontWeight: "600", color: "#f1f5f9", marginBottom: "4px" }}>
+                    <div
+                      style={{
+                        fontWeight: "600",
+                        color: "#f1f5f9",
+                        marginBottom: "4px",
+                      }}
+                    >
                       {item.name}
                     </div>
                     {item.description && (
@@ -697,7 +856,7 @@ export default function MenuItemsManagement() {
                         style={{
                           fontSize: "13px",
                           color: "#94a3b8",
-                          lineHeight: "1.4"
+                          lineHeight: "1.4",
                         }}
                       >
                         {item.description.substring(0, 60)}
@@ -706,18 +865,27 @@ export default function MenuItemsManagement() {
                     )}
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <span style={{
-                      background: "#312e81",
-                      color: "#a5b4fc",
-                      padding: "6px 12px",
-                      borderRadius: "20px",
-                      fontSize: "13px",
-                      fontWeight: "500"
-                    }}>
+                    <span
+                      style={{
+                        background: "#312e81",
+                        color: "#a5b4fc",
+                        padding: "6px 12px",
+                        borderRadius: "20px",
+                        fontSize: "13px",
+                        fontWeight: "500",
+                      }}
+                    >
                       {item.category.name}
                     </span>
                   </td>
-                  <td style={{ padding: "16px", fontWeight: "700", color: "#10b981", fontSize: "15px" }}>
+                  <td
+                    style={{
+                      padding: "16px",
+                      fontWeight: "700",
+                      color: "#10b981",
+                      fontSize: "15px",
+                    }}
+                  >
                     {formatPrice(item.price)}
                   </td>
                   <td style={{ padding: "16px", color: "#94a3b8" }}>
@@ -736,8 +904,18 @@ export default function MenuItemsManagement() {
                         fontSize: "13px",
                         fontWeight: "500",
                         cursor: "pointer",
-                        background: item.status === "available" ? "#064e3b" : item.status === "sold_out" ? "#7f1d1d" : "#78350f",
-                        color: item.status === "available" ? "#6ee7b7" : item.status === "sold_out" ? "#fca5a5" : "#fcd34d"
+                        background:
+                          item.status === "available"
+                            ? "#064e3b"
+                            : item.status === "sold_out"
+                            ? "#7f1d1d"
+                            : "#78350f",
+                        color:
+                          item.status === "available"
+                            ? "#6ee7b7"
+                            : item.status === "sold_out"
+                            ? "#fca5a5"
+                            : "#fcd34d",
                       }}
                     >
                       <option value="available">✅ Available</option>
@@ -745,23 +923,37 @@ export default function MenuItemsManagement() {
                       <option value="sold_out">🔴 Sold Out</option>
                     </select>
                   </td>
-                  <td style={{ padding: "16px", textAlign: "center", fontSize: "20px" }}>
+                  <td
+                    style={{
+                      padding: "16px",
+                      textAlign: "center",
+                      fontSize: "20px",
+                    }}
+                  >
                     {item.isChefRecommended ? "⭐" : "-"}
                   </td>
                   <td style={{ padding: "16px", textAlign: "center" }}>
-                    <span style={{
-                      background: "#334155",
-                      padding: "6px 10px",
-                      borderRadius: "8px",
-                      fontWeight: "600",
-                      color: "#cbd5e1",
-                      fontSize: "13px"
-                    }}>
+                    <span
+                      style={{
+                        background: "#334155",
+                        padding: "6px 10px",
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        color: "#cbd5e1",
+                        fontSize: "13px",
+                      }}
+                    >
                       {item.modifierGroupsCount || 0}
                     </span>
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        justifyContent: "center",
+                      }}
+                    >
                       <button
                         onClick={() => openEditModal(item)}
                         title="Edit"
@@ -774,17 +966,19 @@ export default function MenuItemsManagement() {
                           cursor: "pointer",
                           fontSize: "16px",
                           transition: "all 0.2s ease",
-                          boxShadow: "0 2px 4px rgba(59, 130, 246, 0.3)"
+                          boxShadow: "0 2px 4px rgba(59, 130, 246, 0.3)",
                         }}
                         onMouseOver={(e) => {
                           e.currentTarget.style.background = "#2563eb";
                           e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow = "0 4px 8px rgba(59, 130, 246, 0.4)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 8px rgba(59, 130, 246, 0.4)";
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = "#3b82f6";
                           e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(59, 130, 246, 0.3)";
+                          e.currentTarget.style.boxShadow =
+                            "0 2px 4px rgba(59, 130, 246, 0.3)";
                         }}
                       >
                         ✏️
@@ -801,17 +995,19 @@ export default function MenuItemsManagement() {
                           cursor: "pointer",
                           fontSize: "16px",
                           transition: "all 0.2s ease",
-                          boxShadow: "0 2px 4px rgba(239, 68, 68, 0.3)"
+                          boxShadow: "0 2px 4px rgba(239, 68, 68, 0.3)",
                         }}
                         onMouseOver={(e) => {
                           e.currentTarget.style.background = "#dc2626";
                           e.currentTarget.style.transform = "translateY(-2px)";
-                          e.currentTarget.style.boxShadow = "0 4px 8px rgba(239, 68, 68, 0.4)";
+                          e.currentTarget.style.boxShadow =
+                            "0 4px 8px rgba(239, 68, 68, 0.4)";
                         }}
                         onMouseOut={(e) => {
                           e.currentTarget.style.background = "#ef4444";
                           e.currentTarget.style.transform = "translateY(0)";
-                          e.currentTarget.style.boxShadow = "0 2px 4px rgba(239, 68, 68, 0.3)";
+                          e.currentTarget.style.boxShadow =
+                            "0 2px 4px rgba(239, 68, 68, 0.3)";
                         }}
                       >
                         🗑️
@@ -827,25 +1023,29 @@ export default function MenuItemsManagement() {
 
       {/* No results */}
       {!loading && items.length === 0 && (
-        <div style={{ 
-          textAlign: "center", 
-          padding: "60px 40px", 
-          background: "#1e293b",
-          borderRadius: "12px",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-          border: "1px solid #334155"
-        }}>
+        <div
+          style={{
+            textAlign: "center",
+            padding: "60px 40px",
+            background: "#1e293b",
+            borderRadius: "12px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+            border: "1px solid #334155",
+          }}
+        >
           <div style={{ fontSize: "80px", marginBottom: "20px" }}>🍽️</div>
-          <h3 style={{ color: "#cbd5e1", marginBottom: "10px", fontSize: "20px" }}>
+          <h3
+            style={{ color: "#cbd5e1", marginBottom: "10px", fontSize: "20px" }}
+          >
             No menu items found
           </h3>
           <p style={{ color: "#64748b", marginBottom: "20px" }}>
-            {searchQuery || categoryFilter || statusFilter 
+            {searchQuery || categoryFilter || statusFilter
               ? "Try adjusting your filters or search terms"
               : "Get started by creating your first menu item!"}
           </p>
           {!searchQuery && !categoryFilter && !statusFilter && (
-            <button 
+            <button
               onClick={() => setShowCreateModal(true)}
               style={{
                 background: "#6366f1",
@@ -857,15 +1057,17 @@ export default function MenuItemsManagement() {
                 fontWeight: "600",
                 cursor: "pointer",
                 boxShadow: "0 4px 6px rgba(99, 102, 241, 0.4)",
-                transition: "all 0.3s ease"
+                transition: "all 0.3s ease",
               }}
               onMouseOver={(e) => {
                 e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow = "0 6px 12px rgba(99, 102, 241, 0.5)";
+                e.currentTarget.style.boxShadow =
+                  "0 6px 12px rgba(99, 102, 241, 0.5)";
               }}
               onMouseOut={(e) => {
                 e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "0 4px 6px rgba(99, 102, 241, 0.4)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 6px rgba(99, 102, 241, 0.4)";
               }}
             >
               ➕ Create First Item
@@ -876,18 +1078,20 @@ export default function MenuItemsManagement() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ 
-          marginTop: "30px", 
-          display: "flex", 
-          justifyContent: "center", 
-          alignItems: "center",
-          gap: "10px",
-          padding: "20px",
-          background: "#1e293b",
-          borderRadius: "12px",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-          border: "1px solid #334155"
-        }}>
+        <div
+          style={{
+            marginTop: "30px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "10px",
+            padding: "20px",
+            background: "#1e293b",
+            borderRadius: "12px",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+            border: "1px solid #334155",
+          }}
+        >
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
@@ -899,7 +1103,7 @@ export default function MenuItemsManagement() {
               color: currentPage === 1 ? "#475569" : "#a5b4fc",
               fontWeight: "600",
               cursor: currentPage === 1 ? "not-allowed" : "pointer",
-              transition: "all 0.2s ease"
+              transition: "all 0.2s ease",
             }}
             onMouseOver={(e) => {
               if (currentPage !== 1) {
@@ -916,20 +1120,24 @@ export default function MenuItemsManagement() {
           >
             ← Previous
           </button>
-          <span style={{ 
-            padding: "10px 20px",
-            fontWeight: "600",
-            color: "#cbd5e1",
-            background: "#0f172a",
-            borderRadius: "8px",
-            minWidth: "140px",
-            textAlign: "center",
-            border: "1px solid #334155"
-          }}>
+          <span
+            style={{
+              padding: "10px 20px",
+              fontWeight: "600",
+              color: "#cbd5e1",
+              background: "#0f172a",
+              borderRadius: "8px",
+              minWidth: "140px",
+              textAlign: "center",
+              border: "1px solid #334155",
+            }}
+          >
             Page {currentPage} of {totalPages}
           </span>
           <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            onClick={() =>
+              setCurrentPage(Math.min(totalPages, currentPage + 1))
+            }
             disabled={currentPage === totalPages}
             style={{
               padding: "10px 20px",
@@ -939,7 +1147,7 @@ export default function MenuItemsManagement() {
               color: currentPage === totalPages ? "#475569" : "#a5b4fc",
               fontWeight: "600",
               cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-              transition: "all 0.2s ease"
+              transition: "all 0.2s ease",
             }}
             onMouseOver={(e) => {
               if (currentPage !== totalPages) {
@@ -961,7 +1169,10 @@ export default function MenuItemsManagement() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+        <div
+          className="modal-overlay"
+          onClick={() => setShowCreateModal(false)}
+        >
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Menu Item</h2>
             <form onSubmit={handleCreate}>
@@ -1011,7 +1222,13 @@ export default function MenuItemsManagement() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "15px",
+                }}
+              >
                 <div className="form-group">
                   <label>Price (VND) *</label>
                   <input
@@ -1020,7 +1237,10 @@ export default function MenuItemsManagement() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        price: e.target.value === "" ? 0 : parseFloat(e.target.value),
+                        price:
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value),
                       })
                     }
                     required
@@ -1038,7 +1258,8 @@ export default function MenuItemsManagement() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        prep_time_minutes: e.target.value === "" ? 0 : parseInt(e.target.value),
+                        prep_time_minutes:
+                          e.target.value === "" ? 0 : parseInt(e.target.value),
                       })
                     }
                     min={0}
@@ -1063,7 +1284,14 @@ export default function MenuItemsManagement() {
               </div>
 
               <div className="form-group">
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={formData.is_chef_recommended}
@@ -1081,16 +1309,24 @@ export default function MenuItemsManagement() {
 
               <div className="form-group">
                 <label>Modifier Groups</label>
-                <div style={{ 
-                  maxHeight: "150px", 
-                  overflowY: "auto", 
-                  border: "1px solid var(--border)", 
-                  padding: "10px", 
-                  borderRadius: "8px",
-                  background: "var(--bg-main)"
-                }}>
+                <div
+                  style={{
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    border: "1px solid var(--border)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    background: "var(--bg-main)",
+                  }}
+                >
                   {modifierGroups.length === 0 && (
-                    <p style={{ color: "var(--text-secondary)", fontSize: "0.9em", margin: 0 }}>
+                    <p
+                      style={{
+                        color: "var(--text-secondary)",
+                        fontSize: "0.9em",
+                        margin: 0,
+                      }}
+                    >
                       No modifier groups available
                     </p>
                   )}
@@ -1103,7 +1339,7 @@ export default function MenuItemsManagement() {
                         gap: "8px",
                         padding: "5px 0",
                         cursor: "pointer",
-                        color: "var(--text-primary)"
+                        color: "var(--text-primary)",
                       }}
                     >
                       <input
@@ -1121,23 +1357,30 @@ export default function MenuItemsManagement() {
               </div>
 
               {/* Info about photos */}
-              <div style={{ 
-                padding: "12px 15px", 
-                background: "rgba(99, 102, 241, 0.1)", 
-                border: "1px solid rgba(99, 102, 241, 0.3)", 
-                borderRadius: "8px",
-                marginBottom: "1rem"
-              }}>
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: "0.9rem", 
-                  color: "var(--text-secondary)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px"
-                }}>
+              <div
+                style={{
+                  padding: "12px 15px",
+                  background: "rgba(99, 102, 241, 0.1)",
+                  border: "1px solid rgba(99, 102, 241, 0.3)",
+                  borderRadius: "8px",
+                  marginBottom: "1rem",
+                }}
+              >
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.9rem",
+                    color: "var(--text-secondary)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
                   <span style={{ fontSize: "1.2rem" }}>ℹ️</span>
-                  <span>Photos can be added after creating the item by clicking the Edit button.</span>
+                  <span>
+                    Photos can be added after creating the item by clicking the
+                    Edit button.
+                  </span>
                 </p>
               </div>
 
@@ -1212,7 +1455,13 @@ export default function MenuItemsManagement() {
                 />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "15px",
+                }}
+              >
                 <div className="form-group">
                   <label>Price (VND) *</label>
                   <input
@@ -1221,7 +1470,10 @@ export default function MenuItemsManagement() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        price: e.target.value === "" ? 0 : parseFloat(e.target.value),
+                        price:
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value),
                       })
                     }
                     required
@@ -1239,7 +1491,8 @@ export default function MenuItemsManagement() {
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        prep_time_minutes: e.target.value === "" ? 0 : parseInt(e.target.value),
+                        prep_time_minutes:
+                          e.target.value === "" ? 0 : parseInt(e.target.value),
                       })
                     }
                     min={0}
@@ -1264,7 +1517,14 @@ export default function MenuItemsManagement() {
               </div>
 
               <div className="form-group">
-                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                  }}
+                >
                   <input
                     type="checkbox"
                     checked={formData.is_chef_recommended}
@@ -1282,14 +1542,16 @@ export default function MenuItemsManagement() {
 
               <div className="form-group">
                 <label>Modifier Groups</label>
-                <div style={{ 
-                  maxHeight: "150px", 
-                  overflowY: "auto", 
-                  border: "1px solid var(--border)", 
-                  padding: "10px", 
-                  borderRadius: "8px",
-                  background: "var(--bg-main)"
-                }}>
+                <div
+                  style={{
+                    maxHeight: "150px",
+                    overflowY: "auto",
+                    border: "1px solid var(--border)",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    background: "var(--bg-main)",
+                  }}
+                >
                   {modifierGroups.map((group) => (
                     <label
                       key={group.id}
@@ -1299,7 +1561,7 @@ export default function MenuItemsManagement() {
                         gap: "8px",
                         padding: "5px 0",
                         cursor: "pointer",
-                        color: "var(--text-primary)"
+                        color: "var(--text-primary)",
                       }}
                     >
                       <input
@@ -1323,7 +1585,9 @@ export default function MenuItemsManagement() {
                 onPhotosChange={async () => {
                   // Reload the specific item details to get updated photos
                   try {
-                    const updatedItem = await menuItemsApi.getOne(selectedItem.id);
+                    const updatedItem = await menuItemsApi.getOne(
+                      selectedItem.id
+                    );
                     setSelectedItem(updatedItem);
                   } catch (err) {
                     console.error("Failed to reload item photos:", err);

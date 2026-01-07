@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { tablesApi } from "../api/tablesApi";
-import type { Table } from "../api/tablesApi";
-import type { CreateTableData } from "../api/tablesApi";
+import type { Table,CreateTableData } from "../types/tables.types";
 import QRCode from "react-qr-code";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";

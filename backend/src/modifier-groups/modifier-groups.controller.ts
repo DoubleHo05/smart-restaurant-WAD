@@ -17,7 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
+@Roles('admin', 'super_admin')
 @Controller('api/admin/menu/modifier-groups')
 export class ModifierGroupsController {
   constructor(private readonly modifierGroupsService: ModifierGroupsService) {}

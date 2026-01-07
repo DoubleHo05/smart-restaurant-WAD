@@ -13,7 +13,11 @@ export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateCategoryDto) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    // Get restaurant_id from existing category, or use a default
+    const existingCategory = await this.prisma.menuCategory.findFirst();
+    const restaurantId =
+      existingCategory?.restaurant_id || 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+
     const existing = await this.prisma.menuCategory.findFirst({
       where: {
         restaurant_id: restaurantId,
@@ -35,9 +39,8 @@ export class CategoriesService {
     });
   }
   async findAll(filters?: { status?: string; sortBy?: string }) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
     // Build where clause
-    const where: any = { restaurant_id: restaurantId };
+    const where: any = {};
     if (filters?.status) {
       where.status = filters.status;
     }

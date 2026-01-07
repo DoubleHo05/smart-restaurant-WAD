@@ -20,7 +20,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
 @Controller('api/admin/menu/items')
 export class MenuItemsController {
   constructor(private readonly menuItemsService: MenuItemsService) {}
@@ -30,6 +29,7 @@ export class MenuItemsController {
    * Create a new menu item
    */
   @Post()
+  @Roles('admin', 'super_admin')
   async create(
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     createDto: CreateItemDto,
@@ -77,6 +77,7 @@ export class MenuItemsController {
    * Update a menu item
    */
   @Put(':id')
+  @Roles('admin', 'super_admin')
   async update(
     @Param('id') id: string,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
@@ -90,6 +91,7 @@ export class MenuItemsController {
    * Update item status
    */
   @Patch(':id/status')
+  @Roles('admin', 'super_admin')
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.menuItemsService.updateStatus(id, status);
   }
@@ -99,6 +101,7 @@ export class MenuItemsController {
    * Soft delete a menu item
    */
   @Delete(':id')
+  @Roles('admin', 'super_admin')
   async remove(@Param('id') id: string) {
     return this.menuItemsService.remove(id);
   }

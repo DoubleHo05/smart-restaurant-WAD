@@ -13,6 +13,7 @@ import { ModifierGroupsModule } from './modifier-groups/modifier-groups.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { RestaurantsModule } from './restaurants/restaurants.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
     }),
     PrismaModule,
+    RestaurantsModule,
     TablesModule,
     QrTokenModule,
     QrExportModule,

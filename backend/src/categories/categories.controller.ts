@@ -18,12 +18,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin')
 @Controller('api/admin/menu/categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
+  @Roles('admin', 'super_admin')
   async create(@Body() createDto: CreateCategoryDto) {
     return this.categoriesService.create(createDto);
   }
@@ -36,16 +36,19 @@ export class CategoriesController {
     return this.categoriesService.findAll({ status, sortBy });
   }
   @Put(':id')
+  @Roles('admin', 'super_admin')
   async update(@Param('id') id: string, @Body() updateDto: UpdateCategoryDto) {
     return this.categoriesService.update(id, updateDto);
   }
 
   @Patch(':id/status')
+  @Roles('admin', 'super_admin')
   async updateStatus(@Param('id') id: string, @Body('status') status: string) {
     return this.categoriesService.updateStatus(id, status);
   }
 
   @Delete(':id')
+  @Roles('admin', 'super_admin')
   async remove(@Param('id') id: string) {
     return this.categoriesService.softDelete(id);
   }

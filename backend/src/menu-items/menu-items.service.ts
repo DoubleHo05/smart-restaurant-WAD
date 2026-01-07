@@ -32,12 +32,14 @@ export class MenuItemsService {
       throw new BadRequestException('Cannot add items to inactive category');
     }
 
+    // Use restaurant_id from category to ensure consistency
+    const restaurantId = category.restaurant_id;
+
     // Validate modifier groups if provided
     if (createDto.modifier_group_ids && createDto.modifier_group_ids.length > 0) {
       const modifierGroups = await this.prisma.modifierGroup.findMany({
         where: {
           id: { in: createDto.modifier_group_ids },
-          restaurant_id: createDto.restaurant_id,
         },
       });
 
@@ -52,6 +54,7 @@ export class MenuItemsService {
     const menuItem = await this.prisma.menuItem.create({
       data: {
         ...itemData,
+        restaurant_id: restaurantId,
         is_deleted: false,
         prep_time_minutes: itemData.prep_time_minutes || 0,
         is_chef_recommended: itemData.is_chef_recommended || false,
@@ -95,7 +98,6 @@ export class MenuItemsService {
 
     // Build where clause
     const where: any = {
-      restaurant_id: restaurantId,
       is_deleted: false,
     };
 

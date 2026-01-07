@@ -12,11 +12,9 @@ export const menuItemsApi = {
    * Get all menu items with filters
    */
   async getAll(
-    restaurantId: string,
     filters?: MenuItemFilters
   ): Promise<MenuItemsResponse> {
     const params = new URLSearchParams();
-    params.append("restaurant_id", restaurantId);
 
     if (filters?.search) params.append("search", filters.search);
     if (filters?.category_id) params.append("category_id", filters.category_id);

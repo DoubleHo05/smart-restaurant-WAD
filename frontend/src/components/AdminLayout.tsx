@@ -58,7 +58,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="nav-icon">📁</span>
             Categories
           </Link>
-          <Link to="/" className={`nav-link ${isActive("/") ? "active" : ""}`}>
+          <Link
+            to="/tables"
+            className={`nav-link ${isActive("/tables") ? "active" : ""}`}
+          >
             <span className="nav-icon">🪑</span>
             Tables
           </Link>
