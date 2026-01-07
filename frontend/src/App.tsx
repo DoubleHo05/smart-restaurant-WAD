@@ -9,6 +9,7 @@ import ModifiersManagement from "./pages/ModifiersManagement";
 import MenuItemsManagement from "./pages/MenuItemsManagement";
 import AdminLayout from "./components/AdminLayout";
 import AdminLogin from "./pages/AdminLogin";
+import Dashboard from "./pages/Dashboard";
 import "./App.css";
 
 function App() {
@@ -26,9 +27,9 @@ function App() {
                   <Routes>
                     <Route
                       path="/"
-                      // element={<Navigate to="/dashboard" replace />}
+                      element={<Navigate to="/dashboard" replace />}
                     />
-                    {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+                    {<Route path="/dashboard" element={<Dashboard />} />}
                     <Route path="/tables" element={<TableManagement />} />
                     <Route path="/menu" element={<Menu />} />
                     <Route

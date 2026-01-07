@@ -1,77 +1,11 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-export interface MenuItem {
-  id: string;
-  restaurantId: string;
-  name: string;
-  description?: string;
-  price: number;
-  prepTimeMinutes: number;
-  status: string;
-  isChefRecommended: boolean;
-  category: {
-    id: string;
-    name: string;
-  };
-  primaryPhoto?: string | null;
-  photos?: Array<{
-    id: string;
-    url: string;
-    isPrimary: boolean;
-  }>;
-  modifierGroups?: Array<{
-    id: string;
-    name: string;
-  }>;
-  modifierGroupsCount?: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface CreateMenuItemData {
-  restaurant_id: string;
-  category_id: string;
-  name: string;
-  description?: string;
-  price: number;
-  prep_time_minutes?: number;
-  status: string;
-  is_chef_recommended?: boolean;
-  modifier_group_ids?: string[];
-}
-
-export interface UpdateMenuItemData {
-  category_id?: string;
-  name?: string;
-  description?: string;
-  price?: number;
-  prep_time_minutes?: number;
-  status?: string;
-  is_chef_recommended?: boolean;
-  modifier_group_ids?: string[];
-}
-
-export interface MenuItemFilters {
-  search?: string;
-  category_id?: string;
-  status?: string;
-  is_chef_recommended?: string;
-  sortBy?: string;
-  page?: number;
-  limit?: number;
-}
-
-export interface MenuItemsResponse {
-  data: MenuItem[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+import axiosInstance from "./axiosConfig";
+import {
+  MenuItem,
+  CreateMenuItemData,
+  UpdateMenuItemData,
+  MenuItemFilters,
+  MenuItemsResponse,
+} from "./../types/menuItems.types";
 
 export const menuItemsApi = {
   /**
@@ -93,8 +27,8 @@ export const menuItemsApi = {
     if (filters?.page) params.append("page", filters.page.toString());
     if (filters?.limit) params.append("limit", filters.limit.toString());
 
-    const response = await axios.get(
-      `${API_BASE_URL}/api/admin/menu/items?${params.toString()}`
+    const response = await axiosInstance.get<MenuItemsResponse>(
+      `/api/admin/menu/items?${params.toString()}`
     );
     return response.data;
   },
@@ -103,7 +37,9 @@ export const menuItemsApi = {
    * Get a single menu item by ID
    */
   async getOne(id: string): Promise<MenuItem> {
-    const response = await axios.get(`${API_BASE_URL}/api/admin/menu/items/${id}`);
+    const response = await axiosInstance.get<MenuItem>(
+      `/api/admin/menu/items/${id}`
+    );
     return response.data;
   },
 
@@ -111,8 +47,8 @@ export const menuItemsApi = {
    * Create a new menu item
    */
   async create(data: CreateMenuItemData): Promise<MenuItem> {
-    const response = await axios.post(
-      `${API_BASE_URL}/api/admin/menu/items`,
+    const response = await axiosInstance.post<MenuItem>(
+      "/api/admin/menu/items",
       data
     );
     return response.data;
@@ -122,8 +58,8 @@ export const menuItemsApi = {
    * Update an existing menu item
    */
   async update(id: string, data: UpdateMenuItemData): Promise<MenuItem> {
-    const response = await axios.put(
-      `${API_BASE_URL}/api/admin/menu/items/${id}`,
+    const response = await axiosInstance.put<MenuItem>(
+      `/api/admin/menu/items/${id}`,
       data
     );
     return response.data;
@@ -136,22 +72,21 @@ export const menuItemsApi = {
     id: string,
     status: string
   ): Promise<{ success: boolean; message: string }> {
-    const response = await axios.patch(
-      `${API_BASE_URL}/api/admin/menu/items/${id}/status`,
-      { status }
-    );
+    const response = await axiosInstance.patch<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/menu/items/${id}/status`, { status });
     return response.data;
   },
 
   /**
    * Delete a menu item (soft delete)
    */
-  async delete(
-    id: string
-  ): Promise<{ success: boolean; message: string }> {
-    const response = await axios.delete(
-      `${API_BASE_URL}/api/admin/menu/items/${id}`
-    );
+  async delete(id: string): Promise<{ success: boolean; message: string }> {
+    const response = await axiosInstance.delete<{
+      success: boolean;
+      message: string;
+    }>(`/api/admin/menu/items/${id}`);
     return response.data;
   },
 };
