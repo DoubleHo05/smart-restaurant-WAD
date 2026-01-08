@@ -11,9 +11,7 @@ export const menuItemsApi = {
   /**
    * Get all menu items with filters
    */
-  async getAll(
-    filters?: MenuItemFilters
-  ): Promise<MenuItemsResponse> {
+  async getAll(filters?: MenuItemFilters): Promise<MenuItemsResponse> {
     const params = new URLSearchParams();
 
     if (filters?.search) params.append("search", filters.search);

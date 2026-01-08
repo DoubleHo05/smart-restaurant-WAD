@@ -3,6 +3,8 @@ import { categoriesApi } from "../api/categoriesApi";
 import type { Category, CreateCategoryData } from "../types/categories.types";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";
+import { useRestaurant } from "../contexts/RestaurantContext";
+import RestaurantSelector from "../components/RestaurantSelector";
 import "../App.css";
 
 export default function CategoriesManagement() {
@@ -12,6 +14,7 @@ export default function CategoriesManagement() {
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
+  const { selectedRestaurant } = useRestaurant();
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -25,6 +28,7 @@ export default function CategoriesManagement() {
 
   // Form data
   const [formData, setFormData] = useState<CreateCategoryData>({
+    restaurant_id: "",
     name: "",
     description: "",
     display_order: 0,
@@ -58,10 +62,20 @@ export default function CategoriesManagement() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedRestaurant) {
+      toast.error("Please select a restaurant first");
+      return;
+    }
+
     try {
-      await categoriesApi.create(formData);
+      await categoriesApi.create({
+        ...formData,
+        restaurant_id: selectedRestaurant.id,
+      });
       setShowCreateModal(false);
       setFormData({
+        restaurant_id: "",
         name: "",
         description: "",
         display_order: 0,
@@ -83,6 +97,7 @@ export default function CategoriesManagement() {
       setShowEditModal(false);
       setSelectedCategory(null);
       setFormData({
+        restaurant_id: "",
         name: "",
         description: "",
         display_order: 0,
@@ -127,6 +142,7 @@ export default function CategoriesManagement() {
   const openEditModal = (category: Category) => {
     setSelectedCategory(category);
     setFormData({
+      restaurant_id: selectedRestaurant?.id || "",
       name: category.name,
       description: category.description || "",
       display_order: category.display_order,
@@ -247,6 +263,8 @@ export default function CategoriesManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Category</h2>
             <form onSubmit={handleCreate}>
+              <RestaurantSelector />
+
               <div className="form-group">
                 <label>Name *</label>
                 <input

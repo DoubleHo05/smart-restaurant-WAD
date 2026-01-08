@@ -36,7 +36,10 @@ export class MenuItemsService {
     const restaurantId = category.restaurant_id;
 
     // Validate modifier groups if provided
-    if (createDto.modifier_group_ids && createDto.modifier_group_ids.length > 0) {
+    if (
+      createDto.modifier_group_ids &&
+      createDto.modifier_group_ids.length > 0
+    ) {
       const modifierGroups = await this.prisma.modifierGroup.findMany({
         where: {
           id: { in: createDto.modifier_group_ids },
@@ -268,7 +271,9 @@ export class MenuItemsService {
         });
 
         if (modifierGroups.length !== modifier_group_ids.length) {
-          throw new BadRequestException('One or more modifier groups not found');
+          throw new BadRequestException(
+            'One or more modifier groups not found',
+          );
         }
       }
 

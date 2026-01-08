@@ -13,14 +13,28 @@ export class TablesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createTableDto: CreateTableDto): Promise<Table> {
-    // Check if table number already exists
+    // Validate restaurant exists
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: createTableDto.restaurant_id },
+    });
+
+    if (!restaurant) {
+      throw new NotFoundException('Restaurant not found');
+    }
+
+    // Check if table number already exists for this restaurant
     const existingTable = await this.prisma.table.findUnique({
-      where: { table_number: createTableDto.table_number },
+      where: {
+        restaurant_id_table_number: {
+          restaurant_id: createTableDto.restaurant_id,
+          table_number: createTableDto.table_number,
+        },
+      },
     });
 
     if (existingTable) {
       throw new ConflictException(
-        `Table with number ${createTableDto.table_number} already exists`,
+        `Table with number ${createTableDto.table_number} already exists in this restaurant`,
       );
     }
 
@@ -76,17 +90,22 @@ export class TablesService {
 
   async update(id: string, updateTableDto: UpdateTableDto): Promise<Table> {
     // Check if table exists
-    await this.findOne(id);
+    const currentTable = await this.findOne(id);
 
     // Check if updating table_number and if it conflicts with existing
     if (updateTableDto.table_number) {
       const existingTable = await this.prisma.table.findUnique({
-        where: { table_number: updateTableDto.table_number },
+        where: {
+          restaurant_id_table_number: {
+            restaurant_id: currentTable.restaurant_id,
+            table_number: updateTableDto.table_number,
+          },
+        },
       });
 
       if (existingTable && existingTable.id !== id) {
         throw new ConflictException(
-          `Table with number ${updateTableDto.table_number} already exists`,
+          `Table with number ${updateTableDto.table_number} already exists in this restaurant`,
         );
       }
     }

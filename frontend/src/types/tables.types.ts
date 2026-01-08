@@ -16,6 +16,7 @@ export interface CreateTableData {
   capacity: number;
   location?: string;
   description?: string;
+  restaurant_id: string;
 }
 
 export interface UpdateTableData {

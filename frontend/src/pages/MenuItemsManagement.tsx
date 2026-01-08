@@ -22,7 +22,6 @@ interface ModifierGroup {
 }
 
 export default function MenuItemsManagement() {
-
   // Data states
   const [items, setItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

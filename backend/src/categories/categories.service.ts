@@ -13,14 +13,18 @@ export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateCategoryDto) {
-    // Get restaurant_id from existing category, or use a default
-    const existingCategory = await this.prisma.menuCategory.findFirst();
-    const restaurantId =
-      existingCategory?.restaurant_id || 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    // Validate restaurant exists
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: createDto.restaurant_id },
+    });
+
+    if (!restaurant) {
+      throw new NotFoundException('Restaurant not found');
+    }
 
     const existing = await this.prisma.menuCategory.findFirst({
       where: {
-        restaurant_id: restaurantId,
+        restaurant_id: createDto.restaurant_id,
         name: createDto.name,
       },
     });
@@ -30,7 +34,7 @@ export class CategoriesService {
     // Tạo category mới
     return this.prisma.menuCategory.create({
       data: {
-        restaurant_id: restaurantId,
+        restaurant_id: createDto.restaurant_id,
         name: createDto.name,
         description: createDto.description,
         display_order: createDto.display_order ?? 0,

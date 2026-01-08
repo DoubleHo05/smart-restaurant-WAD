@@ -10,6 +10,7 @@ export interface Category {
 }
 
 export interface CreateCategoryData {
+  restaurant_id: string;
   name: string;
   description?: string;
   display_order?: number;

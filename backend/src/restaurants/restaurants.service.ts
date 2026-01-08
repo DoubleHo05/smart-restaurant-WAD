@@ -98,10 +98,7 @@ export class RestaurantsService {
     }
 
     // Check ownership unless super_admin
-    if (
-      !userRoles.includes('super_admin') &&
-      restaurant.owner_id !== userId
-    ) {
+    if (!userRoles.includes('super_admin') && restaurant.owner_id !== userId) {
       throw new ForbiddenException('You do not have access to this restaurant');
     }
 
@@ -164,6 +161,6 @@ export class RestaurantsService {
       select: { owner_id: true },
     });
 
-    return restaurant && restaurant.owner_id === userId;
+    return restaurant?.owner_id === userId;
   }
 }

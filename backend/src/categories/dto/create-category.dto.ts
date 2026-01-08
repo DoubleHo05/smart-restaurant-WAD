@@ -5,9 +5,13 @@ import {
   IsIn,
   Length,
   Min,
+  IsUUID,
 } from 'class-validator';
 
 export class CreateCategoryDto {
+  @IsUUID()
+  restaurant_id: string;
+
   @IsString()
   @Length(2, 50)
   name: string;

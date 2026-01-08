@@ -13,8 +13,7 @@ import {
 import { Type } from 'class-transformer';
 
 export class CreateItemDto {
-  @IsUUID()
-  restaurant_id: string;
+  // restaurant_id is auto-filled from category, no need to pass it
 
   @IsUUID()
   category_id: string;

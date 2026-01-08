@@ -16,6 +16,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public user: PrismaClient['user'];
   public role: PrismaClient['role'];
   public userRole: PrismaClient['userRole'];
+  public restaurant: PrismaClient['restaurant'];
 
   private client: PrismaClient;
   private pool: Pool;
@@ -32,6 +33,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.client = new PrismaClient({ adapter });
 
     // Initialize all models
+    this.restaurant = this.client.restaurant;
     this.table = this.client.table;
     this.menuCategory = this.client.menuCategory;
     this.menuItem = this.client.menuItem;
