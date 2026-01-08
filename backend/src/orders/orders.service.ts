@@ -5,6 +5,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import {
+  UpdateOrderStatusDto,
+  OrderStatus,
+} from './dto/update-order-status.dto';
 
 @Injectable()
 export class OrdersService {
@@ -398,6 +402,128 @@ export class OrdersService {
     return {
       data: orders,
       total: orders.length,
+    };
+  }
+
+  /**
+   * Validate status transition
+   * Ensures order status follows valid state machine flow
+   */
+  private validateStatusTransition(
+    currentStatus: string,
+    newStatus: OrderStatus,
+  ): boolean {
+    const validTransitions: Record<string, OrderStatus[]> = {
+      pending: [
+        OrderStatus.ACCEPTED,
+        OrderStatus.REJECTED,
+        OrderStatus.CANCELLED,
+      ],
+      accepted: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+      preparing: [OrderStatus.READY, OrderStatus.CANCELLED],
+      ready: [OrderStatus.SERVED, OrderStatus.CANCELLED],
+      served: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
+      completed: [], // Terminal state
+      cancelled: [], // Terminal state
+      rejected: [], // Terminal state
+    };
+
+    const allowedStatuses = validTransitions[currentStatus] || [];
+    return allowedStatuses.includes(newStatus);
+  }
+
+  /**
+   * Update order status with validation
+   * PATCH /api/orders/:id/status
+   */
+  async updateStatus(orderId: string, updateDto: UpdateOrderStatusDto) {
+    // Get current order
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: {
+        id: true,
+        order_number: true,
+        status: true,
+        table_id: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validate status transition
+    if (!this.validateStatusTransition(order.status, updateDto.status)) {
+      throw new BadRequestException(
+        `Invalid status transition from "${order.status}" to "${updateDto.status}"`,
+      );
+    }
+
+    // Prepare update data with timestamps
+    const updateData: any = {
+      status: updateDto.status,
+      updated_at: new Date(),
+    };
+
+    // Set timestamp fields based on new status
+    const now = new Date();
+    switch (updateDto.status) {
+      case OrderStatus.ACCEPTED:
+        updateData.accepted_at = now;
+        break;
+      case OrderStatus.PREPARING:
+        updateData.preparing_at = now;
+        break;
+      case OrderStatus.READY:
+        updateData.ready_at = now;
+        break;
+      case OrderStatus.SERVED:
+        updateData.served_at = now;
+        break;
+      case OrderStatus.COMPLETED:
+        updateData.completed_at = now;
+        break;
+    }
+
+    // Update order in database
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+      include: {
+        table: {
+          select: {
+            id: true,
+            table_number: true,
+            location: true,
+          },
+        },
+        order_items: {
+          include: {
+            menu_item: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // TODO: Emit Socket.IO event for real-time notification (Sprint 2)
+    // this.notificationGateway.emitOrderStatusUpdate({
+    //   orderId: order.id,
+    //   orderNumber: order.order_number,
+    //   tableId: order.table_id,
+    //   oldStatus: order.status,
+    //   newStatus: updateDto.status,
+    //   reason: updateDto.reason,
+    // });
+
+    return {
+      message: `Order status updated from "${order.status}" to "${updateDto.status}"`,
+      order: updatedOrder,
     };
   }
 }

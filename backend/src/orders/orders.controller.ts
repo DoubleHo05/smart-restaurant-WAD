@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Query,
@@ -9,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 @Controller('api/orders')
 export class OrdersController {
@@ -84,5 +86,18 @@ export class OrdersController {
   @Get('customer/:customerId')
   async findByCustomer(@Param('customerId') customerId: string) {
     return this.ordersService.findByCustomerId(customerId);
+  }
+
+  /**
+   * PATCH /api/orders/:id/status
+   * Update order status with validation
+   */
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    updateDto: UpdateOrderStatusDto,
+  ) {
+    return this.ordersService.updateStatus(id, updateDto);
   }
 }
