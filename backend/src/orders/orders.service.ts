@@ -220,4 +220,184 @@ export class OrdersService {
 
     return order;
   }
+
+  /**
+   * Get all orders with optional filters
+   * For Admin/Waiter - list all orders
+   */
+  async findAll(filters?: {
+    status?: string;
+    table_id?: string;
+    customer_id?: string;
+    restaurant_id?: string;
+    start_date?: Date;
+    end_date?: Date;
+  }) {
+    const where: any = {};
+
+    if (filters?.status) {
+      where.status = filters.status;
+    }
+
+    if (filters?.table_id) {
+      where.table_id = filters.table_id;
+    }
+
+    if (filters?.customer_id) {
+      where.customer_id = filters.customer_id;
+    }
+
+    if (filters?.restaurant_id) {
+      where.restaurant_id = filters.restaurant_id;
+    }
+
+    if (filters?.start_date || filters?.end_date) {
+      where.created_at = {};
+      if (filters.start_date) {
+        where.created_at.gte = filters.start_date;
+      }
+      if (filters.end_date) {
+        where.created_at.lte = filters.end_date;
+      }
+    }
+
+    const orders = await this.prisma.order.findMany({
+      where,
+      include: {
+        table: {
+          select: {
+            id: true,
+            table_number: true,
+            location: true,
+          },
+        },
+        order_items: {
+          include: {
+            menu_item: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+            modifiers: {
+              include: {
+                modifier_option: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price_adjustment: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return {
+      data: orders,
+      total: orders.length,
+    };
+  }
+
+  /**
+   * Get orders by table ID
+   */
+  async findByTableId(tableId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: { table_id: tableId },
+      include: {
+        table: {
+          select: {
+            id: true,
+            table_number: true,
+            location: true,
+          },
+        },
+        order_items: {
+          include: {
+            menu_item: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+            modifiers: {
+              include: {
+                modifier_option: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price_adjustment: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return {
+      data: orders,
+      total: orders.length,
+    };
+  }
+
+  /**
+   * Get customer order history
+   */
+  async findByCustomerId(customerId: string) {
+    const orders = await this.prisma.order.findMany({
+      where: { customer_id: customerId },
+      include: {
+        table: {
+          select: {
+            id: true,
+            table_number: true,
+            location: true,
+          },
+        },
+        order_items: {
+          include: {
+            menu_item: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+            modifiers: {
+              include: {
+                modifier_option: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price_adjustment: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+    });
+
+    return {
+      data: orders,
+      total: orders.length,
+    };
+  }
 }
