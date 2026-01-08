@@ -28,19 +28,19 @@ export class UsersController {
   }
 
   @Get()
-  @Roles('super_admin', 'admin')
+  @Roles('super_admin')
   findAll(@Query('role') role?: string) {
     return this.usersService.findAll(role);
   }
 
   @Get(':id')
-  @Roles('super_admin', 'admin')
+  @Roles('super_admin')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('super_admin', 'admin')
+  @Roles('super_admin')
   update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(id, updateUserDto);
   }

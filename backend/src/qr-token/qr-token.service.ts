@@ -38,6 +38,7 @@ export class QrTokenService {
 
     // 5. Tạo URL đầy đủ
     const frontendUrl = process.env.FRONTEND_MENU_URL;
+    console.log('[QR Debug] FRONTEND_MENU_URL:', frontendUrl); // Debug log
     if (!frontendUrl) {
       throw new Error(
         'FRONTEND_MENU_URL environment variable is required for QR code generation',

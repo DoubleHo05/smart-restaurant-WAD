@@ -5,7 +5,7 @@ import {
   UpdateMenuItemData,
   MenuItemFilters,
   MenuItemsResponse,
-} from "./../types/menuItems.types";
+} from "../types/menuItems.types";
 
 export const menuItemsApi = {
   /**

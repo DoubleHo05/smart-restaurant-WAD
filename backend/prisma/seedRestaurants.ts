@@ -32,9 +32,7 @@ async function main() {
   }
 
   if (!admin) {
-    throw new Error(
-      'Admin user not found. Please run seedUser.ts first.',
-    );
+    throw new Error('Admin user not found. Please run seedUser.ts first.');
   }
 
   // Create sample restaurants - Restaurant 1 owned by admin

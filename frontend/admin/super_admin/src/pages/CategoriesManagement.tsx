@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { categoriesApi } from "../api/categoriesApi";
 import type { Category, CreateCategoryData } from "../types/categories.types";
+import type { Restaurant } from "../types/restaurant.types";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";
-import { useRestaurant } from "../contexts/RestaurantContext";
 import RestaurantSelector from "../components/RestaurantSelector";
 import "../App.css";
 
@@ -11,10 +11,11 @@ export default function CategoriesManagement() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
-  const { selectedRestaurant } = useRestaurant();
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -170,7 +171,11 @@ export default function CategoriesManagement() {
     <div className="app">
       <header className="header">
         <h1>📁 Categories Management</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+          <RestaurantSelector
+            selectedRestaurant={selectedRestaurant}
+            onSelectRestaurant={setSelectedRestaurant}
+          />
           <button
             className="btn btn-secondary"
             onClick={() => (window.location.href = "/")}
@@ -180,6 +185,7 @@ export default function CategoriesManagement() {
           <button
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}
+            disabled={!selectedRestaurant}
           >
             + Add Category
           </button>
@@ -278,8 +284,6 @@ export default function CategoriesManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Category</h2>
             <form onSubmit={handleCreate}>
-              <RestaurantSelector />
-
               <div className="form-group">
                 <label>Name *</label>
                 <input

@@ -23,9 +23,20 @@ export class UsersService {
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+    // Filter out super_admin role - only allow other roles
+    const filteredRoles = createUserDto.roles.filter(
+      (role) => role !== 'super_admin',
+    );
+
+    console.log(
+      '🔍 [UsersService.create] Original roles:',
+      createUserDto.roles,
+    );
+    console.log('🔍 [UsersService.create] Filtered roles:', filteredRoles);
+
     // Get role IDs
     const roles = await this.prisma.role.findMany({
-      where: { name: { in: createUserDto.roles } },
+      where: { name: { in: filteredRoles } },
     });
 
     const user = await this.prisma.user.create({
@@ -107,12 +118,35 @@ export class UsersService {
 
     // Update roles if provided
     if (updateUserDto.roles) {
+      // Validation: User must have at least one role
+      if (updateUserDto.roles.length === 0) {
+        throw new ConflictException('User must have at least one role');
+      }
+
+      // Filter out super_admin role - only allow other roles
+      const filteredRoles = updateUserDto.roles.filter(
+        (role) => role !== 'super_admin',
+      );
+
+      // After filtering, ensure user still has at least one role
+      if (filteredRoles.length === 0) {
+        throw new ConflictException(
+          'User must have at least one valid role (super_admin not allowed)',
+        );
+      }
+
+      console.log(
+        '🔍 [UsersService.update] Original roles:',
+        updateUserDto.roles,
+      );
+      console.log('🔍 [UsersService.update] Filtered roles:', filteredRoles);
+
       await this.prisma.userRole.deleteMany({
         where: { user_id: id },
       });
 
       const roles = await this.prisma.role.findMany({
-        where: { name: { in: updateUserDto.roles } },
+        where: { name: { in: filteredRoles } },
       });
 
       updateData.user_roles = {

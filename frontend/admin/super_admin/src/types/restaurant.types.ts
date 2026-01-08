@@ -22,6 +22,7 @@ export interface CreateRestaurantData {
   name: string;
   address?: string;
   phone?: string;
+  ownerId?: string;
 }
 
 export interface UpdateRestaurantData {

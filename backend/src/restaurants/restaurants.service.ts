@@ -41,17 +41,33 @@ export class RestaurantsService {
    */
   async findAll(userId: string, userRoles: string[]) {
     console.log('🔍 [RestaurantsService.findAll] userId:', userId);
-    console.log('🔍 [RestaurantsService.findAll] userRoles:', userRoles);
-    
-    const isSuperAdmin = userRoles.includes('super_admin');
+    console.log(
+      '🔍 [RestaurantsService.findAll] userRoles:',
+      JSON.stringify(userRoles),
+    );
+    console.log(
+      '🔍 [RestaurantsService.findAll] userRoles type:',
+      typeof userRoles,
+    );
+    console.log(
+      '🔍 [RestaurantsService.findAll] userRoles is array:',
+      Array.isArray(userRoles),
+    );
+
+    const isSuperAdmin = userRoles && userRoles.includes('super_admin');
     console.log('🔍 [RestaurantsService.findAll] isSuperAdmin:', isSuperAdmin);
 
     const where: any = {};
     if (!isSuperAdmin) {
       where.owner_id = userId;
-      console.log('🔍 [RestaurantsService.findAll] Filtering by owner_id:', userId);
+      console.log(
+        '🔍 [RestaurantsService.findAll] where filter:',
+        JSON.stringify(where),
+      );
     } else {
-      console.log('🔍 [RestaurantsService.findAll] Super admin - returning all restaurants');
+      console.log(
+        '🔍 [RestaurantsService.findAll] Super admin - returning all restaurants',
+      );
     }
 
     const restaurants = await this.prisma.restaurant.findMany({
@@ -76,8 +92,15 @@ export class RestaurantsService {
       },
     });
 
-    console.log('✅ [RestaurantsService.findAll] Found restaurants:', restaurants.length);
-    console.log('✅ [RestaurantsService.findAll] Restaurant IDs:', restaurants.map(r => ({ id: r.id, name: r.name, owner_id: r.owner_id })));
+    console.log(
+      '✅ [RestaurantsService.findAll] Found restaurants:',
+      restaurants.length,
+    );
+    restaurants.forEach((r) => {
+      console.log(
+        `  - Restaurant: ${r.name} (id: ${r.id}, owner_id: ${r.owner_id})`,
+      );
+    });
 
     return restaurants;
   }

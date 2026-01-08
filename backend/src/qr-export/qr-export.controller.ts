@@ -1,4 +1,11 @@
-import { Controller, Get, Param, Res, NotFoundException, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { QrExportService } from './qr-export.service';
 import { TablesService } from '../tables/tables.service';
@@ -14,7 +21,7 @@ export class QrExportController {
   constructor(
     private readonly qrExportService: QrExportService,
     private readonly tablesService: TablesService,
-  ) { }
+  ) {}
 
   // API Download PDF của 1 bàn
   @Get(':id/download-pdf')
@@ -50,7 +57,11 @@ export class QrExportController {
   // API Download ZIP tất cả bàn
   @Get('download-all-zip')
   async downloadAllZip(@CurrentUser() user: any, @Res() res: Response) {
-    const allTables = await this.tablesService.findAll(user.userId, user.roles, {});
+    const allTables = await this.tablesService.findAll(
+      user.userId,
+      user.roles,
+      {},
+    );
 
     // Lọc chỉ lấy những bàn có QR Token và đang Active
     const activeTables = allTables.filter(

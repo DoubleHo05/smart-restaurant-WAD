@@ -1,8 +1,16 @@
 import { useRestaurant } from "../contexts/RestaurantContext";
+import type { Restaurant } from "../types/restaurant.types";
 
-export default function RestaurantSelector() {
-  const { restaurants, selectedRestaurant, setSelectedRestaurant, loading } =
-    useRestaurant();
+interface RestaurantSelectorProps {
+  selectedRestaurant: Restaurant | null;
+  onSelectRestaurant: (restaurant: Restaurant | null) => void;
+}
+
+export default function RestaurantSelector({
+  selectedRestaurant,
+  onSelectRestaurant,
+}: RestaurantSelectorProps) {
+  const { restaurants, loading } = useRestaurant();
 
   if (loading) {
     return (
@@ -37,7 +45,7 @@ export default function RestaurantSelector() {
         value={selectedRestaurant?.id || ""}
         onChange={(e) => {
           const restaurant = restaurants.find((r) => r.id === e.target.value);
-          setSelectedRestaurant(restaurant || null);
+          onSelectRestaurant(restaurant || null);
         }}
         style={{
           width: "100%",
@@ -51,6 +59,7 @@ export default function RestaurantSelector() {
           transition: "all 0.3s ease",
         }}
       >
+        <option value="">-- Select Restaurant --</option>
         {restaurants.map((restaurant) => (
           <option key={restaurant.id} value={restaurant.id}>
             {restaurant.name}

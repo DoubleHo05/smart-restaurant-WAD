@@ -1,11 +1,8 @@
 import { useState, useEffect } from "react";
-import { usersApi } from "../api/usersApi";
-import type { User, CreateUserData } from "../types/user.types";
-import { useToast } from "../contexts/ToastContext";
-import { useConfirm } from "../components/ConfirmDialog";
-import { useAuth } from "../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import "../App.css";
+import { usersApi } from "../../api/usersApi";
+import type { User, CreateUserData } from "../../types/user.types";
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirm } from "../../components/ConfirmDialog";
 
 const AVAILABLE_ROLES = [
   { value: "admin", label: "Admin - Restaurant Administrator" },
@@ -14,15 +11,13 @@ const AVAILABLE_ROLES = [
   { value: "customer", label: "Customer - End User" },
 ];
 
-export default function UserManagement() {
+export default function UsersTab() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
-  const { user } = useAuth();
-  const navigate = useNavigate();
 
   // Filters
   const [roleFilter, setRoleFilter] = useState<string>("");
@@ -41,14 +36,6 @@ export default function UserManagement() {
     roles: [],
   });
 
-  // Check if user is super_admin
-  useEffect(() => {
-    if (user && !user.roles?.includes("super_admin")) {
-      toast.error("Access Denied: Only Super Admin can manage users");
-      navigate("/");
-    }
-  }, [user, navigate]); // Removed toast from dependencies
-
   // Load users
   const loadUsers = async () => {
     try {
@@ -65,10 +52,8 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
-    if (user?.roles?.includes("super_admin")) {
-      loadUsers();
-    }
-  }, [roleFilter, user]);
+    loadUsers();
+  }, [roleFilter]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +83,11 @@ export default function UserManagement() {
   const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
+
+    if (formData.roles.length === 0) {
+      toast.error("User must have at least one role");
+      return;
+    }
 
     try {
       await usersApi.update(selectedUser.id, {
@@ -158,54 +148,9 @@ export default function UserManagement() {
     }));
   };
 
-  if (!user?.roles?.includes("super_admin")) {
-    return (
-      <div className="app">
-        <div
-          style={{
-            textAlign: "center",
-            padding: "50px",
-            background: "#1e293b",
-            borderRadius: "12px",
-            border: "2px solid #ef4444",
-          }}
-        >
-          <h2 style={{ color: "#ef4444", marginBottom: "20px" }}>
-            🚫 Access Denied
-          </h2>
-          <p style={{ color: "#cbd5e1" }}>
-            Only Super Administrators can access user management.
-          </p>
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("/")}
-            style={{ marginTop: "20px" }}
-          >
-            ← Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="app">
-      <header className="header">
-        <h1>👥 User Management</h1>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>
-            ← Back to Home
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowCreateModal(true)}
-          >
-            + Add User
-          </button>
-        </div>
-      </header>
-
-      {/* Filters */}
+    <>
+      {/* Filters & Actions */}
       <div className="filters">
         <div className="filter-group">
           <label>Role Filter:</label>
@@ -221,12 +166,17 @@ export default function UserManagement() {
             ))}
           </select>
         </div>
-        <div style={{ marginLeft: "auto", color: "#666" }}>
-          Total: {users.length} users
+        <div style={{ marginLeft: "auto" }}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            + Add User
+          </button>
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Users Grid */}
       {loading ? (
         <div className="loading">Loading users...</div>
       ) : error ? (
@@ -405,7 +355,11 @@ export default function UserManagement() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formData.roles.length === 0}
+                >
                   Create User
                 </button>
               </div>
@@ -491,7 +445,11 @@ export default function UserManagement() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formData.roles.length === 0}
+                >
                   Update User
                 </button>
               </div>
@@ -502,6 +460,6 @@ export default function UserManagement() {
 
       {/* Confirm Dialog */}
       <ConfirmDialogComponent />
-    </div>
+    </>
   );
 }

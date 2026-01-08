@@ -6,7 +6,7 @@ export const usersApi = {
   getAll: async (roleFilter?: string) => {
     const params = new URLSearchParams();
     if (roleFilter) params.append("role", roleFilter);
-
+    
     const response = await axiosInstance.get<User[]>(
       `/users?${params.toString()}`
     );

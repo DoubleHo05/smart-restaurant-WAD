@@ -5,9 +5,9 @@ import type {
   CreateMenuItemData,
   UpdateMenuItemData,
 } from "../types/menuItems.types";
+import type { Restaurant } from "../types/restaurant.types";
 import axiosInstance from "../api/axiosConfig";
 import ImageUpload from "../components/ImageUpload";
-import { useRestaurant } from "../contexts/RestaurantContext";
 import RestaurantSelector from "../components/RestaurantSelector";
 import "../App.css";
 
@@ -24,7 +24,8 @@ interface ModifierGroup {
 }
 
 export default function MenuItemsManagement() {
-  const { selectedRestaurant } = useRestaurant();
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
 
   // Data states
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -354,7 +355,10 @@ export default function MenuItemsManagement() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector />
+          <RestaurantSelector
+            selectedRestaurant={selectedRestaurant}
+            onSelectRestaurant={setSelectedRestaurant}
+          />
           <button
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}

@@ -6,9 +6,9 @@ import type {
   CreateModifierGroupData,
   CreateModifierOptionData,
 } from "../types/modifiers.types";
+import type { Restaurant } from "../types/restaurant.types";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";
-import { useRestaurant } from "../contexts/RestaurantContext";
 import RestaurantSelector from "../components/RestaurantSelector";
 import "../App.css";
 
@@ -17,10 +17,11 @@ export default function ModifiersManagement() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
-  const { selectedRestaurant } = useRestaurant();
 
   // Modal states
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -251,7 +252,10 @@ export default function ModifiersManagement() {
       <header className="header">
         <h1>🎛️ Modifiers Management</h1>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector />
+          <RestaurantSelector
+            selectedRestaurant={selectedRestaurant}
+            onSelectRestaurant={setSelectedRestaurant}
+          />
           <button
             className="btn btn-secondary"
             onClick={() => (window.location.href = "/")}
@@ -465,8 +469,6 @@ export default function ModifiersManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>{isEditMode ? "Edit" : "Create"} Modifier Group</h2>
             <form onSubmit={isEditMode ? handleUpdateGroup : handleCreateGroup}>
-              {!isEditMode && <RestaurantSelector />}
-
               <div className="form-group">
                 <label>Name *</label>
                 <input

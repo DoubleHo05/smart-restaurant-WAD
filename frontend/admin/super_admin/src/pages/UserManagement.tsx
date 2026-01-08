@@ -99,6 +99,12 @@ export default function UserManagement() {
     e.preventDefault();
     if (!selectedUser) return;
 
+    // Validation: User must have at least one role
+    if (formData.roles.length === 0) {
+      toast.error("User must have at least one role");
+      return;
+    }
+
     try {
       await usersApi.update(selectedUser.id, {
         full_name: formData.full_name,
@@ -405,7 +411,11 @@ export default function UserManagement() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formData.roles.length === 0}
+                >
                   Create User
                 </button>
               </div>
@@ -491,7 +501,11 @@ export default function UserManagement() {
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={formData.roles.length === 0}
+                >
                   Update User
                 </button>
               </div>
