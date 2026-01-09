@@ -3,7 +3,6 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { JwtPayload } from '../interfaces/auth.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -14,17 +13,17 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET') || 'your-secret-key-change-this',
+      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
     });
   }
 
-  async validate(payload: JwtPayload) {
+  async validate(payload: any) {
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: {
         user_roles: {
           include: {
-            roles: true,
+            role: true,
           },
         },
       },
@@ -34,13 +33,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    const userRole = user.user_roles[0]?.roles?.name || 'customer';
-
     return {
+      userId: user.id,
       id: user.id,
       email: user.email,
-      name: user.name || '',
-      role: userRole,
+      full_name: user.full_name,
+      roles: user.user_roles.map((ur) => ur.role.name),
     };
   }
 }

@@ -199,6 +199,18 @@ body {
   transform: translateY(0);
 }
 
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: inherit;
+}
+
 .btn-primary {
   background: linear-gradient(
     135deg,

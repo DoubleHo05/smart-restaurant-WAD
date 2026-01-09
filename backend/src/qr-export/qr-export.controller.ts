@@ -1,14 +1,27 @@
-import { Controller, Get, Param, Res, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Res,
+  NotFoundException,
+  UseGuards,
+} from '@nestjs/common';
 import type { Response } from 'express';
 import { QrExportService } from './qr-export.service';
 import { TablesService } from '../tables/tables.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin', 'super_admin')
 @Controller('tables/qr')
 export class QrExportController {
   constructor(
     private readonly qrExportService: QrExportService,
     private readonly tablesService: TablesService,
-  ) { }
+  ) {}
 
   // API Download PDF của 1 bàn
   @Get(':id/download-pdf')
@@ -43,8 +56,12 @@ export class QrExportController {
 
   // API Download ZIP tất cả bàn
   @Get('download-all-zip')
-  async downloadAllZip(@Res() res: Response) {
-    const allTables = await this.tablesService.findAll();
+  async downloadAllZip(@CurrentUser() user: any, @Res() res: Response) {
+    const allTables = await this.tablesService.findAll(
+      user.userId,
+      user.roles,
+      {},
+    );
 
     // Lọc chỉ lấy những bàn có QR Token và đang Active
     const activeTables = allTables.filter(

@@ -1,96 +1,58 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Navigation from "./components/Navigation";
+import { AuthProvider } from "./contexts/AuthContext";
+import { RestaurantProvider } from "./contexts/RestaurantContext";
+import ProtectedRoute from "./components/ProtectedRoute";
 import TableManagement from "./pages/TableManagement";
 import Menu from "./pages/Menu";
 import CategoriesManagement from "./pages/CategoriesManagement";
 import ModifiersManagement from "./pages/ModifiersManagement";
 import MenuItemsManagement from "./pages/MenuItemsManagement";
-import OrderManagement from "./pages/OrderManagement";
+import UserManagement from "./pages/UserManagement";
+import AdminLayout from "./components/AdminLayout";
+import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
-import CustomerLogin from "./pages/customer/Login";
-import CustomerRegister from "./pages/customer/Register";
-import QrLanding from "./pages/customer/QrLanding";
-import CustomerMenu from "./pages/customer/CustomerMenu";
-import { AuthProvider } from "./contexts/AuthContext";
 import "./App.css";
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Admin Routes */}
-          <Route
-            path="/"
-            element={
-              <>
-                <Navigation />
-                <TableManagement />
-              </>
-            }
-          />
-          <Route
-            path="/menu"
-            element={
-              <>
-                <Navigation />
-                <Menu />
-              </>
-            }
-          />
-          <Route
-            path="/categories"
-            element={
-              <>
-                <Navigation />
-                <CategoriesManagement />
-              </>
-            }
-          />
-          <Route
-            path="/modifiers"
-            element={
-              <>
-                <Navigation />
-                <ModifiersManagement />
-              </>
-            }
-          />
-          <Route
-            path="/items"
-            element={
-              <>
-                <Navigation />
-                <MenuItemsManagement />
-              </>
-            }
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              <>
-                <Navigation />
-                <OrderManagement />
-              </>
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <>
-                <Navigation />
-                <Dashboard />
-              </>
-            }
-          />
+      <RestaurantProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/admin/login" element={<AdminLogin />} />
 
-          {/* Customer Routes */}
-          <Route path="/customer/login" element={<CustomerLogin />} />
-          <Route path="/customer/register" element={<CustomerRegister />} />
-          <Route path="/qr/:token" element={<QrLanding />} />
-          <Route path="/customer/menu" element={<CustomerMenu />} />
-        </Routes>
-      </BrowserRouter>
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute roles={["admin", "super_admin"]}>
+                  <AdminLayout>
+                    <Routes>
+                      <Route
+                        path="/"
+                        element={<Navigate to="/dashboard" replace />}
+                      />
+                      {<Route path="/dashboard" element={<Dashboard />} />}
+                      <Route path="/tables" element={<TableManagement />} />
+                      <Route path="/menu" element={<Menu />} />
+                      <Route
+                        path="/categories"
+                        element={<CategoriesManagement />}
+                      />
+                      <Route
+                        path="/modifiers"
+                        element={<ModifiersManagement />}
+                      />
+                      <Route path="/items" element={<MenuItemsManagement />} />
+                      <Route path="/users" element={<UserManagement />} />
+                    </Routes>
+                  </AdminLayout>
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </BrowserRouter>
+      </RestaurantProvider>
     </AuthProvider>
   );
 }

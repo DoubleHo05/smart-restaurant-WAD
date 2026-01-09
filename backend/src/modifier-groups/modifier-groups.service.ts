@@ -11,10 +11,9 @@ import { UpdateModifierOptionDto } from './dto/update-modifier-option.dto';
 
 @Injectable()
 export class ModifierGroupsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateModifierGroupDto) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
     // ━━━ Business Rule Validation ━━━
     // Rule 1: Single-select không cần min/max
     if (dto.selection_type === 'single') {
@@ -46,7 +45,7 @@ export class ModifierGroupsService {
     // ━━━ Create Group ━━━
     return this.prisma.modifierGroup.create({
       data: {
-        restaurant_id: restaurantId,
+        restaurant_id: dto.restaurant_id,
         name: dto.name,
         selection_type: dto.selection_type,
         is_required: dto.is_required ?? false,
@@ -58,9 +57,45 @@ export class ModifierGroupsService {
     });
   }
 
-  async findAll(filters?: { status?: string; includeOptions?: boolean }) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
-    const where: any = { restaurant_id: restaurantId };
+  async findAll(
+    userId: string,
+    userRoles: string[],
+    filters?: {
+      restaurant_id?: string;
+      status?: string;
+      includeOptions?: boolean;
+    },
+  ) {
+    const isSuperAdmin = userRoles.includes('super_admin');
+    const where: any = {};
+
+    // Filter by user's restaurants
+    if (!isSuperAdmin) {
+      const userRestaurants = await this.prisma.restaurant.findMany({
+        where: { owner_id: userId },
+        select: { id: true },
+      });
+      const userRestaurantIds = userRestaurants.map((r) => r.id);
+
+      // If restaurant_id is provided, validate it belongs to user
+      if (filters?.restaurant_id) {
+        if (!userRestaurantIds.includes(filters.restaurant_id)) {
+          throw new BadRequestException(
+            'You do not have access to this restaurant',
+          );
+        }
+        where.restaurant_id = filters.restaurant_id;
+      } else {
+        // Otherwise, filter by all user's restaurants
+        where.restaurant_id = {
+          in: userRestaurantIds,
+        };
+      }
+    } else if (filters?.restaurant_id) {
+      // Super admin can filter by specific restaurant
+      where.restaurant_id = filters.restaurant_id;
+    }
+
     if (filters?.status) {
       where.status = filters.status;
     }
@@ -69,11 +104,11 @@ export class ModifierGroupsService {
       orderBy: { display_order: 'asc' },
       include: filters?.includeOptions
         ? {
-          options: {
-            where: { status: 'active' },
-            orderBy: { price_adjustment: 'asc' },
-          },
-        }
+            options: {
+              where: { status: 'active' },
+              orderBy: { price_adjustment: 'asc' },
+            },
+          }
         : undefined,
     });
 
@@ -82,9 +117,9 @@ export class ModifierGroupsService {
       ...group,
       options: group.options
         ? group.options.map((option: any) => ({
-          ...option,
-          price_adjustment: Number(option.price_adjustment),
-        }))
+            ...option,
+            price_adjustment: Number(option.price_adjustment),
+          }))
         : undefined,
     }));
   }

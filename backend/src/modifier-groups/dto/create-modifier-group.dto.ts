@@ -4,11 +4,15 @@ import {
   IsBoolean,
   IsInt,
   IsOptional,
+  IsUUID,
   Length,
   Min,
   Max,
 } from 'class-validator';
 export class CreateModifierGroupDto {
+  @IsUUID()
+  restaurant_id: string;
+
   @IsString()
   @Length(2, 80)
   name: string;

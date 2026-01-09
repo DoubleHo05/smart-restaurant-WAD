@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { tablesApi } from "../api/tablesApi";
-import type { Table } from "../api/tablesApi";
-import type { CreateTableData } from "../api/tablesApi";
+import type { Table, CreateTableData } from "../types/tables.types";
 import QRCode from "react-qr-code";
 import { useToast } from "../contexts/ToastContext";
 import { useConfirm } from "../components/ConfirmDialog";
+import { useRestaurant } from "../contexts/RestaurantContext";
+import RestaurantSelector from "../components/RestaurantSelector";
 import "../App.css";
 
 export default function TableManagement() {
@@ -15,6 +16,7 @@ export default function TableManagement() {
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
+  const { selectedRestaurant } = useRestaurant();
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -33,10 +35,17 @@ export default function TableManagement() {
     capacity: 1,
     location: "",
     description: "",
+    restaurant_id: "",
   });
 
   // Load tables
   const loadTables = async () => {
+    if (!selectedRestaurant) {
+      setTables([]);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const data = await tablesApi.getAll({
@@ -45,7 +54,13 @@ export default function TableManagement() {
         sortBy,
         sortOrder,
       });
-      setTables(data);
+
+      // Filter by selectedRestaurant on client-side
+      const filtered = data.filter(
+        (table) => table.restaurant_id === selectedRestaurant.id
+      );
+
+      setTables(filtered);
       setError(null);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load tables");
@@ -67,22 +82,33 @@ export default function TableManagement() {
   useEffect(() => {
     loadTables();
     loadLocations();
-  }, [statusFilter, locationFilter, sortBy, sortOrder]);
+  }, [statusFilter, locationFilter, sortBy, sortOrder, selectedRestaurant]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedRestaurant) {
+      toast.error("Please select a restaurant first");
+      return;
+    }
+
     try {
-      await tablesApi.create(formData);
+      await tablesApi.create({
+        ...formData,
+        restaurant_id: selectedRestaurant.id,
+      });
       setShowCreateModal(false);
       setFormData({
         table_number: "",
         capacity: 1,
         location: "",
         description: "",
+        restaurant_id: "",
       });
+      toast.success("Table created successfully!");
       loadTables();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to create table");
+      toast.error(err.response?.data?.message || "Failed to create table");
     }
   };
 
@@ -99,6 +125,7 @@ export default function TableManagement() {
         capacity: 1,
         location: "",
         description: "",
+        restaurant_id: "",
       });
       loadTables();
     } catch (err: any) {
@@ -139,6 +166,7 @@ export default function TableManagement() {
       capacity: table.capacity,
       location: table.location || "",
       description: table.description || "",
+      restaurant_id: "",
     });
     setShowEditModal(true);
   };
@@ -207,12 +235,16 @@ export default function TableManagement() {
     <div className="app">
       <header className="header">
         <h1>🍽️ Table Management</h1>
-        <button
-          className="btn btn-primary"
-          onClick={() => setShowCreateModal(true)}
-        >
-          + Add New Table
-        </button>
+        <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+          <RestaurantSelector />
+          <button
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+            disabled={!selectedRestaurant}
+          >
+            + Add New Table
+          </button>
+        </div>
       </header>
 
       {/* Filters */}
@@ -298,7 +330,9 @@ export default function TableManagement() {
                 {table.qr_token ? (
                   <div className="qr-section">
                     <QRCode
-                      value={`${import.meta.env.VITE_MENU_URL}?table=${table.id}&token=${table.qr_token}`}
+                      value={`${import.meta.env.VITE_MENU_URL}?table=${
+                        table.id
+                      }&token=${table.qr_token}`}
                       size={120}
                       level="H"
                       style={{
@@ -414,6 +448,8 @@ export default function TableManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Table</h2>
             <form onSubmit={handleCreate}>
+              <RestaurantSelector />
+
               <div className="form-group">
                 <label>Table Number *</label>
                 <input

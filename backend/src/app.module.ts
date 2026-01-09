@@ -11,8 +11,9 @@ import { MenuPhotosModule } from './menu-photos/menu-photos.module';
 import { CategoriesModule } from './categories/categories.module';
 import { ModifierGroupsModule } from './modifier-groups/modifier-groups.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
-import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { RestaurantsModule } from './restaurants/restaurants.module';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { AuthModule } from './auth/auth.module';
       isGlobal: true,
     }),
     PrismaModule,
-    AuthModule,
+    RestaurantsModule,
     TablesModule,
     QrTokenModule,
     QrExportModule,
@@ -29,7 +30,8 @@ import { AuthModule } from './auth/auth.module';
     CategoriesModule,
     ModifierGroupsModule,
     MenuItemsModule,
-    OrdersModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

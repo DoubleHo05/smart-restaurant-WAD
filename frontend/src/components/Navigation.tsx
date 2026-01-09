@@ -1,12 +1,16 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "./Navigation.css";
 
 export default function Navigation() {
   const location = useLocation();
+  const { user } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path ? "nav-link active" : "nav-link";
   };
+
+  const isSuperAdmin = user?.roles?.includes("super_admin");
 
   return (
     <nav className="navigation">
@@ -34,6 +38,11 @@ export default function Navigation() {
           <Link to="/menu" className={isActive("/menu")}>
             📱 Guest Menu
           </Link>
+          {isSuperAdmin && (
+            <Link to="/users" className={isActive("/users")}>
+              👥 Users
+            </Link>
+          )}
         </div>
       </div>
     </nav>

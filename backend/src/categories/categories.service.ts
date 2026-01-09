@@ -13,10 +13,18 @@ export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createDto: CreateCategoryDto) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+    // Validate restaurant exists
+    const restaurant = await this.prisma.restaurant.findUnique({
+      where: { id: createDto.restaurant_id },
+    });
+
+    if (!restaurant) {
+      throw new NotFoundException('Restaurant not found');
+    }
+
     const existing = await this.prisma.menuCategory.findFirst({
       where: {
-        restaurant_id: restaurantId,
+        restaurant_id: createDto.restaurant_id,
         name: createDto.name,
       },
     });
@@ -26,7 +34,7 @@ export class CategoriesService {
     // Tạo category mới
     return this.prisma.menuCategory.create({
       data: {
-        restaurant_id: restaurantId,
+        restaurant_id: createDto.restaurant_id,
         name: createDto.name,
         description: createDto.description,
         display_order: createDto.display_order ?? 0,
@@ -34,10 +42,43 @@ export class CategoriesService {
       },
     });
   }
-  async findAll(filters?: { status?: string; sortBy?: string }) {
-    const restaurantId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+  async findAll(
+    userId: string,
+    userRoles: string[],
+    filters?: { restaurant_id?: string; status?: string; sortBy?: string },
+  ) {
+    const isSuperAdmin = userRoles.includes('super_admin');
+
     // Build where clause
-    const where: any = { restaurant_id: restaurantId };
+    const where: any = {};
+
+    // Filter by user's restaurants
+    if (!isSuperAdmin) {
+      const userRestaurants = await this.prisma.restaurant.findMany({
+        where: { owner_id: userId },
+        select: { id: true },
+      });
+      const userRestaurantIds = userRestaurants.map((r) => r.id);
+
+      // If restaurant_id is provided, validate it belongs to user
+      if (filters?.restaurant_id) {
+        if (!userRestaurantIds.includes(filters.restaurant_id)) {
+          throw new BadRequestException(
+            'You do not have access to this restaurant',
+          );
+        }
+        where.restaurant_id = filters.restaurant_id;
+      } else {
+        // Otherwise, filter by all user's restaurants
+        where.restaurant_id = {
+          in: userRestaurantIds,
+        };
+      }
+    } else if (filters?.restaurant_id) {
+      // Super admin can filter by specific restaurant
+      where.restaurant_id = filters.restaurant_id;
+    }
+
     if (filters?.status) {
       where.status = filters.status;
     }

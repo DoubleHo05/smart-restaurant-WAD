@@ -1,9 +1,22 @@
-import { Controller, Get, Put, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { ModifierGroupsService } from './modifier-groups.service';
 import { UpdateModifierOptionDto } from './dto/update-modifier-option.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('api/admin/menu/modifier-options')
 export class ModifierOptionController {
-  constructor(private readonly service: ModifierGroupsService) {}
+  constructor(private readonly service: ModifierGroupsService) { }
   /**
    * GET /api/admin/menu/modifier-options/:id
    * Get single option details (optional endpoint)
@@ -17,6 +30,7 @@ export class ModifierOptionController {
    * Update option (name, price_adjustment, status)
    */
   @Put(':id')
+  @Roles('admin', 'super_admin')
   async update(@Param('id') id: string, @Body() dto: UpdateModifierOptionDto) {
     return this.service.updateOption(id, dto);
   }
@@ -25,6 +39,7 @@ export class ModifierOptionController {
    * Soft delete option (set status = inactive)
    */
   @Delete(':id')
+  @Roles('admin', 'super_admin')
   async remove(@Param('id') id: string) {
     return this.service.deleteOption(id);
   }

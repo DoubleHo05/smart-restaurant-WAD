@@ -6,7 +6,6 @@ import { Pool } from 'pg';
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
   // Expose all Prisma models
-  public user: PrismaClient['user'];
   public table: PrismaClient['table'];
   public menuCategory: PrismaClient['menuCategory'];
   public menuItem: PrismaClient['menuItem'];
@@ -14,11 +13,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public modifierGroup: PrismaClient['modifierGroup'];
   public modifierOption: PrismaClient['modifierOption'];
   public menuItemModifierGroup: PrismaClient['menuItemModifierGroup'];
-  public order: PrismaClient['order'];
-  public orderItem: PrismaClient['orderItem'];
-  public orderItemModifier: PrismaClient['orderItemModifier'];
-  public roles: PrismaClient['roles'];
-  public user_roles: PrismaClient['user_roles'];
+  public user: PrismaClient['user'];
+  public role: PrismaClient['role'];
+  public userRole: PrismaClient['userRole'];
+  public restaurant: PrismaClient['restaurant'];
 
   private client: PrismaClient;
   private pool: Pool;
@@ -35,7 +33,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.client = new PrismaClient({ adapter });
 
     // Initialize all models
-    this.user = this.client.user;
+    this.restaurant = this.client.restaurant;
     this.table = this.client.table;
     this.menuCategory = this.client.menuCategory;
     this.menuItem = this.client.menuItem;
@@ -43,16 +41,9 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
     this.modifierGroup = this.client.modifierGroup;
     this.modifierOption = this.client.modifierOption;
     this.menuItemModifierGroup = this.client.menuItemModifierGroup;
-    this.order = this.client.order;
-    this.orderItem = this.client.orderItem;
-    this.orderItemModifier = this.client.orderItemModifier;
-    this.roles = this.client.roles;
-    this.user_roles = this.client.user_roles;
-  }
-
-  // Expose $transaction method
-  async $transaction<T>(fn: (tx: PrismaClient) => Promise<T>): Promise<T> {
-    return this.client.$transaction(fn);
+    this.user = this.client.user;
+    this.role = this.client.role;
+    this.userRole = this.client.userRole;
   }
 
   async onModuleInit() {
