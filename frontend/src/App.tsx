@@ -7,22 +7,91 @@ import ModifiersManagement from "./pages/ModifiersManagement";
 import MenuItemsManagement from "./pages/MenuItemsManagement";
 import OrderManagement from "./pages/OrderManagement";
 import Dashboard from "./pages/Dashboard";
+import CustomerLogin from "./pages/customer/Login";
+import CustomerRegister from "./pages/customer/Register";
+import QrLanding from "./pages/customer/QrLanding";
+import CustomerMenu from "./pages/customer/CustomerMenu";
+import { AuthProvider } from "./contexts/AuthContext";
 import "./App.css";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Navigation />
-      <Routes>
-        <Route path="/" element={<TableManagement />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/categories" element={<CategoriesManagement />} />
-        <Route path="/modifiers" element={<ModifiersManagement />} />
-        <Route path="/items" element={<MenuItemsManagement />} />
-        <Route path="/admin/orders" element={<OrderManagement />} />
-        <Route path="/admin/dashboard" element={<Dashboard />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Admin Routes */}
+          <Route
+            path="/"
+            element={
+              <>
+                <Navigation />
+                <TableManagement />
+              </>
+            }
+          />
+          <Route
+            path="/menu"
+            element={
+              <>
+                <Navigation />
+                <Menu />
+              </>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <>
+                <Navigation />
+                <CategoriesManagement />
+              </>
+            }
+          />
+          <Route
+            path="/modifiers"
+            element={
+              <>
+                <Navigation />
+                <ModifiersManagement />
+              </>
+            }
+          />
+          <Route
+            path="/items"
+            element={
+              <>
+                <Navigation />
+                <MenuItemsManagement />
+              </>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <>
+                <Navigation />
+                <OrderManagement />
+              </>
+            }
+          />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <>
+                <Navigation />
+                <Dashboard />
+              </>
+            }
+          />
+
+          {/* Customer Routes */}
+          <Route path="/customer/login" element={<CustomerLogin />} />
+          <Route path="/customer/register" element={<CustomerRegister />} />
+          <Route path="/qr/:token" element={<QrLanding />} />
+          <Route path="/customer/menu" element={<CustomerMenu />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

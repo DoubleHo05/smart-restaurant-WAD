@@ -12,6 +12,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { ModifierGroupsModule } from './modifier-groups/modifier-groups.module';
 import { MenuItemsModule } from './menu-items/menu-items.module';
 import { OrdersModule } from './orders/orders.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { OrdersModule } from './orders/orders.module';
       isGlobal: true,
     }),
     PrismaModule,
+    AuthModule,
     TablesModule,
     QrTokenModule,
     QrExportModule,
