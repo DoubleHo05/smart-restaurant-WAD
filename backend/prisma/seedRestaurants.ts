@@ -51,10 +51,10 @@ async function main() {
 
   // Restaurant 2 owned by superadmin
   const restaurant2 = await prisma.restaurant.upsert({
-    where: { id: 'b1ffcd00-0d1c-5fe9-cc7e-7cc0ce491b22' },
+    where: { id: 'a1ffcd00-0d1c-4fe9-9c7e-7cc0ce491b22' },
     update: { owner_id: superAdmin.id }, // Keep superadmin ownership
     create: {
-      id: 'b1ffcd00-0d1c-5fe9-cc7e-7cc0ce491b22',
+      id: 'a1ffcd00-0d1c-4fe9-9c7e-7cc0ce491b22',
       name: 'Smart Restaurant - Central Park',
       address: '456 Le Lai Street, District 3, Ho Chi Minh City',
       phone: '0283 765 4321',

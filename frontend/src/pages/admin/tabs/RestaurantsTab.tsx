@@ -34,6 +34,7 @@ export default function RestaurantsTab() {
     name: "",
     address: "",
     phone: "",
+    owner_id: "",
   });
 
   const [updateFormData, setUpdateFormData] = useState<UpdateRestaurantData>({
@@ -49,11 +50,11 @@ export default function RestaurantsTab() {
       setLoadingUsers(true);
       try {
         const allUsers = await usersApi.getAll();
-        // Filter out super_admin users
-        const filteredUsers = allUsers.filter(
-          (user) => !user.roles.includes("super_admin")
+        // Filter: only admin users (exclude super_admin)
+        const adminUsers = allUsers.filter(
+          (user) => user.roles.includes("admin") && !user.roles.includes("super_admin")
         );
-        setUsers(filteredUsers);
+        setUsers(adminUsers);
       } catch (err) {
         console.error("Failed to fetch users:", err);
         toast.error("Failed to load users list");
@@ -72,6 +73,11 @@ export default function RestaurantsTab() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.owner_id) {
+      toast.error("Please select an owner");
+      return;
+    }
+
     try {
       await restaurantsApi.create(formData);
       setShowCreateModal(false);
@@ -79,6 +85,7 @@ export default function RestaurantsTab() {
         name: "",
         address: "",
         phone: "",
+        owner_id: "",
       });
       toast.success("Restaurant created successfully!");
       refreshRestaurants();
@@ -242,9 +249,9 @@ export default function RestaurantsTab() {
                 <label>Owner (Admin) *</label>
                 <select
                   required
-                  value={formData.ownerId || ""}
+                  value={formData.owner_id || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, ownerId: e.target.value })
+                    setFormData({ ...formData, owner_id: e.target.value })
                   }
                   disabled={loadingUsers}
                 >
