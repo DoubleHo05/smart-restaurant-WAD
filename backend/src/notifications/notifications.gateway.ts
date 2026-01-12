@@ -70,4 +70,11 @@ export class NotificationsGateway {
       client.disconnect();
     }
   }
+  handleDisconnect(client: Socket) {
+    const clientInfo = this.connectedClients.get(client.id);
+    this.logger.log(
+      `Client disconnected: ${client.id} | User: ${clientInfo?.userId}`,
+    );
+    this.connectedClients.delete(client.id);
+  }
 }
