@@ -166,46 +166,70 @@ export class NotificationsGateway
 
   //Notify waiter when order is ready
   async notifyOrderReady(order: any) {
-  const notification = {
-    type: 'order_ready',
-    title: 'Order Ready',
-    message: `Order #${order.order_number} is ready to serve`,
-    data: {
-      order_id: order.id,
-      order_number: order.order_number,
-      table_number: order.table.table_number,
-      prep_time_minutes: order.prep_time_minutes || 0,
-    },
-    timestamp: new Date().toISOString(),
-  };
-
-  // Emit to waiters
-  this.emitToRole('waiter', 'order_ready', notification);
-
-  // Notify customer
-  if (order.customer_id) {
-    this.emitToUser(order.customer_id, 'order_status_update', {
-      order_id: order.id,
-      status: 'ready',
-      message: 'Your order is ready',
-    });
-  }
-
-  this.logger.log(`Notified waiter: Order ${order.order_number} ready`);
-}
-
-// Notify customer when order is served
-async notifyOrderServed(order: any) {
-  if (order.customer_id) {
-    this.emitToUser(order.customer_id, 'order_status_update', {
-      order_id: order.id,
-      status: 'served',
-      message: 'Your order has been served. Enjoy your meal!',
+    const notification = {
+      type: 'order_ready',
+      title: 'Order Ready',
+      message: `Order #${order.order_number} is ready to serve`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        table_number: order.table.table_number,
+        prep_time_minutes: order.prep_time_minutes || 0,
+      },
       timestamp: new Date().toISOString(),
-    });
+    };
+
+    // Emit to waiters
+    this.emitToRole('waiter', 'order_ready', notification);
+
+    // Notify customer
+    if (order.customer_id) {
+      this.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: order.id,
+        status: 'ready',
+        message: 'Your order is ready',
+      });
+    }
+
+    this.logger.log(`Notified waiter: Order ${order.order_number} ready`);
   }
 
-  this.logger.log(`Notified customer: Order ${order.order_number} served`);
-}
+  // Notify customer when order is served
+  async notifyOrderServed(order: any) {
+    if (order.customer_id) {
+      this.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: order.id,
+        status: 'served',
+        message: 'Your order has been served. Enjoy your meal!',
+        timestamp: new Date().toISOString(),
+      });
+    }
 
+    this.logger.log(`Notified customer: Order ${order.order_number} served`);
+  }
+
+  //Notify about order rejection
+  async notifyOrderRejected(order: any, reason: string) {
+    const notification = {
+      type: 'order_rejected',
+      title: 'Order Rejected',
+      message: `Order #${order.order_number} was rejected`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        reason,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify customer
+    if (order.customer_id) {
+      this.emitToUser(order.customer_id, 'order_rejected', notification);
+    }
+
+    // Notify admins
+    this.emitToRole('admin', 'order_rejected', notification);
+
+    this.logger.log(`Notified: Order ${order.order_number} rejected`);
+  }
 }
