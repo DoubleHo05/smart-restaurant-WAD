@@ -20,12 +20,15 @@ import ModifiersManagement from "./pages/admin/ModifiersManagement";
 import TableManagement from "./pages/admin/TableManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import SystemAdminPage from "./pages/admin/SystemAdminPage";
+import OrderManagement from "./pages/OrderManagement";
 
 // Waiter pages
 import WaiterOrders from "./pages/waiter/WaiterOrders";
+import WaiterTables from "./pages/waiter/WaiterTables";
 
 // Layout
 import AdminLayout from "./components/AdminLayout";
+import WaiterLayout from "./components/WaiterLayout";
 
 import "./App.css";
 
@@ -94,6 +97,14 @@ function App() {
               }
             />
             <Route
+              path="/admin/orders"
+              element={
+                <AdminLayout>
+                  <OrderManagement />
+                </AdminLayout>
+              }
+            />
+            <Route
               path="/admin/users"
               element={
                 <AdminLayout>
@@ -111,7 +122,22 @@ function App() {
             />
 
             {/* Waiter routes */}
-            <Route path="/waiter/orders" element={<WaiterOrders />} />
+            <Route
+              path="/waiter/orders"
+              element={
+                <WaiterLayout>
+                  <WaiterOrders />
+                </WaiterLayout>
+              }
+            />
+            <Route
+              path="/waiter/tables"
+              element={
+                <WaiterLayout>
+                  <WaiterTables />
+                </WaiterLayout>
+              }
+            />
 
             {/* Default redirect - shows both options */}
             <Route

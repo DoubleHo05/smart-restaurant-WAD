@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./WaiterOrders.css";
 import {
   getPendingOrders,
@@ -8,9 +9,10 @@ import {
   WaiterOrder,
 } from "../../api/waiterApi";
 
-type TabType = "pending" | "accepted" | "ready" | "tables";
+type TabType = "pending" | "accepted" | "ready";
 
 export default function WaiterOrders() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingOrders, setPendingOrders] = useState<WaiterOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<WaiterOrder[]>([]);
@@ -192,14 +194,9 @@ export default function WaiterOrders() {
 
   return (
     <div className="waiter-orders-page">
-      <div className="page-header">
-        <h1>Waiter Dashboard</h1>
-        <div className="header-actions">
-          <button className="icon-btn">
-            <span className="icon">💻</span>
-          </button>
-          <div className="user-avatar">TN</div>
-        </div>
+      <div className="page-title">
+        <h1>Order Management</h1>
+        <p className="page-subtitle">Review and manage incoming orders</p>
       </div>
 
       <div className="tabs-container">
@@ -223,12 +220,6 @@ export default function WaiterOrders() {
           onClick={() => setActiveTab("ready")}
         >
           Ready to Serve
-        </button>
-        <button
-          className={`tab ${activeTab === "tables" ? "active" : ""}`}
-          onClick={() => setActiveTab("tables")}
-        >
-          My Tables
         </button>
       </div>
 

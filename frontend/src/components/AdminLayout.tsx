@@ -31,7 +31,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <nav className="sidebar-nav">
           <Link
             to="/admin/dashboard"
-            className={`nav-link ${isActive("/admin/dashboard") ? "active" : ""}`}
+            className={`nav-link ${
+              isActive("/admin/dashboard") ? "active" : ""
+            }`}
           >
             <span className="nav-icon">📊</span>
             Dashboard
@@ -45,21 +47,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </Link>
           <Link
             to="/admin/menu-items"
-            className={`nav-link ${isActive("/admin/menu-items") ? "active" : ""}`}
+            className={`nav-link ${
+              isActive("/admin/menu-items") ? "active" : ""
+            }`}
           >
             <span className="nav-icon">🍴</span>
             Menu Items
           </Link>
           <Link
             to="/admin/categories"
-            className={`nav-link ${isActive("/admin/categories") ? "active" : ""}`}
+            className={`nav-link ${
+              isActive("/admin/categories") ? "active" : ""
+            }`}
           >
             <span className="nav-icon">📁</span>
             Categories
           </Link>
           <Link
             to="/admin/modifiers"
-            className={`nav-link ${isActive("/admin/modifiers") ? "active" : ""}`}
+            className={`nav-link ${
+              isActive("/admin/modifiers") ? "active" : ""
+            }`}
           >
             <span className="nav-icon">🔧</span>
             Modifiers
@@ -70,6 +78,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           >
             <span className="nav-icon">🪑</span>
             Tables
+          </Link>
+          <Link
+            to="/admin/orders"
+            className={`nav-link ${isActive("/admin/orders") ? "active" : ""}`}
+          >
+            <span className="nav-icon">📦</span>
+            Orders
           </Link>
           <Link
             to="/admin/users"

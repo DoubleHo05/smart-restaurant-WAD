@@ -1,0 +1,149 @@
+.waiter-layout {
+  display: flex;
+  height: 100vh;
+  background: #f5f6fa;
+}
+
+/* Sidebar */
+.waiter-sidebar {
+  width: 260px;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-logo {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #667eea;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #6b7280;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.nav-link.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.nav-icon {
+  font-size: 20px;
+}
+
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.waiter-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 8px;
+}
+
+.waiter-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.waiter-info {
+  flex: 1;
+}
+
+.waiter-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.waiter-role {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.logout-link {
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  color: #ef4444;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logout-link:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+/* Main Content */
+.waiter-main {
+  flex: 1;
+  overflow-y: auto;
+  background: #f5f6fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .waiter-sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    transition: left 0.3s;
+  }
+
+  .waiter-sidebar.open {
+    left: 0;
+  }
+
+  .waiter-main {
+    margin-left: 0;
+  }
+}
