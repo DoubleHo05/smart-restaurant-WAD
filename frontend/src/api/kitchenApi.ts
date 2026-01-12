@@ -1,0 +1,108 @@
+import axiosInstance from "./axiosConfig";
+
+export interface KitchenOrderItem {
+  id: string;
+  menu_item_id: string;
+  quantity: number;
+  unit_price: number;
+  notes?: string;
+  menu_item: {
+    id: string;
+    name: string;
+    prep_time_minutes: number;
+  };
+  modifiers?: Array<{
+    id: string;
+    modifier_option: {
+      id: string;
+      name: string;
+      price_adjustment: number;
+    };
+  }>;
+}
+
+export interface KitchenOrder {
+  id: string;
+  order_number: string;
+  table_id: string;
+  status: string;
+  special_instructions?: string;
+  created_at: string;
+  accepted_at?: string;
+  preparing_started_at?: string;
+  ready_at?: string;
+  table: {
+    id: string;
+    table_number: string;
+    location?: string;
+  };
+  order_items: KitchenOrderItem[];
+  time_elapsed?: number;
+  estimated_prep_time?: number;
+  urgency?: "normal" | "warning" | "critical";
+}
+
+export interface KitchenOrdersResponse {
+  success: boolean;
+  data: KitchenOrder[];
+}
+
+export interface KitchenStats {
+  pending: number;
+  cooking: number;
+  ready: number;
+  overdue: number;
+}
+
+// Get all kitchen orders (accepted & preparing)
+export const getKitchenOrders = async (
+  restaurantId: string,
+  tableId?: string
+): Promise<KitchenOrder[]> => {
+  const params: any = { restaurant_id: restaurantId };
+  if (tableId) params.table_id = tableId;
+
+  const response = await axiosInstance.get<KitchenOrdersResponse>(
+    "/kitchen/orders",
+    { params }
+  );
+  return response.data.data || [];
+};
+
+// Start preparing an order
+export const startPreparing = async (
+  orderId: string,
+  restaurantId: string
+): Promise<KitchenOrder> => {
+  const response = await axiosInstance.post(
+    `/kitchen/orders/${orderId}/start-preparing`,
+    {
+      restaurant_id: restaurantId,
+    }
+  );
+  return response.data;
+};
+
+// Mark order as ready
+export const markReady = async (
+  orderId: string,
+  restaurantId: string
+): Promise<KitchenOrder> => {
+  const response = await axiosInstance.post(
+    `/kitchen/orders/${orderId}/mark-ready`,
+    {
+      restaurant_id: restaurantId,
+    }
+  );
+  return response.data;
+};
+
+// Get kitchen statistics
+export const getKitchenStats = async (
+  restaurantId: string
+): Promise<KitchenStats> => {
+  const response = await axiosInstance.get("/kitchen/stats", {
+    params: { restaurant_id: restaurantId },
+  });
+  return response.data;
+};

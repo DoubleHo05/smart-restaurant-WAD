@@ -87,10 +87,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             Orders
           </Link>
           <Link
+            to="/kitchen/kds"
+            className={`nav-link ${isActive("/kitchen/kds") ? "active" : ""}`}
+          >
+            <span className="nav-icon">👨‍🍳</span>
+            Kitchen Display
+          </Link>
+          <Link
             to="/admin/users"
             className={`nav-link ${isActive("/admin/users") ? "active" : ""}`}
           >
-            <span className="nav-icon">�</span>
+            <span className="nav-icon">👥</span>
             Users
           </Link>
           <Link

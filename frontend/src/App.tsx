@@ -26,9 +26,13 @@ import OrderManagement from "./pages/OrderManagement";
 import WaiterOrders from "./pages/waiter/WaiterOrders";
 import WaiterTables from "./pages/waiter/WaiterTables";
 
+// Kitchen pages
+import KitchenDisplay from "./pages/kitchen/KitchenDisplay";
+
 // Layout
 import AdminLayout from "./components/AdminLayout";
 import WaiterLayout from "./components/WaiterLayout";
+import KitchenLayout from "./components/KitchenLayout";
 
 import "./App.css";
 
@@ -136,6 +140,16 @@ function App() {
                 <WaiterLayout>
                   <WaiterTables />
                 </WaiterLayout>
+              }
+            />
+
+            {/* Kitchen routes */}
+            <Route
+              path="/kitchen/kds"
+              element={
+                <KitchenLayout>
+                  <KitchenDisplay />
+                </KitchenLayout>
               }
             />
 
