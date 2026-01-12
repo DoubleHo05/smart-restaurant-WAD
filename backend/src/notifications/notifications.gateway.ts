@@ -104,4 +104,29 @@ export class NotificationsGateway
   handlePing(@ConnectedSocket() client: Socket): string {
     return 'pong';
   }
+
+  //Notify waiters about new order
+  async notifyNewOrder(order: any) {
+    const notification = {
+      type: 'new_order',
+      title: 'New Order Received',
+      message: `New order #${order.order_number} from Table ${order.table.table_number}`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        table_number: order.table.table_number,
+        total: order.total,
+        items_count: order.order_items.length,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Emit to all waiters
+    this.emitToRole('waiter', 'new_order', notification);
+
+    // Also emit to admins
+    this.emitToRole('admin', 'new_order', notification);
+
+    this.logger.log(`Notified waiters: New order ${order.order_number}`);
+  }
 }
