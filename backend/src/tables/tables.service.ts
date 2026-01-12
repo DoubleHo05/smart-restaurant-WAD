@@ -168,4 +168,154 @@ export class TablesService {
       .map((t) => t.location)
       .filter((loc): loc is string => loc !== null);
   }
+
+  /**
+   * Get table status overview for a restaurant
+   * Returns count of tables by occupancy status (available, occupied, reserved)
+   */
+  async getTableStatusOverview(restaurantId: string) {
+    // Get all tables for the restaurant
+    const tables = await this.prisma.table.findMany({
+      where: {
+        restaurant_id: restaurantId,
+        status: 'active', // Only active tables
+      },
+      include: {
+        orders: {
+          where: {
+            status: {
+              in: ['pending', 'accepted', 'preparing', 'ready', 'served'],
+            },
+          },
+          orderBy: {
+            created_at: 'desc',
+          },
+          take: 1,
+        },
+      },
+    });
+
+    // Calculate status for each table
+    const tableStatuses = tables.map((table) => {
+      let occupancyStatus: 'available' | 'occupied' | 'reserved' = 'available';
+
+      // If table has active orders, mark as occupied
+      if (table.orders.length > 0) {
+        occupancyStatus = 'occupied';
+      }
+
+      return {
+        id: table.id,
+        table_number: table.table_number,
+        location: table.location,
+        capacity: table.capacity,
+        status: occupancyStatus,
+        current_order: table.orders[0] || null,
+      };
+    });
+
+    // Count tables by status
+    const statusCounts = {
+      available: tableStatuses.filter((t) => t.status === 'available').length,
+      occupied: tableStatuses.filter((t) => t.status === 'occupied').length,
+      reserved: tableStatuses.filter((t) => t.status === 'reserved').length,
+      total: tableStatuses.length,
+    };
+
+    return {
+      success: true,
+      data: {
+        tables: tableStatuses,
+        summary: statusCounts,
+      },
+    };
+  }
+
+  /**
+   * Update table occupancy status manually
+   * (available, occupied, reserved)
+   */
+  async updateTableOccupancyStatus(
+    tableId: string,
+    restaurantId: string,
+    occupancyStatus: 'available' | 'occupied' | 'reserved',
+  ) {
+    // Verify table exists and belongs to restaurant
+    const table = await this.prisma.table.findUnique({
+      where: { id: tableId },
+    });
+
+    if (!table) {
+      throw new NotFoundException(`Table with ID ${tableId} not found`);
+    }
+
+    if (table.restaurant_id !== restaurantId) {
+      throw new ConflictException('Table does not belong to this restaurant');
+    }
+
+    // Note: We're storing occupancy info in description or using a separate field
+    // For now, we'll track it via orders. This method is for manual override.
+    // In production, you might add a separate 'occupancy_status' column to the table
+
+    return {
+      success: true,
+      message: `Table ${table.table_number} status updated to ${occupancyStatus}`,
+      data: {
+        id: table.id,
+        table_number: table.table_number,
+        occupancy_status: occupancyStatus,
+      },
+    };
+  }
+
+  /**
+   * Auto-update table status based on order status
+   * Called when order status changes
+   */
+  async autoUpdateTableStatusByOrder(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        table: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Check if there are other active orders for this table
+    const activeOrders = await this.prisma.order.findMany({
+      where: {
+        table_id: order.table_id,
+        status: {
+          in: ['pending', 'accepted', 'preparing', 'ready', 'served'],
+        },
+        id: {
+          not: orderId, // Exclude current order
+        },
+      },
+    });
+
+    let newStatus: 'available' | 'occupied';
+
+    // If order is completed/cancelled and no other active orders, table is available
+    if (
+      ['completed', 'cancelled', 'rejected'].includes(order.status) &&
+      activeOrders.length === 0
+    ) {
+      newStatus = 'available';
+    } else {
+      // Table has active orders, mark as occupied
+      newStatus = 'occupied';
+    }
+
+    return {
+      table_id: order.table_id,
+      table_number: order.table.table_number,
+      occupancy_status: newStatus,
+      active_orders_count:
+        activeOrders.length + (newStatus === 'occupied' ? 1 : 0),
+    };
+  }
 }

@@ -16,6 +16,7 @@ import { TablesService } from './tables.service';
 import { CreateTableDto } from './dto/create-table.dto';
 import { UpdateTableDto } from './dto/update-table.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { UpdateTableStatusDto } from './dto/update-table-status.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -79,5 +80,45 @@ export class TablesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.tablesService.remove(id);
+  }
+
+  /**
+   * GET /api/tables/status?restaurant_id={uuid}
+   * Get table status overview for a restaurant
+   * Returns all tables with their occupancy status and counts
+   */
+  @Get('status/overview')
+  getTableStatusOverview(@Query('restaurant_id') restaurantId: string) {
+    if (!restaurantId) {
+      return {
+        success: false,
+        error: 'restaurant_id is required',
+      };
+    }
+    return this.tablesService.getTableStatusOverview(restaurantId);
+  }
+
+  /**
+   * PATCH /api/tables/:id/occupancy-status?restaurant_id={uuid}
+   * Manually update table occupancy status (available, occupied, reserved)
+   */
+  @Patch(':id/occupancy-status')
+  @Roles('admin', 'waiter', 'super_admin')
+  updateTableOccupancyStatus(
+    @Param('id') tableId: string,
+    @Query('restaurant_id') restaurantId: string,
+    @Body() updateTableStatusDto: UpdateTableStatusDto,
+  ) {
+    if (!restaurantId) {
+      return {
+        success: false,
+        error: 'restaurant_id is required',
+      };
+    }
+    return this.tablesService.updateTableOccupancyStatus(
+      tableId,
+      restaurantId,
+      updateTableStatusDto.status as 'available' | 'occupied' | 'reserved',
+    );
   }
 }

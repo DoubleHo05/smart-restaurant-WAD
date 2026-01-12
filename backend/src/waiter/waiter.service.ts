@@ -5,12 +5,16 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TablesService } from '../tables/tables.service';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { PendingOrdersFilterDto } from './dto/pending-orders-filter.dto';
 
 @Injectable()
 export class WaiterService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tablesService: TablesService,
+  ) {}
 
   /**
    * Get pending orders for a waiter's restaurant
@@ -178,6 +182,9 @@ export class WaiterService {
     // TODO: Emit Socket.IO event to kitchen (order_accepted)
     // TODO: Emit Socket.IO event to customer (order_accepted)
 
+    // Auto-update table status
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
+
     return {
       success: true,
       message: 'Order accepted successfully',
@@ -249,6 +256,9 @@ export class WaiterService {
 
     // TODO: Emit Socket.IO event to customer (order_rejected)
 
+    // Auto-update table status (table might become available if no other orders)
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
+
     return {
       success: true,
       message: 'Order rejected successfully',
@@ -308,6 +318,9 @@ export class WaiterService {
     });
 
     // TODO: Emit Socket.IO event to customer (order_served)
+
+    // Auto-update table status (table still occupied until order completed)
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
 
     return {
       success: true,

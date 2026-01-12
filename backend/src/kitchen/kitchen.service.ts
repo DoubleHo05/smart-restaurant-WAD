@@ -5,11 +5,15 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { TablesService } from '../tables/tables.service';
 import { KitchenOrdersFilterDto } from './dto/kitchen-orders-filter.dto';
 
 @Injectable()
 export class KitchenService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private tablesService: TablesService,
+  ) {}
 
   /**
    * Get all orders that need kitchen attention (accepted & preparing status)
@@ -202,6 +206,9 @@ export class KitchenService {
     // TODO: Emit Socket.IO event to waiter (order_preparing)
     // TODO: Emit Socket.IO event to customer (order_preparing)
 
+    // Auto-update table status (table remains occupied)
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
+
     return {
       success: true,
       message: 'Order preparation started',
@@ -281,6 +288,9 @@ export class KitchenService {
 
     // TODO: Emit Socket.IO event to waiter (order_ready - high priority)
     // TODO: Emit Socket.IO event to customer (order_ready)
+
+    // Auto-update table status (table remains occupied until served)
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
 
     return {
       success: true,
