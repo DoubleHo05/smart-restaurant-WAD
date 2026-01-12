@@ -20,6 +20,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public order: PrismaClient['order'];
   public orderItem: PrismaClient['orderItem'];
   public orderItemModifier: PrismaClient['orderItemModifier'];
+  public notifications: PrismaClient['notifications'];
 
   private client: PrismaClient;
   private pool: Pool;
