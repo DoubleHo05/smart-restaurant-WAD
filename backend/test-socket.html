@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Test - Smart Restaurant</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+      }
+
+      .header {
+        background: #2d3748;
+        color: white;
+        padding: 24px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 24px;
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        opacity: 0.8;
+        font-size: 14px;
+      }
+
+      .content {
+        padding: 24px;
+      }
+
+      .section {
+        margin-bottom: 24px;
+      }
+
+      .section h2 {
+        font-size: 18px;
+        margin-bottom: 12px;
+        color: #2d3748;
+      }
+
+      .input-group {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      input[type='text'],
+      input[type='password'] {
+        flex: 1;
+        padding: 10px 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      button {
+        padding: 10px 20px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #5568d3;
+      }
+
+      button:disabled {
+        background: #cbd5e0;
+        cursor: not-allowed;
+      }
+
+      .status {
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .status.disconnected {
+        background: #fed7d7;
+        color: #c53030;
+      }
+
+      .status.connected {
+        background: #c6f6d5;
+        color: #2f855a;
+      }
+
+      .status.connecting {
+        background: #feebc8;
+        color: #c05621;
+      }
+
+      .token-display {
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 12px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        word-break: break-all;
+        margin-bottom: 12px;
+        max-height: 100px;
+        overflow-y: auto;
+      }
+
+      .messages {
+        background: #f7fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 16px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .message {
+        padding: 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .message.new_order {
+        background: #bee3f8;
+        border-left: 4px solid #3182ce;
+      }
+
+      .message.order_accepted {
+        background: #c6f6d5;
+        border-left: 4px solid #38a169;
+      }
+
+      .message.order_ready {
+        background: #feebc8;
+        border-left: 4px solid #dd6b20;
+      }
+
+      .message.order_rejected {
+        background: #fed7d7;
+        border-left: 4px solid #e53e3e;
+      }
+
+      .message .title {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+
+      .message .time {
+        font-size: 12px;
+        opacity: 0.7;
+        margin-top: 4px;
+      }
+
+      .empty-state {
+        text-align: center;
+        color: #a0aec0;
+        padding: 40px;
+      }
+
+      .guide {
+        background: #edf2f7;
+        border-radius: 6px;
+        padding: 16px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .guide h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+        color: #2d3748;
+      }
+
+      .guide ol {
+        margin-left: 20px;
+      }
+
+      .guide li {
+        margin-bottom: 4px;
+      }
+
+      .guide code {
+        background: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔌 WebSocket Connection Test</h1>
+        <p>Smart Restaurant - Real-time Notifications</p>
+      </div>
+
+      <div class="content">
+        <!-- Quick Guide -->
+        <div class="guide">
+          <h3>📋 Quick Start Guide:</h3>
+          <ol>
+            <li>
+              Enter your login credentials (or use test account:
+              waiter@example.com / password123)
+            </li>
+            <li>Click <strong>"Login & Connect"</strong></li>
+            <li>
+              Once connected, create an order in another browser tab to see
+              real-time notifications here!
+            </li>
+          </ol>
+        </div>
+
+        <!-- Login Section -->
+        <div class="section">
+          <h2>1️⃣ Login to Get Token</h2>
+          <div class="input-group">
+            <input
+              type="text"
+              id="email"
+              placeholder="Email (e.g., waiter@example.com)"
+              value="waiter@example.com"
+            />
+          </div>
+          <div class="input-group">
+            <input
+              type="password"
+              id="password"
+              placeholder="Password"
+              value="password123"
+            />
+            <button onclick="loginAndConnect()" id="loginBtn">
+              Login & Connect
+            </button>
+          </div>
+
+          <div id="tokenSection" style="display: none">
+            <h3 style="font-size: 14px; margin: 12px 0 8px 0; color: #4a5568">
+              Your JWT Token:
+            </h3>
+            <div class="token-display" id="tokenDisplay"></div>
+          </div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="section">
+          <h2>2️⃣ WebSocket Status</h2>
+          <div class="status disconnected" id="status">
+            ❌ Disconnected - Click "Login & Connect" to start
+          </div>
+          <div
+            id="socketInfo"
+            style="display: none; font-size: 14px; color: #4a5568"
+          >
+            <p><strong>Socket ID:</strong> <span id="socketId">-</span></p>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="section">
+          <h2>3️⃣ Real-time Notifications</h2>
+          <div class="messages" id="messages">
+            <div class="empty-state">
+              <p>🔔 Waiting for notifications...</p>
+              <p style="font-size: 12px; margin-top: 8px">
+                Connect to WebSocket and create an order to see notifications
+                here.
+              </p>
+            </div>
+          </div>
+          <button onclick="clearMessages()" style="margin-top: 12px">
+            Clear Messages
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let socket = null;
+      let token = null;
+
+      // Configuration
+      const BACKEND_URL = 'http://localhost:3000';
+      const API_URL = BACKEND_URL; // Backend không có /api prefix
+      const SOCKET_URL = `${BACKEND_URL}/notifications`;
+
+      // Login and establish WebSocket connection
+      async function loginAndConnect() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const loginBtn = document.getElementById('loginBtn');
+        const statusEl = document.getElementById('status');
+
+        if (!email || !password) {
+          alert('Please enter email and password');
+          return;
+        }
+
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+        statusEl.className = 'status connecting';
+        statusEl.innerHTML = '⏳ Logging in...';
+
+        try {
+          // Step 1: Login to get JWT token
+          const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
+          });
+
+          if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Login failed');
+          }
+
+          const data = await response.json();
+          token = data.access_token;
+
+          // Display token
+          document.getElementById('tokenSection').style.display = 'block';
+          document.getElementById('tokenDisplay').textContent = token;
+
+          console.log('✅ Login successful:', data.user);
+
+          // Step 2: Connect to WebSocket
+          connectToWebSocket(token);
+        } catch (error) {
+          console.error('❌ Login failed:', error);
+          statusEl.className = 'status disconnected';
+          statusEl.innerHTML = `❌ Login failed: ${error.message}`;
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login & Connect';
+          alert(
+            `Login failed: ${error.message}\n\nMake sure:\n- Backend is running\n- User exists in database\n- Credentials are correct`,
+          );
+        }
+      }
+
+      // Connect to WebSocket
+      function connectToWebSocket(token) {
+        const statusEl = document.getElementById('status');
+        const loginBtn = document.getElementById('loginBtn');
+
+        statusEl.className = 'status connecting';
+        statusEl.innerHTML = '⏳ Connecting to WebSocket...';
+
+        socket = io(SOCKET_URL, {
+          auth: { token },
+          reconnection: true,
+          reconnectionAttempts: 5,
+          reconnectionDelay: 1000,
+        });
+
+        // Connection established
+        socket.on('connect', () => {
+          console.log('✅ WebSocket connected:', socket.id);
+          statusEl.className = 'status connected';
+          statusEl.innerHTML = '✅ Connected - Listening for notifications';
+
+          document.getElementById('socketInfo').style.display = 'block';
+          document.getElementById('socketId').textContent = socket.id;
+
+          loginBtn.textContent = 'Connected ✓';
+
+          // Test ping
+          socket.emit('ping', (response) => {
+            console.log('🏓 Ping response:', response);
+            addMessage(
+              'system',
+              'Connection test successful (ping/pong)',
+              new Date(),
+            );
+          });
+        });
+
+        // Connection error
+        socket.on('connect_error', (error) => {
+          console.error('❌ Connection error:', error);
+          statusEl.className = 'status disconnected';
+          statusEl.innerHTML = `❌ Connection failed: ${error.message}`;
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Retry Connection';
+        });
+
+        // Disconnected
+        socket.on('disconnect', (reason) => {
+          console.log('❌ Disconnected:', reason);
+          statusEl.className = 'status disconnected';
+          statusEl.innerHTML = `❌ Disconnected: ${reason}`;
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Reconnect';
+        });
+
+        // Listen to notification events
+        socket.on('new_order', (data) => {
+          console.log('📦 New order:', data);
+          addMessage(
+            'new_order',
+            `${data.message}<br><small>Order: ${data.data.order_number} | Table: ${data.data.table_number} | Total: $${data.data.total}</small>`,
+            new Date(data.timestamp),
+          );
+        });
+
+        socket.on('order_accepted', (data) => {
+          console.log('✅ Order accepted:', data);
+          addMessage(
+            'order_accepted',
+            `${data.message}<br><small>Order: ${data.data.order_number}</small>`,
+            new Date(data.timestamp),
+          );
+        });
+
+        socket.on('order_ready', (data) => {
+          console.log('🍽️ Order ready:', data);
+          addMessage(
+            'order_ready',
+            `${data.message}<br><small>Order: ${data.data.order_number}</small>`,
+            new Date(data.timestamp),
+          );
+        });
+
+        socket.on('order_status_update', (data) => {
+          console.log('🔄 Order status update:', data);
+          addMessage(
+            'order_accepted',
+            `${data.message}<br><small>Status: ${data.status}</small>`,
+            new Date(data.timestamp),
+          );
+        });
+
+        socket.on('order_rejected', (data) => {
+          console.log('❌ Order rejected:', data);
+          addMessage(
+            'order_rejected',
+            `${data.message}<br><small>Reason: ${data.data.reason}</small>`,
+            new Date(data.timestamp),
+          );
+        });
+      }
+
+      // Add message to the display
+      function addMessage(type, message, time) {
+        const messagesEl = document.getElementById('messages');
+
+        // Remove empty state
+        const emptyState = messagesEl.querySelector('.empty-state');
+        if (emptyState) {
+          emptyState.remove();
+        }
+
+        const icon =
+          {
+            new_order: '📦',
+            order_accepted: '✅',
+            order_ready: '🍽️',
+            order_rejected: '❌',
+            system: '🔔',
+          }[type] || '🔔';
+
+        const messageEl = document.createElement('div');
+        messageEl.className = `message ${type}`;
+        messageEl.innerHTML = `
+        <div class="title">${icon} ${type.replace(/_/g, ' ').toUpperCase()}</div>
+        <div>${message}</div>
+        <div class="time">${time.toLocaleTimeString()}</div>
+      `;
+
+        messagesEl.insertBefore(messageEl, messagesEl.firstChild);
+
+        // Limit to 50 messages
+        while (messagesEl.children.length > 50) {
+          messagesEl.removeChild(messagesEl.lastChild);
+        }
+      }
+
+      // Clear messages
+      function clearMessages() {
+        const messagesEl = document.getElementById('messages');
+        messagesEl.innerHTML =
+          '<div class="empty-state"><p>🔔 Messages cleared</p></div>';
+      }
+
+      // Auto-focus on email input
+      document.getElementById('email').focus();
+
+      // Enter key to login
+      document.getElementById('password').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          loginAndConnect();
+        }
+      });
+    </script>
+  </body>
+</html>
