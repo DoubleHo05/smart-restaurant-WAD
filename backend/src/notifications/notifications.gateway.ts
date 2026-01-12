@@ -163,4 +163,35 @@ export class NotificationsGateway
 
     this.logger.log(`Notified kitchen: Order ${order.order_number} accepted`);
   }
+
+  //Notify waiter when order is ready
+  async notifyOrderReady(order: any) {
+  const notification = {
+    type: 'order_ready',
+    title: 'Order Ready',
+    message: `Order #${order.order_number} is ready to serve`,
+    data: {
+      order_id: order.id,
+      order_number: order.order_number,
+      table_number: order.table.table_number,
+      prep_time_minutes: order.prep_time_minutes || 0,
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  // Emit to waiters
+  this.emitToRole('waiter', 'order_ready', notification);
+
+  // Notify customer
+  if (order.customer_id) {
+    this.emitToUser(order.customer_id, 'order_status_update', {
+      order_id: order.id,
+      status: 'ready',
+      message: 'Your order is ready',
+    });
+  }
+
+  this.logger.log(`Notified waiter: Order ${order.order_number} ready`);
+}
+
 }
