@@ -14,6 +14,8 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+import { OrdersModule } from './orders/orders.module';
+import { WaiterModule } from './waiter/waiter.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
     MenuItemsModule,
     AuthModule,
     UsersModule,
+    OrdersModule,
+    WaiterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
