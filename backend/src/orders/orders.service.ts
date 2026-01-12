@@ -10,9 +10,16 @@ import {
   OrderStatus,
 } from './dto/update-order-status.dto';
 
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
+
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsGateway: NotificationsGateway,
+    private notificationsService: NotificationsService,
+  ) {}
 
   /**
    * Create a new order with items and modifiers
@@ -175,7 +182,12 @@ export class OrdersService {
     });
 
     // Return the complete order with items and modifiers
-    return this.getOrderDetails(order.id);
+    const completeOrder = await this.getOrderDetails(order.id);
+
+    // 🔔 EMIT REAL-TIME NOTIFICATION TO WAITERS
+    await this.notifyNewOrder(completeOrder);
+
+    return completeOrder;
   }
 
   /**
@@ -511,19 +523,223 @@ export class OrdersService {
       },
     });
 
-    // TODO: Emit Socket.IO event for real-time notification (Sprint 2)
-    // this.notificationGateway.emitOrderStatusUpdate({
-    //   orderId: order.id,
-    //   orderNumber: order.order_number,
-    //   tableId: order.table_id,
-    //   oldStatus: order.status,
-    //   newStatus: updateDto.status,
-    //   reason: updateDto.reason,
-    // });
+    // 🔔 EMIT REAL-TIME NOTIFICATIONS based on new status
+    await this.emitStatusChangeNotification(updatedOrder, order.status, updateDto);
 
     return {
       message: `Order status updated from "${order.status}" to "${updateDto.status}"`,
       order: updatedOrder,
     };
+  }
+
+  /**
+   * 🔔 Notify waiters about new order
+   */
+  private async notifyNewOrder(order: any) {
+    const notification = {
+      type: 'new_order',
+      title: 'New Order Received',
+      message: `New order #${order.order_number} from Table ${order.table.table_number}`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        table_number: order.table.table_number,
+        total: Number(order.total),
+        items_count: order.order_items.length,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Emit to all waiters via WebSocket
+    this.notificationsGateway.emitToRole('waiter', 'new_order', notification);
+
+    // Also notify admins
+    this.notificationsGateway.emitToRole('admin', 'new_order', notification);
+
+    // Save notification to database for all waiters
+    const waiters = await this.prisma.user.findMany({
+      where: {
+        user_roles: {
+          some: {
+            role: { name: 'waiter' },
+          },
+        },
+        status: 'active',
+      },
+      select: { id: true },
+    });
+
+    // Save notifications in bulk
+    for (const waiter of waiters) {
+      await this.notificationsService.createNotification({
+        user_id: waiter.id,
+        type: 'new_order',
+        title: 'New Order',
+        message: `Order #${order.order_number} from Table ${order.table.table_number}`,
+        data: { order_id: order.id },
+      });
+    }
+
+    console.log(`✅ Notified ${waiters.length} waiters about order ${order.order_number}`);
+  }
+
+  /**
+   * 🔔 Emit notification based on status change
+   */
+  private async emitStatusChangeNotification(
+    order: any,
+    oldStatus: string,
+    updateDto: UpdateOrderStatusDto,
+  ) {
+    switch (updateDto.status) {
+      case OrderStatus.ACCEPTED:
+        await this.notifyOrderAccepted(order);
+        break;
+      case OrderStatus.READY:
+        await this.notifyOrderReady(order);
+        break;
+      case OrderStatus.SERVED:
+        await this.notifyOrderServed(order);
+        break;
+      case OrderStatus.REJECTED:
+        await this.notifyOrderRejected(order, updateDto.reason || 'No reason provided');
+        break;
+      case OrderStatus.CANCELLED:
+        await this.notifyOrderCancelled(order, updateDto.reason || 'Cancelled by request');
+        break;
+    }
+  }
+
+  /**
+   * 🔔 Notify kitchen when order is accepted
+   */
+  private async notifyOrderAccepted(order: any) {
+    const notification = {
+      type: 'order_accepted',
+      title: 'Order Accepted',
+      message: `Order #${order.order_number} accepted - Start preparing`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        table_number: order.table.table_number,
+        items: order.order_items.map((item: any) => ({
+          name: item.menu_item.name,
+          quantity: item.quantity,
+        })),
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Emit to kitchen staff
+    this.notificationsGateway.emitToRole('kitchen', 'order_accepted', notification);
+
+    // Notify customer if exists
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: order.id,
+        status: 'accepted',
+        message: 'Your order has been accepted and is being prepared',
+      });
+    }
+
+    console.log(`✅ Notified kitchen: Order ${order.order_number} accepted`);
+  }
+
+  /**
+   * 🔔 Notify waiter when order is ready
+   */
+  private async notifyOrderReady(order: any) {
+    const notification = {
+      type: 'order_ready',
+      title: 'Order Ready',
+      message: `Order #${order.order_number} is ready to serve`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        table_number: order.table.table_number,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Emit to waiters
+    this.notificationsGateway.emitToRole('waiter', 'order_ready', notification);
+
+    // Notify customer
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: order.id,
+        status: 'ready',
+        message: 'Your order is ready!',
+      });
+    }
+
+    console.log(`✅ Notified waiter: Order ${order.order_number} ready`);
+  }
+
+  /**
+   * 🔔 Notify customer when order is served
+   */
+  private async notifyOrderServed(order: any) {
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: order.id,
+        status: 'served',
+        message: 'Your order has been served. Enjoy your meal!',
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    console.log(`✅ Notified customer: Order ${order.order_number} served`);
+  }
+
+  /**
+   * 🔔 Notify about order rejection
+   */
+  private async notifyOrderRejected(order: any, reason: string) {
+    const notification = {
+      type: 'order_rejected',
+      title: 'Order Rejected',
+      message: `Order #${order.order_number} was rejected`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        reason,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify customer
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_rejected', notification);
+    }
+
+    // Notify admins
+    this.notificationsGateway.emitToRole('admin', 'order_rejected', notification);
+
+    console.log(`❌ Notified: Order ${order.order_number} rejected`);
+  }
+
+  /**
+   * 🔔 Notify about order cancellation
+   */
+  private async notifyOrderCancelled(order: any, reason: string) {
+    const notification = {
+      type: 'order_cancelled',
+      title: 'Order Cancelled',
+      message: `Order #${order.order_number} was cancelled`,
+      data: {
+        order_id: order.id,
+        order_number: order.order_number,
+        reason,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify customer
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_cancelled', notification);
+    }
+
+    console.log(`⚠️ Notified: Order ${order.order_number} cancelled`);
   }
 }
