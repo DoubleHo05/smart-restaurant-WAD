@@ -639,8 +639,35 @@ export default function KitchenDisplay() {
 
   const stats = getStats();
 
+  // Check if device is mobile/small screen
+  const [showLandscapeHint, setShowLandscapeHint] = useState(false);
+
+  useEffect(() => {
+    const checkOrientation = () => {
+      const isSmallScreen = window.innerWidth < 768;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      setShowLandscapeHint(isSmallScreen && isPortrait);
+    };
+
+    checkOrientation();
+    window.addEventListener("resize", checkOrientation);
+    window.addEventListener("orientationchange", checkOrientation);
+
+    return () => {
+      window.removeEventListener("resize", checkOrientation);
+      window.removeEventListener("orientationchange", checkOrientation);
+    };
+  }, []);
+
   return (
     <div className="kitchen-display">
+      {/* Landscape orientation hint for small devices */}
+      {showLandscapeHint && (
+        <div className="landscape-hint">
+          📱 Please rotate your device to landscape mode for best experience
+        </div>
+      )}
+
       <div className="kds-header">
         <div className="header-left">
           <div className="kds-title">
