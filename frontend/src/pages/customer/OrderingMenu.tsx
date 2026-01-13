@@ -52,6 +52,7 @@ export default function OrderingMenu() {
   const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
   const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState('');
+  const [menuLoaded, setMenuLoaded] = useState(false);
 
   useEffect(() => {
     // Get table and restaurant info from localStorage
@@ -70,12 +71,49 @@ export default function OrderingMenu() {
     setTableInfo(tableData);
     setRestaurantInfo(restaurantData);
 
-    loadMenu(restaurantData.id);
-  }, [navigate]);
+    // Only load menu if not already loaded
+    if (!menuLoaded) {
+      loadMenu(restaurantData.id);
+      setMenuLoaded(true);
+    }
+
+    // Check for re-order items
+    const reorderItems = localStorage.getItem('reorder_items');
+    const reorderRestaurantId = localStorage.getItem('reorder_restaurant_id');
+    
+    if (reorderItems && reorderRestaurantId === restaurantData.id) {
+      try {
+        const items = JSON.parse(reorderItems);
+        const cartItems: CartItem[] = items.map((item: any, index: number) => ({
+          id: `${item.id}-${Date.now()}-${index}`,
+          menu_item_id: item.id,
+          name: item.name,
+          price: parseFloat(item.price),
+          quantity: item.quantity,
+          modifiers: item.modifiers || [],
+          subtotal: parseFloat(item.price) * item.quantity,
+        }));
+        
+        setCart(cartItems);
+        setShowCart(true); // Auto-open cart to show re-ordered items
+        
+        // Clear re-order data after loading
+        localStorage.removeItem('reorder_items');
+        localStorage.removeItem('reorder_restaurant_id');
+      } catch (error) {
+        console.error('Failed to load re-order items:', error);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - navigate is stable from react-router
 
   const loadMenu = async (restaurantId: string) => {
     try {
-      setLoading(true);
+      // Don't show loading spinner if we already have menu data
+      if (menuItems.length === 0) {
+        setLoading(true);
+      }
+      
       const [categoriesData, menuData] = await Promise.all([
         getMenuCategories(restaurantId),
         getPublicMenu(selectedCategory, searchTerm, restaurantId),
@@ -217,7 +255,12 @@ export default function OrderingMenu() {
               </div>
             ) : (
               menuItems.map((item) => (
-                <div key={item.id} className="menu-item-card">
+                <div 
+                  key={item.id} 
+                  className="menu-item-card"
+                  onClick={() => navigate(`/customer/order/item/${item.id}`)}
+                  style={{ cursor: 'pointer' }}
+                >
                   {item.image && (
                     <div className="item-image-wrapper">
                       <img src={item.image} alt={item.name} className="item-image" />
@@ -237,7 +280,10 @@ export default function OrderingMenu() {
                       </span>
                       <button 
                         className="btn-add-to-cart"
-                        onClick={() => addToCart(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/customer/order/item/${item.id}`);
+                        }}
                         disabled={!item.isAvailable}
                       >
                         {item.isAvailable ? '+ Add' : 'Unavailable'}
@@ -247,32 +293,6 @@ export default function OrderingMenu() {
                 </div>
               ))
             )}
-          </div>
-
-          {/* Bottom Navigation */}
-          <div className="bottom-nav">
-            <button className="nav-item active">
-              <span className="nav-icon">🍽️</span>
-              <span className="nav-label">Menu</span>
-            </button>
-            <button 
-              className="nav-item"
-              onClick={() => setShowCart(true)}
-            >
-              <span className="nav-icon">🛒</span>
-              {cart.length > 0 && (
-                <span className="cart-badge">{getCartItemCount()}</span>
-              )}
-              <span className="nav-label">Cart</span>
-            </button>
-            <button className="nav-item">
-              <span className="nav-icon">📋</span>
-              <span className="nav-label">Orders</span>
-            </button>
-            <button className="nav-item">
-              <span className="nav-icon">👤</span>
-              <span className="nav-label">Profile</span>
-            </button>
           </div>
         </>
       ) : (
