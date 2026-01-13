@@ -10,7 +10,7 @@ import {
   Res,
   Header,
 } from '@nestjs/common';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
@@ -126,7 +126,7 @@ export class OrdersController {
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
     @Query('export') exportFormat?: string,
-    @Res() res?: Response,
+    @Res({ passthrough: false }) res?: Response,
   ) {
     const filters: any = {
       restaurant_id,
@@ -137,7 +137,7 @@ export class OrdersController {
     };
 
     // If export=csv, return CSV file
-    if (exportFormat === 'csv') {
+    if (exportFormat === 'csv' && res) {
       const csv = await this.ordersService.exportHistoryToCSV(filters);
       res.header('Content-Type', 'text/csv');
       res.header(

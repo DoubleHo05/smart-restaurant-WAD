@@ -30,11 +30,24 @@ export default function KitchenDisplay() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<KitchenOrder | null>(null);
+  const [batchView, setBatchView] = useState(false);
+  const [previousOrderCount, setPreviousOrderCount] = useState(0);
+  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+  const newOrderSoundRef = useState<HTMLAudioElement | null>(null)[0];
 
   // TODO: Replace with actual restaurant ID from auth context
   const restaurantId = "temp-restaurant-id";
 
   useEffect(() => {
+    // Initialize audio context for sound
+    try {
+      const ctx = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      setAudioContext(ctx);
+    } catch (e) {
+      console.warn("Web Audio API not supported");
+    }
+
     loadOrders();
     loadDelayedOrders();
 
@@ -57,8 +70,21 @@ export default function KitchenDisplay() {
     return () => {
       clearInterval(refreshInterval);
       clearInterval(clockInterval);
+      audioContext?.close();
     };
   }, []);
+
+  // Detect new orders and play sound
+  useEffect(() => {
+    if (
+      receivedOrders.length > previousOrderCount &&
+      soundEnabled &&
+      audioContext
+    ) {
+      playNewOrderSound();
+    }
+    setPreviousOrderCount(receivedOrders.length);
+  }, [receivedOrders.length]);
 
   const loadOrders = async () => {
     try {
@@ -265,6 +291,16 @@ export default function KitchenDisplay() {
           {order.priority_score && order.priority_score > 30 && (
             <div className="priority-badge">🔴 HIGH PRIORITY</div>
           )}
+          <button
+            className="print-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              printOrderTicket(order);
+            }}
+            title="Print order ticket"
+          >
+            🖨️
+          </button>
         </div>
 
         <div className="order-status-bar">
@@ -355,6 +391,252 @@ export default function KitchenDisplay() {
     return { pending, cooking, ready, overdue };
   };
 
+  const playNewOrderSound = () => {
+    if (!audioContext) return;
+
+    try {
+      // Create an alert beep sound using Web Audio API
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      // Configure the beep
+      oscillator.frequency.value = 880; // A5 note
+      oscillator.type = "sine";
+
+      // Envelope
+      gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+      gainNode.gain.linearRampToValueAtTime(
+        0.3,
+        audioContext.currentTime + 0.01
+      );
+      gainNode.gain.exponentialRampToValueAtTime(
+        0.01,
+        audioContext.currentTime + 0.3
+      );
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+
+      // Play twice for double beep
+      setTimeout(() => {
+        const osc2 = audioContext.createOscillator();
+        const gain2 = audioContext.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioContext.destination);
+        osc2.frequency.value = 880;
+        osc2.type = "sine";
+        gain2.gain.setValueAtTime(0, audioContext.currentTime);
+        gain2.gain.linearRampToValueAtTime(
+          0.3,
+          audioContext.currentTime + 0.01
+        );
+        gain2.gain.exponentialRampToValueAtTime(
+          0.01,
+          audioContext.currentTime + 0.3
+        );
+        osc2.start(audioContext.currentTime);
+        osc2.stop(audioContext.currentTime + 0.3);
+      }, 150);
+    } catch (error) {
+      console.error("Error playing sound:", error);
+    }
+  };
+
+  const printOrderTicket = (order: KitchenOrder) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow popups to print order tickets");
+      return;
+    }
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Order ${order.order_number}</title>
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; }
+          }
+          body {
+            font-family: 'Courier New', monospace;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 2px dashed #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+          }
+          .order-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+          }
+          .table-info {
+            font-size: 18px;
+            margin: 5px 0;
+          }
+          .timestamp {
+            font-size: 12px;
+            color: #666;
+          }
+          .items-section {
+            margin: 20px 0;
+          }
+          .item {
+            margin: 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+          }
+          .item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 5px;
+          }
+          .item-qty {
+            min-width: 30px;
+          }
+          .item-name {
+            flex: 1;
+          }
+          .modifiers {
+            margin-left: 30px;
+            font-size: 12px;
+            color: #666;
+          }
+          .notes {
+            margin-left: 30px;
+            font-size: 12px;
+            font-style: italic;
+            color: #444;
+            background: #fff3cd;
+            padding: 5px;
+            margin-top: 5px;
+          }
+          .footer {
+            text-align: center;
+            border-top: 2px dashed #000;
+            padding-top: 10px;
+            margin-top: 20px;
+            font-size: 12px;
+          }
+          .priority {
+            background: #ff4444;
+            color: white;
+            padding: 5px 10px;
+            display: inline-block;
+            margin: 10px 0;
+            border-radius: 4px;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="order-number">ORDER #${order.order_number}</div>
+          <div class="table-info">🍽️ ${order.table.table_number}</div>
+          <div class="timestamp">${new Date(
+            order.created_at
+          ).toLocaleString()}</div>
+          ${
+            order.priority_score && order.priority_score > 30
+              ? '<div class="priority">⚠️ HIGH PRIORITY</div>'
+              : ""
+          }
+        </div>
+
+        <div class="items-section">
+          ${order.order_items
+            .map(
+              (item) => `
+            <div class="item">
+              <div class="item-header">
+                <span class="item-qty">${item.quantity}x</span>
+                <span class="item-name">${item.menu_item.name}</span>
+              </div>
+              ${
+                item.modifiers && item.modifiers.length > 0
+                  ? `
+                <div class="modifiers">
+                  + ${item.modifiers
+                    .map((m) => m.modifier_option.name)
+                    .join(", ")}
+                </div>
+              `
+                  : ""
+              }
+              ${
+                item.notes
+                  ? `
+                <div class="notes">
+                  📝 ${item.notes}
+                </div>
+              `
+                  : ""
+              }
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+
+        <div class="footer">
+          <div>Printed: ${new Date().toLocaleString()}</div>
+          ${
+            order.estimated_prep_time
+              ? `<div>Est. Prep Time: ${order.estimated_prep_time} min</div>`
+              : ""
+          }
+        </div>
+
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(() => window.close(), 100);
+          }
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+  };
+
+  // Group orders by table for batch view
+  const getGroupedOrders = () => {
+    const groupByTable = (orders: KitchenOrder[]) => {
+      const grouped = new Map<string, KitchenOrder[]>();
+      orders.forEach((order) => {
+        const tableKey = order.table.table_number;
+        if (!grouped.has(tableKey)) {
+          grouped.set(tableKey, []);
+        }
+        grouped.get(tableKey)!.push(order);
+      });
+      return Array.from(grouped.entries()).map(([tableName, orders]) => ({
+        tableName,
+        orders,
+        totalItems: orders.reduce(
+          (sum, o) => sum + o.order_items.reduce((s, i) => s + i.quantity, 0),
+          0
+        ),
+      }));
+    };
+
+    return {
+      received: groupByTable(receivedOrders),
+      preparing: groupByTable(preparingOrders),
+      ready: groupByTable(readyOrders),
+    };
+  };
+
   const stats = getStats();
 
   return (
@@ -404,12 +686,20 @@ export default function KitchenDisplay() {
               🔥 Batch Prepare ({selectedOrderIds.size})
             </button>
           )}
+          <button
+            className={`view-toggle-btn ${batchView ? "active" : ""}`}
+            onClick={() => setBatchView(!batchView)}
+            title="Toggle batch view (group by table)"
+          >
+            {batchView ? "📋 Table View" : "📑 List View"}
+          </button>
           <div className="current-time">{formatTime(currentTime)}</div>
           <button
             className={`sound-toggle ${soundEnabled ? "active" : ""}`}
             onClick={() => setSoundEnabled(!soundEnabled)}
+            title="Toggle sound alerts"
           >
-            <span className="sound-icon">🔊</span>
+            <span className="sound-icon">{soundEnabled ? "🔊" : "🔇"}</span>
             Sound {soundEnabled ? "ON" : "OFF"}
           </button>
           <button className="settings-btn">⚙️ Settings</button>
@@ -423,40 +713,107 @@ export default function KitchenDisplay() {
       </div>
 
       <div className="kds-columns">
-        <div className="kds-column received-column">
-          <div className="column-header received-header">
-            <span className="column-icon">⚠</span>
-            <h2>RECEIVED</h2>
-            <span className="column-count">{receivedOrders.length}</span>
-          </div>
-          <div className="column-content">
-            {receivedOrders.map((order) => renderOrderCard(order, "received"))}
-          </div>
-        </div>
+        {!batchView ? (
+          // List View - Individual Orders
+          <>
+            <div className="kds-column received-column">
+              <div className="column-header received-header">
+                <span className="column-icon">⚠</span>
+                <h2>RECEIVED</h2>
+                <span className="column-count">{receivedOrders.length}</span>
+              </div>
+              <div className="column-content">
+                {receivedOrders.map((order) =>
+                  renderOrderCard(order, "received")
+                )}
+              </div>
+            </div>
 
-        <div className="kds-column preparing-column">
-          <div className="column-header preparing-header">
-            <span className="column-icon">🔥</span>
-            <h2>PREPARING</h2>
-            <span className="column-count">{preparingOrders.length}</span>
-          </div>
-          <div className="column-content">
-            {preparingOrders.map((order) =>
-              renderOrderCard(order, "preparing")
-            )}
-          </div>
-        </div>
+            <div className="kds-column preparing-column">
+              <div className="column-header preparing-header">
+                <span className="column-icon">🔥</span>
+                <h2>PREPARING</h2>
+                <span className="column-count">{preparingOrders.length}</span>
+              </div>
+              <div className="column-content">
+                {preparingOrders.map((order) =>
+                  renderOrderCard(order, "preparing")
+                )}
+              </div>
+            </div>
 
-        <div className="kds-column ready-column">
-          <div className="column-header ready-header">
-            <span className="column-icon">✓</span>
-            <h2>READY</h2>
-            <span className="column-count">{readyOrders.length}</span>
-          </div>
-          <div className="column-content">
-            {readyOrders.map((order) => renderOrderCard(order, "ready"))}
-          </div>
-        </div>
+            <div className="kds-column ready-column">
+              <div className="column-header ready-header">
+                <span className="column-icon">✓</span>
+                <h2>READY</h2>
+                <span className="column-count">{readyOrders.length}</span>
+              </div>
+              <div className="column-content">
+                {readyOrders.map((order) => renderOrderCard(order, "ready"))}
+              </div>
+            </div>
+          </>
+        ) : (
+          // Batch View - Grouped by Table
+          <>
+            {(["received", "preparing", "ready"] as const).map((status) => {
+              const groupedData = getGroupedOrders();
+              const groups =
+                status === "received"
+                  ? groupedData.received
+                  : status === "preparing"
+                  ? groupedData.preparing
+                  : groupedData.ready;
+              const columnName =
+                status === "received"
+                  ? "RECEIVED"
+                  : status === "preparing"
+                  ? "PREPARING"
+                  : "READY";
+              const columnIcon =
+                status === "received"
+                  ? "⚠"
+                  : status === "preparing"
+                  ? "🔥"
+                  : "✓";
+              const headerClass = `${status}-header`;
+              const columnClass = `${status}-column`;
+
+              return (
+                <div key={status} className={`kds-column ${columnClass}`}>
+                  <div className={`column-header ${headerClass}`}>
+                    <span className="column-icon">{columnIcon}</span>
+                    <h2>{columnName}</h2>
+                    <span className="column-count">
+                      {groups.reduce((sum, g) => sum + g.orders.length, 0)}
+                    </span>
+                  </div>
+                  <div className="column-content">
+                    {groups.map((group) => (
+                      <div key={group.tableName} className="table-group">
+                        <div className="table-group-header">
+                          <span className="table-group-name">
+                            🍽️ {group.tableName}
+                          </span>
+                          <span className="table-group-count">
+                            {group.orders.length} order
+                            {group.orders.length !== 1 ? "s" : ""} ·{" "}
+                            {group.totalItems} items
+                          </span>
+                        </div>
+                        <div className="table-group-orders">
+                          {group.orders.map((order) =>
+                            renderOrderCard(order, status)
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
       </div>
 
       {/* Order Detail Modal */}

@@ -551,3 +551,226 @@
     display: none;
   }
 }
+/* View Toggle Button */
+.view-toggle-btn {
+  padding: 10px 18px;
+  background: #334155;
+  color: white;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-toggle-btn:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+.view-toggle-btn.active {
+  background: #3b82f6;
+  border-color: #2563eb;
+}
+
+/* Print Button */
+.print-btn {
+  padding: 6px 12px;
+  background: #64748b;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 8px;
+}
+
+.print-btn:hover {
+  background: #475569;
+  transform: scale(1.1);
+}
+
+/* Table Group (Batch View) */
+.table-group {
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.table-group-header {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.table-group-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f59e0b;
+}
+
+.table-group-count {
+  font-size: 13px;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.table-group-orders {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Enhanced Urgency Colors */
+.order-card.critical {
+  border-left: 5px solid #dc2626;
+  animation: pulse-critical 2s ease-in-out infinite;
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+}
+
+.order-card.warning {
+  border-left: 5px solid #f59e0b;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+}
+
+.order-card:not(.critical):not(.warning) {
+  border-left: 5px solid #22c55e;
+}
+
+@keyframes pulse-critical {
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.6);
+  }
+}
+
+/* Sound Toggle Enhancement */
+.sound-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #334155;
+  color: white;
+  border: 2px solid #475569;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sound-toggle:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+.sound-toggle.active {
+  background: #22c55e;
+  border-color: #16a34a;
+}
+
+.sound-icon {
+  font-size: 18px;
+}
+
+/* Delayed Order Visual Alert */
+.order-card.delayed-order {
+  background: linear-gradient(
+    135deg,
+    rgba(220, 38, 38, 0.15) 0%,
+    rgba(30, 41, 59, 1) 100%
+  );
+}
+
+.delayed-order::before {
+  content: "🚨";
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  animation: rotate-alert 2s linear infinite;
+}
+
+@keyframes rotate-alert {
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-15deg);
+  }
+  50% {
+    transform: rotate(0deg);
+  }
+  75% {
+    transform: rotate(15deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* Priority Badge Enhancement */
+.priority-badge {
+  background: #dc2626;
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse-badge 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-badge {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Timer Display Enhancement */
+.timer {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  margin: 10px 0;
+  color: #3b82f6;
+  font-family: "Courier New", monospace;
+}
+
+.order-card.critical .timer {
+  color: #dc2626;
+  animation: blink-timer 1s step-start infinite;
+}
+
+.order-card.warning .timer {
+  color: #f59e0b;
+}
+
+@keyframes blink-timer {
+  50% {
+    opacity: 0.5;
+  }
+}

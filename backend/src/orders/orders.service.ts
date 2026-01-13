@@ -738,13 +738,6 @@ export class OrdersService {
               restaurant_id: true,
             },
           },
-          customer: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
           order_items: {
             include: {
               menu_item: {
@@ -754,7 +747,7 @@ export class OrdersService {
                   price: true,
                 },
               },
-              order_item_modifiers: {
+              modifiers: {
                 include: {
                   modifier_option: {
                     select: {
@@ -807,8 +800,7 @@ export class OrdersService {
       'Time',
       'Restaurant ID',
       'Table Number',
-      'Customer Name',
-      'Customer Email',
+      'Customer ID',
       'Items Count',
       'Total Amount',
       'Status',
@@ -830,13 +822,12 @@ export class OrdersService {
         createdDate.toLocaleTimeString(),
         order.restaurant_id,
         order.table.table_number,
-        order.customer?.name || 'N/A',
-        order.customer?.email || 'N/A',
+        order.customer_id || 'N/A',
         itemsCount,
         order.total.toFixed(2),
         order.status,
         createdDate.toISOString(),
-        order.updated_at ? new Date(order.updated_at).toISOString() : 'N/A',
+        order.completed_at ? new Date(order.completed_at).toISOString() : 'N/A',
       ];
     });
 
