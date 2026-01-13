@@ -23,11 +23,12 @@ export class NotificationsService {
       },
     });
   }
-  async getUserNotifications(userId: string, limit = 20) {
+  async getUserNotifications(userId: string, limit = 20, offset = 0) {
     return this.prisma.notification.findMany({
       where: { user_id: userId },
       orderBy: { created_at: 'desc' },
       take: limit,
+      skip: offset,
     });
   }
 

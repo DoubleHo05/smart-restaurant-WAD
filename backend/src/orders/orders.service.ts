@@ -524,7 +524,11 @@ export class OrdersService {
     });
 
     // 🔔 EMIT REAL-TIME NOTIFICATIONS based on new status
-    await this.emitStatusChangeNotification(updatedOrder, order.status, updateDto);
+    await this.emitStatusChangeNotification(
+      updatedOrder,
+      order.status,
+      updateDto,
+    );
 
     return {
       message: `Order status updated from "${order.status}" to "${updateDto.status}"`,
@@ -580,7 +584,9 @@ export class OrdersService {
       });
     }
 
-    console.log(`✅ Notified ${waiters.length} waiters about order ${order.order_number}`);
+    console.log(
+      `✅ Notified ${waiters.length} waiters about order ${order.order_number}`,
+    );
   }
 
   /**
@@ -602,10 +608,16 @@ export class OrdersService {
         await this.notifyOrderServed(order);
         break;
       case OrderStatus.REJECTED:
-        await this.notifyOrderRejected(order, updateDto.reason || 'No reason provided');
+        await this.notifyOrderRejected(
+          order,
+          updateDto.reason || 'No reason provided',
+        );
         break;
       case OrderStatus.CANCELLED:
-        await this.notifyOrderCancelled(order, updateDto.reason || 'Cancelled by request');
+        await this.notifyOrderCancelled(
+          order,
+          updateDto.reason || 'Cancelled by request',
+        );
         break;
     }
   }
@@ -631,15 +643,23 @@ export class OrdersService {
     };
 
     // Emit to kitchen staff
-    this.notificationsGateway.emitToRole('kitchen', 'order_accepted', notification);
+    this.notificationsGateway.emitToRole(
+      'kitchen',
+      'order_accepted',
+      notification,
+    );
 
     // Notify customer if exists
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
-        order_id: order.id,
-        status: 'accepted',
-        message: 'Your order has been accepted and is being prepared',
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: order.id,
+          status: 'accepted',
+          message: 'Your order has been accepted and is being prepared',
+        },
+      );
     }
 
     console.log(`✅ Notified kitchen: Order ${order.order_number} accepted`);
@@ -666,11 +686,15 @@ export class OrdersService {
 
     // Notify customer
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
-        order_id: order.id,
-        status: 'ready',
-        message: 'Your order is ready!',
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: order.id,
+          status: 'ready',
+          message: 'Your order is ready!',
+        },
+      );
     }
 
     console.log(`✅ Notified waiter: Order ${order.order_number} ready`);
@@ -681,12 +705,16 @@ export class OrdersService {
    */
   private async notifyOrderServed(order: any) {
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
-        order_id: order.id,
-        status: 'served',
-        message: 'Your order has been served. Enjoy your meal!',
-        timestamp: new Date().toISOString(),
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: order.id,
+          status: 'served',
+          message: 'Your order has been served. Enjoy your meal!',
+          timestamp: new Date().toISOString(),
+        },
+      );
     }
 
     console.log(`✅ Notified customer: Order ${order.order_number} served`);
@@ -710,11 +738,19 @@ export class OrdersService {
 
     // Notify customer
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_rejected', notification);
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_rejected',
+        notification,
+      );
     }
 
     // Notify admins
-    this.notificationsGateway.emitToRole('admin', 'order_rejected', notification);
+    this.notificationsGateway.emitToRole(
+      'admin',
+      'order_rejected',
+      notification,
+    );
 
     console.log(`❌ Notified: Order ${order.order_number} rejected`);
   }
@@ -737,7 +773,11 @@ export class OrdersService {
 
     // Notify customer
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_cancelled', notification);
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_cancelled',
+        notification,
+      );
     }
 
     console.log(`⚠️ Notified: Order ${order.order_number} cancelled`);
