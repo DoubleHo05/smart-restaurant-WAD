@@ -17,6 +17,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrdersModule } from './orders/orders.module';
 import { ReportsModule } from './reports/reports.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ReportsModule } from './reports/reports.module';
     NotificationsModule,
     OrdersModule,
     ReportsModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
