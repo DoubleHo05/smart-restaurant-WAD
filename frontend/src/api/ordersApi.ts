@@ -9,56 +9,90 @@ const api = axios.create({
   },
 });
 
-export interface OrderItem {
-  id?: string;
-  menu_item_id: string;
-  name?: string;
-  quantity: number;
-  price?: number;
-  notes?: string;
-  modifiers?: Array<{
+// Add auth token interceptor
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Interfaces matching backend Prisma schema
+export interface OrderItemModifier {
+  id: string;
+  modifier_option_id: string;
+  price_adjustment: number;
+  modifier_option?: {
     id: string;
     name: string;
+    price_adjustment: number;
+  };
+}
+
+export interface OrderItem {
+  id: string;
+  menu_item_id: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  special_requests?: string;
+  menu_item?: {
+    id: string;
+    name: string;
+    description?: string;
     price: number;
-  }>;
+  };
+  modifiers?: OrderItemModifier[];
+}
+
+export interface Table {
+  id: string;
+  table_number: string;
+  location?: string;
 }
 
 export interface Order {
   id: string;
-  order_number?: string;
+  restaurant_id: string;
   table_id: string;
   customer_id?: string;
+  order_number: string;
   status: string;
-  total_price?: number;
-  tax?: number;
-  discount?: number;
-  special_instructions?: string;
-  items?: OrderItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  special_requests?: string;
   created_at: string;
-  updated_at?: string;
+  updated_at: string;
+  accepted_at?: string;
+  preparing_at?: string;
+  ready_at?: string;
+  served_at?: string;
+  completed_at?: string;
+  table?: Table;
+  order_items?: OrderItem[];
 }
 
 export interface GetOrdersParams {
   status?: string;
-  search?: string;
-  table?: string;
-  date?: string;
+  restaurant_id?: string;
+  start_date?: string;
+  end_date?: string;
   page?: number;
   limit?: number;
 }
 
 export interface OrdersResponse {
-  orders: Order[];
+  data: Order[];
   total: number;
-  page: number;
-  limit: number;
 }
 
 export const ordersApi = {
   // Get all orders with filters
   async getAll(params?: GetOrdersParams): Promise<OrdersResponse | Order[]> {
     try {
-      const response = await api.get("/orders", { params });
+      const response = await api.get("/api/orders", { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching orders:", error);
@@ -69,7 +103,7 @@ export const ordersApi = {
   // Get single order by ID
   async getById(id: string): Promise<Order> {
     try {
-      const response = await api.get(`/orders/${id}`);
+      const response = await api.get(`/api/orders/${id}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching order:", error);
@@ -85,7 +119,7 @@ export const ordersApi = {
     special_instructions?: string;
   }): Promise<Order> {
     try {
-      const response = await api.post("/orders", orderData);
+      const response = await api.post("/api/orders", orderData);
       return response.data;
     } catch (error) {
       console.error("Error creating order:", error);
@@ -96,7 +130,7 @@ export const ordersApi = {
   // Update order status
   async updateStatus(id: string, status: string): Promise<Order> {
     try {
-      const response = await api.patch(`/orders/${id}/status`, { status });
+      const response = await api.patch(`/api/orders/${id}/status`, { status });
       return response.data;
     } catch (error) {
       console.error("Error updating order status:", error);
@@ -107,7 +141,7 @@ export const ordersApi = {
   // Update order
   async update(id: string, orderData: Partial<Order>): Promise<Order> {
     try {
-      const response = await api.patch(`/orders/${id}`, orderData);
+      const response = await api.patch(`/api/orders/${id}`, orderData);
       return response.data;
     } catch (error) {
       console.error("Error updating order:", error);
@@ -118,7 +152,7 @@ export const ordersApi = {
   // Delete order
   async delete(id: string): Promise<void> {
     try {
-      await api.delete(`/orders/${id}`);
+      await api.delete(`/api/orders/${id}`);
     } catch (error) {
       console.error("Error deleting order:", error);
       throw error;
@@ -128,7 +162,7 @@ export const ordersApi = {
   // Get orders by table
   async getByTable(tableId: string): Promise<Order[]> {
     try {
-      const response = await api.get(`/orders/table/${tableId}`);
+      const response = await api.get(`/api/orders/table/${tableId}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching orders by table:", error);
@@ -139,7 +173,7 @@ export const ordersApi = {
   // Get orders by customer
   async getByCustomer(customerId: string): Promise<Order[]> {
     try {
-      const response = await api.get(`/orders/customer/${customerId}`);
+      const response = await api.get(`/api/orders/customer/${customerId}`);
       return response.data;
     } catch (error) {
       console.error("Error fetching orders by customer:", error);

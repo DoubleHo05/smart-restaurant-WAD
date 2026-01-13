@@ -163,7 +163,7 @@ export default function OrderDetailModal({
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="order-modal-overlay" onClick={onClose}>
         <div
           className="order-detail-modal"
           onClick={(e) => e.stopPropagation()}
@@ -389,7 +389,7 @@ export default function OrderDetailModal({
       {/* Reject Modal */}
       {showRejectModal && (
         <div
-          className="modal-overlay"
+          className="order-modal-overlay"
           onClick={() => setShowRejectModal(false)}
         >
           <div className="reject-modal" onClick={(e) => e.stopPropagation()}>

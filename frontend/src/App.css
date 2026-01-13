@@ -5,12 +5,12 @@
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --bg-main: #0f172a;
-  --bg-card: #1e293b;
-  --bg-hover: #334155;
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --border: #334155;
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-hover: #f1f5f9;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
 }
 
 * {
@@ -798,6 +798,11 @@ body {
   color: #856404;
 }
 
+.status-badge.accepted {
+  background: #cfe2ff;
+  color: #084298;
+}
+
 /* Action Buttons */
 .btn-action {
   padding: 6px 12px;
@@ -816,6 +821,15 @@ body {
 
 .btn-action.accept:hover {
   background: #229954;
+}
+
+.btn-action.preparing {
+  background: #8e44ad;
+  color: #ffffff;
+}
+
+.btn-action.preparing:hover {
+  background: #7d3c98;
 }
 
 .btn-action.ready {

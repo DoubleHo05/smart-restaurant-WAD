@@ -218,7 +218,6 @@ export class TablesService {
     const statusCounts = {
       available: tableStatuses.filter((t) => t.status === 'available').length,
       occupied: tableStatuses.filter((t) => t.status === 'occupied').length,
-      reserved: tableStatuses.filter((t) => t.status === 'reserved').length,
       total: tableStatuses.length,
     };
 

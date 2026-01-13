@@ -20,7 +20,13 @@ export default function OrderStatusBadge({
         return {
           className: "status-badge received",
           icon: "🔔",
-          label: "Received",
+          label: "Pending",
+        };
+      case "accepted":
+        return {
+          className: "status-badge accepted",
+          icon: "✓",
+          label: "Accepted",
         };
       case "preparing":
         return {
