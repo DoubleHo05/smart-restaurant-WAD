@@ -21,6 +21,7 @@ import ModifiersManagement from "./pages/admin/ModifiersManagement";
 import TableManagement from "./pages/admin/TableManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import SystemAdminPage from "./pages/admin/SystemAdminPage";
+import { ReportsPage } from "./pages/admin/ReportsPage";
 
 // Layout
 import AdminLayout from "./components/AdminLayout";
@@ -108,6 +109,14 @@ function App() {
                   element={
                     <AdminLayout>
                       <SystemAdminPage />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/reports"
+                  element={
+                    <AdminLayout>
+                      <ReportsPage />
                     </AdminLayout>
                   }
                 />

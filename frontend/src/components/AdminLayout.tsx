@@ -78,8 +78,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="nav-icon">�</span>
             Users
           </Link>
-          <Link
-            to="/admin/system"
+          <Link            to="/admin/reports"
+            className={`nav-link ${isActive("/admin/reports") ? "active" : ""}`}
+          >
+            <span className="nav-icon">📈</span>
+            Reports
+          </Link>
+          <Link            to="/admin/system"
             className={`nav-link ${isActive("/admin/system") ? "active" : ""}`}
           >
             <span className="nav-icon">⚙️</span>
