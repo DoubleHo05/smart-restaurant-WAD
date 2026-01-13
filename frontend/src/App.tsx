@@ -36,119 +36,122 @@ function App() {
             <NotificationsProvider>
               <Toaster position="top-right" />
               <Routes>
-            {/* Public customer routes */}
-            <Route path="/qr/:token" element={<QrLanding />} />
-            <Route path="/customer/menu" element={<CustomerMenu />} />
-            <Route path="/customer/login" element={<CustomerLogin />} />
-            <Route path="/customer/register" element={<CustomerRegister />} />
+                {/* Public customer routes */}
+                <Route path="/qr/:token" element={<QrLanding />} />
+                <Route path="/customer/menu" element={<CustomerMenu />} />
+                <Route path="/customer/login" element={<CustomerLogin />} />
+                <Route
+                  path="/customer/register"
+                  element={<CustomerRegister />}
+                />
 
-            {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route
-              path="/admin/dashboard"
-              element={
-                <AdminLayout>
-                  <Dashboard />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/menu"
-              element={
-                <AdminLayout>
-                  <Menu />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/menu-items"
-              element={
-                <AdminLayout>
-                  <MenuItemsManagement />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/categories"
-              element={
-                <AdminLayout>
-                  <CategoriesManagement />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/modifiers"
-              element={
-                <AdminLayout>
-                  <ModifiersManagement />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/tables"
-              element={
-                <AdminLayout>
-                  <TableManagement />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/users"
-              element={
-                <AdminLayout>
-                  <UserManagement />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="/admin/system"
-              element={
-                <AdminLayout>
-                  <SystemAdminPage />
-                </AdminLayout>
-              }
-            />
+                {/* Admin routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <AdminLayout>
+                      <Dashboard />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/menu"
+                  element={
+                    <AdminLayout>
+                      <Menu />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/menu-items"
+                  element={
+                    <AdminLayout>
+                      <MenuItemsManagement />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/categories"
+                  element={
+                    <AdminLayout>
+                      <CategoriesManagement />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/modifiers"
+                  element={
+                    <AdminLayout>
+                      <ModifiersManagement />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/tables"
+                  element={
+                    <AdminLayout>
+                      <TableManagement />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/users"
+                  element={
+                    <AdminLayout>
+                      <UserManagement />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/system"
+                  element={
+                    <AdminLayout>
+                      <SystemAdminPage />
+                    </AdminLayout>
+                  }
+                />
 
-            {/* Default redirect - shows both options */}
-            <Route
-              path="/"
-              element={
-                <div style={{ padding: "40px", textAlign: "center" }}>
-                  <h1>Smart Restaurant</h1>
-                  <div style={{ marginTop: "30px" }}>
-                    <a
-                      href="/customer/login"
-                      style={{
-                        margin: "10px",
-                        padding: "10px 20px",
-                        background: "#007bff",
-                        color: "white",
-                        textDecoration: "none",
-                        borderRadius: "5px",
-                        display: "inline-block",
-                      }}
-                    >
-                      Customer Login
-                    </a>
-                    <a
-                      href="/admin/login"
-                      style={{
-                        margin: "10px",
-                        padding: "10px 20px",
-                        background: "#28a745",
-                        color: "white",
-                        textDecoration: "none",
-                        borderRadius: "5px",
-                        display: "inline-block",
-                      }}
-                    >
-                      Admin Login
-                    </a>
-                  </div>
-                </div>
-              }
-            />
-          </Routes>
+                {/* Default redirect - shows both options */}
+                <Route
+                  path="/"
+                  element={
+                    <div style={{ padding: "40px", textAlign: "center" }}>
+                      <h1>Smart Restaurant</h1>
+                      <div style={{ marginTop: "30px" }}>
+                        <a
+                          href="/customer/login"
+                          style={{
+                            margin: "10px",
+                            padding: "10px 20px",
+                            background: "#007bff",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "5px",
+                            display: "inline-block",
+                          }}
+                        >
+                          Customer Login
+                        </a>
+                        <a
+                          href="/admin/login"
+                          style={{
+                            margin: "10px",
+                            padding: "10px 20px",
+                            background: "#28a745",
+                            color: "white",
+                            textDecoration: "none",
+                            borderRadius: "5px",
+                            display: "inline-block",
+                          }}
+                        >
+                          Admin Login
+                        </a>
+                      </div>
+                    </div>
+                  }
+                />
+              </Routes>
             </NotificationsProvider>
           </SocketProvider>
         </RestaurantProvider>
