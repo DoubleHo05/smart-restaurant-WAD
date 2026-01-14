@@ -14,6 +14,10 @@ import { MenuItemsModule } from './menu-items/menu-items.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+import { CustomersModule } from './customers/customers.module';
+import { CartModule } from './cart/cart.module';
+import { OrdersModule } from './orders/orders.module';
+import { BillRequestsModule } from './bill-requests/bill-requests.module';
 
 @Module({
   imports: [
@@ -32,8 +36,12 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
     MenuItemsModule,
     AuthModule,
     UsersModule,
+    CustomersModule,
+    CartModule,
+    OrdersModule,
+    BillRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
