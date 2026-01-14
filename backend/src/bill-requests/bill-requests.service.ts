@@ -5,10 +5,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBillRequestDto } from './dto/create-bill-request.dto';
+import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class BillRequestsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private paymentsService: PaymentsService,
+  ) {}
 
   /**
    * Customer tạo bill request
@@ -199,7 +203,6 @@ export class BillRequestsService {
 
   /**
    * Waiter accept bill request
-   * TODO: Phase 3 - Integrate với PaymentsService
    */
   async acceptBillRequest(billRequestId: string, waiterId: string) {
     const billRequest = await this.prisma.billRequest.findUnique({
@@ -215,7 +218,7 @@ export class BillRequestsService {
       throw new BadRequestException('Bill request đã được xử lý');
     }
 
-    // Update status
+    // Update status sang accepted
     await this.prisma.billRequest.update({
       where: { id: billRequestId },
       data: {
@@ -225,11 +228,28 @@ export class BillRequestsService {
       },
     });
 
-    // TODO: Phase 3 - Call PaymentsService.initiatePaymentFromBillRequest()
+    // Tạo payment và generate QR/payment URL
+    const paymentResult =
+      await this.paymentsService.initiatePaymentFromBillRequest({
+        bill_request_id: billRequestId,
+        payment_method: billRequest.payment_method_code,
+        amount: Number(billRequest.subtotal),
+        tips_amount: Number(billRequest.tips_amount),
+        order_ids: billRequest.order_ids as string[],
+        restaurant_id: billRequest.restaurant_id,
+      });
 
     return {
       bill_request_id: billRequestId,
-      message: 'Bill request đã được chấp nhận',
+      payment_id: paymentResult.payment_id,
+      payment_method: billRequest.payment_method_code,
+      subtotal: Number(billRequest.subtotal),
+      tips_amount: Number(billRequest.tips_amount),
+      total_amount: Number(billRequest.total_amount),
+      transaction_id: paymentResult.transaction_id,
+      qr_code: paymentResult.qr_code,
+      payment_url: paymentResult.payment_url,
+      message: 'Bill request đã được chấp nhận. Khách hàng có thể thanh toán.',
     };
   }
 
