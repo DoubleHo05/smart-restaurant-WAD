@@ -116,8 +116,14 @@ function Payment() {
             navigate(`/customer/payment-status/${billRequest.id}`);
         } catch (err: any) {
             console.error('Error creating bill request:', err);
-            setError(err.response?.data?.message || 'Failed to create bill request');
-            setSubmitting(false);
+
+            // For demo purposes: navigate to demo page even if API fails
+            console.log('⚠️ API failed, navigating to demo page for testing');
+            navigate('/customer/payment-status/demo');
+
+            // Uncomment below to show error instead
+            // setError(err.response?.data?.message || 'Failed to create bill request');
+            // setSubmitting(false);
         }
     };
 
