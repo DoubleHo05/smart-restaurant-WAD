@@ -19,6 +19,7 @@ import { OrdersModule } from './orders/orders.module';
 import { ReportsModule } from './reports/reports.module';
 import { PaymentsModule } from './payments/payments.module';
 import { BillRequestsModule } from './bill-requests/bill-requests.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { BillRequestsModule } from './bill-requests/bill-requests.module';
     ReportsModule,
     PaymentsModule,
     BillRequestsModule,
+    SuperAdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
