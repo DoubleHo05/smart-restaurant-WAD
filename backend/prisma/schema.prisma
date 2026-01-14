@@ -85,6 +85,7 @@ model MenuItem {
   photos              MenuItemPhoto[]
   category            MenuCategory            @relation(fields: [category_id], references: [id])
   order_items         OrderItem[]
+  reviews             reviews[]
 
   @@index([restaurant_id])
   @@index([category_id])
@@ -172,9 +173,11 @@ model User {
   last_login_at                        DateTime?       @db.Timestamp(6)
   bill_requests                        bill_requests[]
   notifications                        notifications[]
+  orders                               Order[]
   payments_payments_received_byTousers payments[]      @relation("payments_received_byTousers")
   payments_payments_refunded_byTousers payments[]      @relation("payments_refunded_byTousers")
   restaurants                          Restaurant[]
+  reviews                              reviews[]
   user_roles                           UserRole[]
 
   @@index([email])
@@ -211,7 +214,9 @@ model Order {
   ready_at         DateTime?   @db.Timestamp(6)
   served_at        DateTime?   @db.Timestamp(6)
   completed_at     DateTime?   @db.Timestamp(6)
+  waiter_id        String?     @db.Uuid
   order_items      OrderItem[]
+  waiter           User?       @relation(fields: [waiter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_orders_waiter")
   table            Table       @relation(fields: [table_id], references: [id])
   payments         payments[]
 
@@ -220,6 +225,7 @@ model Order {
   @@index([customer_id])
   @@index([status])
   @@index([created_at])
+  @@index([waiter_id], map: "idx_orders_waiter_id")
   @@map("orders")
 }
 
@@ -389,6 +395,21 @@ model bill_requests {
   @@index([restaurant_id, status], map: "idx_bill_requests_restaurant_status")
   @@index([status], map: "idx_bill_requests_status")
   @@index([table_id], map: "idx_bill_requests_table")
+}
+
+model reviews {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menu_item_id String   @db.Uuid
+  user_id      String   @db.Uuid
+  rating       Int      @default(5)
+  comment      String?
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @db.Timestamp(6)
+  menu_items   MenuItem @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+  users        User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([menu_item_id])
+  @@index([user_id])
 }
 
 enum OrderStatus {
