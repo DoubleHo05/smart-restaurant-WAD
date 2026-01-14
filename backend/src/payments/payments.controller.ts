@@ -8,6 +8,7 @@ import {
   Res,
   HttpStatus,
   UseGuards,
+  Param,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -24,6 +25,7 @@ import { MoMoCallbackDto } from './dto/momo-callback.dto';
 import { ZaloPayCallbackDto } from './dto/zalopay-callback.dto';
 import { VNPayIPNDto } from './dto/vnpay-ipn.dto';
 import { CashConfirmDto } from './dto/cash-confirm.dto';
+import { ListPaymentsDto } from './dto/list-payments.dto';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -152,5 +154,60 @@ export class PaymentsController {
       waiter_id: (req as any).user?.userId || dto.waiter_id,
     };
     return this.paymentsService.confirmCashPayment(payload);
+  }
+
+  /**
+   * List payments with filters (Admin only)
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all payments with filters (Admin)' })
+  @ApiResponse({ status: 200, description: 'Payments list retrieved' })
+  async listPayments(@Query() dto: ListPaymentsDto) {
+    return this.paymentsService.listPayments(dto);
+  }
+
+  /**
+   * Get payment detail by ID
+   */
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment details by ID' })
+  @ApiResponse({ status: 200, description: 'Payment details retrieved' })
+  @ApiResponse({ status: 404, description: 'Payment not found' })
+  async getPaymentDetail(@Param('id') id: string) {
+    return this.paymentsService.getPaymentDetail(id);
+  }
+
+  /**
+   * Analytics: Revenue by payment method
+   */
+  @Get('analytics/revenue-by-method')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get revenue breakdown by payment method' })
+  @ApiResponse({ status: 200, description: 'Revenue analytics retrieved' })
+  async getRevenueByMethod(
+    @Query('start_date') startDate: string,
+    @Query('end_date') endDate: string,
+  ) {
+    return this.paymentsService.getRevenueByMethod(startDate, endDate);
+  }
+
+  /**
+   * Analytics: Success rate by payment method
+   */
+  @Get('analytics/success-rate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get success rate by payment method' })
+  @ApiResponse({ status: 200, description: 'Success rate analytics retrieved' })
+  async getSuccessRate() {
+    return this.paymentsService.getSuccessRateByMethod();
   }
 }

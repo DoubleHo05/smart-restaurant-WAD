@@ -9,6 +9,7 @@ import { ZaloPayService } from './zalopay/zalopay.service';
 import { VnPayService } from './vnpay/vnpay.service';
 import { CashService } from './cash/cash.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { ListPaymentsDto } from './dto/list-payments.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -450,6 +451,331 @@ export class PaymentsService {
       payment_id,
       change_amount: change,
       message: 'Cash payment confirmed',
+    };
+  }
+
+  /**
+   * List payments with filters (Admin only)
+   */
+  async listPayments(dto: ListPaymentsDto) {
+    const {
+      page = 1,
+      limit = 20,
+      search,
+      status,
+      method,
+      start_date,
+      end_date,
+      restaurant_id,
+    } = dto;
+
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: any = {};
+
+    if (search) {
+      // Only search on text fields (not UUID)
+      where.OR = [
+        {
+          gateway_trans_id: {
+            contains: search,
+            mode: 'insensitive' as any,
+          },
+        },
+        {
+          gateway_request_id: {
+            contains: search,
+            mode: 'insensitive' as any,
+          },
+        },
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (method) {
+      where.payment_methods = {
+        code: method,
+      };
+    }
+
+    if (start_date || end_date) {
+      where.created_at = {};
+      if (start_date) {
+        where.created_at.gte = new Date(start_date);
+      }
+      if (end_date) {
+        const endDateTime = new Date(end_date);
+        endDateTime.setHours(23, 59, 59, 999);
+        where.created_at.lte = endDateTime;
+      }
+    }
+
+    // Query
+    const [payments, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          payment_methods: {
+            select: {
+              code: true,
+              name: true,
+              logo_url: true,
+            },
+          },
+          bill_requests: {
+            select: {
+              id: true,
+              table_id: true,
+              total_amount: true,
+              status: true,
+              tables: {
+                select: {
+                  table_number: true,
+                },
+              },
+            },
+          },
+          users_payments_received_byTousers: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          created_at: 'desc',
+        },
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+
+    return {
+      payments,
+      pagination: {
+        page,
+        limit,
+        total,
+        total_pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Get payment details
+   */
+  async getPaymentDetail(paymentId: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: paymentId },
+      include: {
+        payment_methods: {
+          select: {
+            code: true,
+            name: true,
+            logo_url: true,
+            description: true,
+          },
+        },
+        bill_requests: {
+          include: {
+            tables: {
+              select: {
+                table_number: true,
+                id: true,
+              },
+            },
+          },
+        },
+        users_payments_received_byTousers: {
+          select: {
+            id: true,
+            full_name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    // Get all orders from bill_request's order_ids
+    if (payment.bill_requests?.order_ids) {
+      const orderIds = payment.bill_requests.order_ids as string[];
+      const orders = await this.prisma.order.findMany({
+        where: {
+          id: { in: orderIds },
+        },
+        include: {
+          order_items: {
+            include: {
+              menu_item: {
+                select: {
+                  name: true,
+                  price: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        ...payment,
+        orders,
+      };
+    }
+
+    return payment;
+  }
+
+  /**
+   * Analytics: Revenue by payment method
+   */
+  async getRevenueByMethod(startDate: string, endDate: string) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: 'completed',
+        completed_at: {
+          gte: start,
+          lte: end,
+        },
+      },
+      include: {
+        payment_methods: true,
+      },
+    });
+
+    // Group by method
+    const methodStats: Record<
+      string,
+      {
+        method: string;
+        code: string;
+        transactions: number;
+        revenue: number;
+        avg_transaction: number;
+      }
+    > = {};
+
+    payments.forEach((payment) => {
+      const method = payment.payment_methods.name;
+      const code = payment.payment_methods.code;
+
+      if (!methodStats[code]) {
+        methodStats[code] = {
+          method,
+          code,
+          transactions: 0,
+          revenue: 0,
+          avg_transaction: 0,
+        };
+      }
+
+      methodStats[code].transactions++;
+      methodStats[code].revenue += Number(payment.amount);
+    });
+
+    // Calculate averages
+    Object.keys(methodStats).forEach((code) => {
+      const stats = methodStats[code];
+      stats.avg_transaction =
+        stats.transactions > 0 ? stats.revenue / stats.transactions : 0;
+    });
+
+    const totalRevenue = payments.reduce(
+      (sum, p) => sum + Number(p.amount),
+      0,
+    );
+
+    return {
+      period: {
+        start: startDate,
+        end: endDate,
+      },
+      methods: Object.values(methodStats),
+      total_revenue: totalRevenue,
+      total_transactions: payments.length,
+    };
+  }
+
+  /**
+   * Analytics: Success rate by method
+   */
+  async getSuccessRateByMethod() {
+    const payments = await this.prisma.payment.findMany({
+      include: {
+        payment_methods: true,
+      },
+    });
+
+    const methodStats: Record<
+      string,
+      {
+        method: string;
+        code: string;
+        success: number;
+        failed: number;
+        pending: number;
+        total: number;
+        success_rate: number;
+      }
+    > = {};
+
+    payments.forEach((payment) => {
+      const code = payment.payment_methods.code;
+      const method = payment.payment_methods.name;
+
+      if (!methodStats[code]) {
+        methodStats[code] = {
+          method,
+          code,
+          success: 0,
+          failed: 0,
+          pending: 0,
+          total: 0,
+          success_rate: 0,
+        };
+      }
+
+      methodStats[code].total++;
+
+      if (payment.status === 'completed') {
+        methodStats[code].success++;
+      } else if (payment.status === 'failed') {
+        methodStats[code].failed++;
+      } else if (payment.status === 'pending') {
+        methodStats[code].pending++;
+      }
+    });
+
+    // Calculate success rates
+    Object.keys(methodStats).forEach((code) => {
+      const stats = methodStats[code];
+      const completedOrFailed = stats.success + stats.failed;
+      stats.success_rate =
+        completedOrFailed > 0 ? (stats.success / completedOrFailed) * 100 : 0;
+    });
+
+    return {
+      methods: Object.values(methodStats),
+      overall: {
+        total_payments: payments.length,
+        completed: payments.filter((p) => p.status === 'completed').length,
+        failed: payments.filter((p) => p.status === 'failed').length,
+        pending: payments.filter((p) => p.status === 'pending').length,
+      },
     };
   }
 }
