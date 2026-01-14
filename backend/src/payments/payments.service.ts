@@ -171,7 +171,7 @@ export class PaymentsService {
       throw new NotFoundException('Payment not found');
     }
 
-    // 3. Update payment status 
+    // 3. Update payment status
     const status = data.resultCode === 0 ? 'completed' : 'failed';
 
     await this.prisma.payment.update({
@@ -190,6 +190,61 @@ export class PaymentsService {
     }
 
     return { status, payment_id: payment.id };
+  }
+
+  async handleZaloPayCallback(data: {
+    app_id: string;
+    app_trans_id: string;
+    app_time: number;
+    app_user: string;
+    amount: number;
+    embed_data: string;
+    item: string;
+    zp_trans_id: string;
+    server_time: number;
+    channel: number;
+    merchant_user_id: string;
+    user_fee_amount: number;
+    discount_amount: number;
+    status: number;
+    mac: string;
+  }) {
+    // 1. Verify MAC
+    const isValid = this.zaloPayService.verifyMAC(data);
+    if (!isValid) {
+      throw new BadRequestException('Invalid ZaloPay MAC');
+    }
+
+    // 2. Parse embed_data để lấy payment_id
+    const embedData = JSON.parse(data.embed_data);
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: embedData.payment_id },
+      include: { bill_requests: true },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    // 3. Update payment status (dùng đúng column names)
+    const status = data.status === 1 ? 'completed' : 'failed';
+
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status,
+        gateway_trans_id: data.zp_trans_id.toString(),
+        completed_at: status === 'completed' ? new Date() : null,
+        failed_reason: status === 'failed' ? 'Payment failed' : null,
+      },
+    });
+
+    // 4. Nếu thành công, complete bill
+    if (status === 'completed' && payment.bill_request_id) {
+      await this.completeBillPayment(payment.bill_request_id);
+    }
+
+    return { return_code: 1, return_message: 'success' };
   }
 
   /**
