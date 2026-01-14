@@ -14,6 +14,7 @@ import CustomerRegister from "./pages/customer/Register";
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
 import Dashboard from "./pages/admin/Dashboard";
+import UnifiedDashboard from "./pages/admin/UnifiedDashboard";
 import Menu from "./pages/admin/Menu";
 import MenuItemsManagement from "./pages/admin/MenuItemsManagement";
 import CategoriesManagement from "./pages/admin/CategoriesManagement";
@@ -50,6 +51,14 @@ function App() {
                 <Route path="/admin/login" element={<AdminLogin />} />
                 <Route
                   path="/admin/dashboard"
+                  element={
+                    <AdminLayout>
+                      <UnifiedDashboard />
+                    </AdminLayout>
+                  }
+                />
+                <Route
+                  path="/admin/old-dashboard"
                   element={
                     <AdminLayout>
                       <Dashboard />

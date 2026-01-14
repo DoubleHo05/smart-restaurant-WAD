@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "./AdminLayout.css";
@@ -10,7 +10,14 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading, isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/admin/login", { replace: true });
+    }
+  }, [isLoading, isAuthenticated, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -18,6 +25,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        fontSize: "18px",
+        color: "#7f8c8d",
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="admin-layout">
@@ -104,9 +132,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="admin-info">
               <div className="admin-name">{user?.full_name || user?.email}</div>
               <div className="admin-role">
-                {user?.roles?.includes("super_admin")
+                {user?.role === "super_admin" || user?.roles?.includes("super_admin")
                   ? "Super Admin"
-                  : user?.roles?.includes("admin")
+                  : user?.role === "admin" || user?.roles?.includes("admin")
                   ? "Restaurant Admin"
                   : "Staff"}
               </div>

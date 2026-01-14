@@ -371,76 +371,90 @@ export class ReportsService {
     const start = startDate ? new Date(startDate) : subDays(new Date(), 30);
     const end = endDate ? new Date(endDate) : new Date();
 
-    // Get all orders with waiter info
-    const orders = await this.prisma.order.findMany({
-      where: {
-        restaurant_id: restaurantId,
-        waiter_id: { not: null },
-        status: { in: [OrderStatus.completed, OrderStatus.served] },
-        created_at: {
-          gte: start,
-          lte: end,
-        },
-      },
-      include: {
-        waiter: {
-          select: {
-            id: true,
-            full_name: true,
-            email: true,
+    try {
+      // Get all orders with waiter info
+      const orders = await this.prisma.order.findMany({
+        where: {
+          restaurant_id: restaurantId,
+          waiter_id: { not: null },
+          status: { in: [OrderStatus.completed, OrderStatus.served] },
+          created_at: {
+            gte: start,
+            lte: end,
           },
         },
-      },
-    });
+        include: {
+          waiter: {
+            select: {
+              id: true,
+              full_name: true,
+              email: true,
+            },
+          },
+        },
+      });
 
-    // Group by waiter
-    const waiterStats = new Map<
-      string,
-      {
-        name: string;
-        email: string;
-        orders: number;
-        revenue: number;
-        avg_order_value: number;
+      // Group by waiter
+      const waiterStats = new Map<
+        string,
+        {
+          name: string;
+          email: string;
+          orders: number;
+          revenue: number;
+          avg_order_value: number;
+        }
+      >();
+
+      for (const order of orders) {
+        if (!order.waiter) continue;
+
+        const waiterId = order.waiter.id;
+        const current = waiterStats.get(waiterId) || {
+          name: order.waiter.full_name || 'Unknown',
+          email: order.waiter.email,
+          orders: 0,
+          revenue: 0,
+          avg_order_value: 0,
+        };
+
+        current.orders += 1;
+        current.revenue += Number(order.total);
+
+        waiterStats.set(waiterId, current);
       }
-    >();
 
-    for (const order of orders) {
-      if (!order.waiter) continue;
+      // Calculate averages
+      const performanceList = Array.from(waiterStats.values()).map((waiter) => ({
+        ...waiter,
+        avg_order_value: waiter.orders > 0 ? waiter.revenue / waiter.orders : 0,
+      }));
 
-      const waiterId = order.waiter.id;
-      const current = waiterStats.get(waiterId) || {
-        name: order.waiter.full_name || 'Unknown',
-        email: order.waiter.email,
-        orders: 0,
-        revenue: 0,
-        avg_order_value: 0,
+      // Sort by revenue
+      performanceList.sort((a, b) => b.revenue - a.revenue);
+
+      return {
+        period: {
+          start: format(start, 'yyyy-MM-dd'),
+          end: format(end, 'yyyy-MM-dd'),
+        },
+        waiters: performanceList,
+        total_waiters: performanceList.length,
+        total_revenue: performanceList.reduce((sum, w) => sum + w.revenue, 0),
       };
-
-      current.orders += 1;
-      current.revenue += Number(order.total);
-
-      waiterStats.set(waiterId, current);
+    } catch (error) {
+      // If waiter_id column doesn't exist or relation error, return empty data
+      console.warn('Waiter performance query failed:', error.message);
+      return {
+        period: {
+          start: format(start, 'yyyy-MM-dd'),
+          end: format(end, 'yyyy-MM-dd'),
+        },
+        waiters: [],
+        total_waiters: 0,
+        total_revenue: 0,
+      };
     }
-
-    // Calculate averages
-    const performanceList = Array.from(waiterStats.values()).map((waiter) => ({
-      ...waiter,
-      avg_order_value: waiter.orders > 0 ? waiter.revenue / waiter.orders : 0,
-    }));
-
-    // Sort by revenue
-    performanceList.sort((a, b) => b.revenue - a.revenue);
-
-    return {
-      period: {
-        start: format(start, 'yyyy-MM-dd'),
-        end: format(end, 'yyyy-MM-dd'),
-      },
-      waiters: performanceList,
-      total_waiters: performanceList.length,
-      total_revenue: performanceList.reduce((sum, w) => sum + w.revenue, 0),
-    };
   }
 
   /**

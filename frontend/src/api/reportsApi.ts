@@ -5,6 +5,11 @@ import type {
   OrdersByStatus,
   DashboardSummary,
   AveragePrepTimeData,
+  RevenueByCategoryResponse,
+  WaiterPerformanceResponse,
+  KitchenEfficiencyResponse,
+  CustomerRetentionResponse,
+  PeakHoursResponse,
 } from "../types/reports.types";
 
 export const reportsApi = {
@@ -91,6 +96,105 @@ export const reportsApi = {
       {
         params: {
           restaurant_id: restaurantId,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // ============================================
+  // ADVANCED REPORTS (Task 3.4)
+  // ============================================
+
+  // GET /reports/revenue-by-category - Doanh thu theo danh mục
+  getRevenueByCategory: async (
+    restaurantId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<RevenueByCategoryResponse> => {
+    const response = await axiosInstance.get<RevenueByCategoryResponse>(
+      "/reports/revenue-by-category",
+      {
+        params: {
+          restaurant_id: restaurantId,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // GET /reports/waiter-performance - Hiệu suất phục vụ
+  getWaiterPerformance: async (
+    restaurantId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<WaiterPerformanceResponse> => {
+    const response = await axiosInstance.get<WaiterPerformanceResponse>(
+      "/reports/waiter-performance",
+      {
+        params: {
+          restaurant_id: restaurantId,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // GET /reports/kitchen-efficiency - Hiệu suất bếp
+  getKitchenEfficiency: async (
+    restaurantId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<KitchenEfficiencyResponse> => {
+    const response = await axiosInstance.get<KitchenEfficiencyResponse>(
+      "/reports/kitchen-efficiency",
+      {
+        params: {
+          restaurant_id: restaurantId,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // GET /reports/customer-retention - Khách hàng quay lại
+  getCustomerRetention: async (
+    restaurantId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<CustomerRetentionResponse> => {
+    const response = await axiosInstance.get<CustomerRetentionResponse>(
+      "/reports/customer-retention",
+      {
+        params: {
+          restaurant_id: restaurantId,
+          start_date: startDate,
+          end_date: endDate,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  // GET /reports/peak-hours - Giờ cao điểm
+  getPeakHours: async (
+    restaurantId: string,
+    startDate?: string,
+    endDate?: string
+  ): Promise<PeakHoursResponse> => {
+    const response = await axiosInstance.get<PeakHoursResponse>(
+      "/reports/peak-hours",
+      {
+        params: {
+          restaurant_id: restaurantId,
+          start_date: startDate,
+          end_date: endDate,
         },
       }
     );

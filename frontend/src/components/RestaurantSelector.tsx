@@ -2,15 +2,19 @@ import { useRestaurant } from "../contexts/RestaurantContext";
 import type { Restaurant } from "../types/restaurant.types";
 
 interface RestaurantSelectorProps {
-  selectedRestaurant: Restaurant | null;
-  onSelectRestaurant: (restaurant: Restaurant | null) => void;
+  selectedRestaurant?: Restaurant | null;
+  onSelectRestaurant?: (restaurant: Restaurant | null) => void;
 }
 
 export default function RestaurantSelector({
-  selectedRestaurant,
-  onSelectRestaurant,
-}: RestaurantSelectorProps) {
-  const { restaurants, loading } = useRestaurant();
+  selectedRestaurant: propSelectedRestaurant,
+  onSelectRestaurant: propOnSelectRestaurant,
+}: RestaurantSelectorProps = {}) {
+  const { restaurants, loading, selectedRestaurant: contextSelectedRestaurant, setSelectedRestaurant } = useRestaurant();
+
+  // Use props if provided (for backward compatibility), otherwise use context
+  const selectedRestaurant = propSelectedRestaurant !== undefined ? propSelectedRestaurant : contextSelectedRestaurant;
+  const handleSelect = propOnSelectRestaurant || setSelectedRestaurant;
 
   if (loading) {
     return (
@@ -45,7 +49,7 @@ export default function RestaurantSelector({
         value={selectedRestaurant?.id || ""}
         onChange={(e) => {
           const restaurant = restaurants.find((r) => r.id === e.target.value);
-          onSelectRestaurant(restaurant || null);
+          handleSelect(restaurant || null);
         }}
         style={{
           width: "100%",
