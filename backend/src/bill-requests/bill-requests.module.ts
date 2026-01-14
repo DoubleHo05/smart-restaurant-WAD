@@ -4,6 +4,7 @@ import { BillRequestsService } from './bill-requests.service';
 
 @Module({
   controllers: [BillRequestsController],
-  providers: [BillRequestsService]
+  providers: [BillRequestsService],
+  exports: [BillRequestsService],
 })
 export class BillRequestsModule {}
