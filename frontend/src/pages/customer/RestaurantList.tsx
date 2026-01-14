@@ -106,32 +106,32 @@ const RestaurantList: React.FC = () => {
               <div className="user-name">{user?.full_name || user?.email || 'Guest'}</div>
             </div>
           </div>
-          
+
           {/* User Menu */}
           <div className="user-menu" ref={menuRef}>
-            <button 
-              className="menu-toggle-btn" 
+            <button
+              className="menu-toggle-btn"
               onClick={() => setMenuOpen(!menuOpen)}
               title="Menu"
             >
               <span>☰</span>
             </button>
-            
+
             {menuOpen && (
               <div className="menu-dropdown">
                 {isRegisteredUser() ? (
                   <>
-                    <button 
+                    <button
                       className="menu-item"
                       onClick={() => {
                         setMenuOpen(false);
-                        navigate('/customer/profile');
+                        navigate('/customer/dashboard-profile');
                       }}
                     >
                       <span className="menu-icon">👤</span>
                       Profile
                     </button>
-                    <button 
+                    <button
                       className="menu-item"
                       onClick={() => {
                         setMenuOpen(false);
@@ -142,7 +142,7 @@ const RestaurantList: React.FC = () => {
                       Order History
                     </button>
                     <div className="menu-divider"></div>
-                    <button 
+                    <button
                       className="menu-item menu-item-danger"
                       onClick={() => {
                         setMenuOpen(false);
@@ -154,7 +154,7 @@ const RestaurantList: React.FC = () => {
                     </button>
                   </>
                 ) : (
-                  <button 
+                  <button
                     className="menu-item"
                     onClick={() => {
                       setMenuOpen(false);
