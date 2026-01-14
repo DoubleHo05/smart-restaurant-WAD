@@ -22,6 +22,10 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  session_id?: string;
+
+  @IsOptional()
+  @IsString()
   special_requests?: string;
 
   @IsArray()
