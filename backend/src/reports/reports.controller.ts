@@ -103,4 +103,105 @@ export class ReportsController {
 
     return this.reportsService.getDashboardSummary(restaurantId);
   }
+
+  /**
+   * GET /reports/revenue-by-category?restaurant_id=xxx&start_date=2026-01-01&end_date=2026-01-31
+   * Task 3.4 - Advanced Reports
+   */
+  @Get('revenue-by-category')
+  async getRevenueByCategory(
+    @Query('restaurant_id') restaurantId: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    return this.reportsService.getRevenueByCategory(
+      restaurantId,
+      startDate,
+      endDate,
+    );
+  }
+
+  /**
+   * GET /reports/waiter-performance?restaurant_id=xxx&start_date=2026-01-01&end_date=2026-01-31
+   * Task 3.4 - Advanced Reports
+   */
+  @Get('waiter-performance')
+  async getWaiterPerformance(
+    @Query('restaurant_id') restaurantId: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    return this.reportsService.getWaiterPerformance(
+      restaurantId,
+      startDate,
+      endDate,
+    );
+  }
+
+  /**
+   * GET /reports/kitchen-efficiency?restaurant_id=xxx&start_date=2026-01-01&end_date=2026-01-31
+   * Task 3.4 - Advanced Reports
+   */
+  @Get('kitchen-efficiency')
+  async getKitchenEfficiency(
+    @Query('restaurant_id') restaurantId: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    return this.reportsService.getKitchenEfficiency(
+      restaurantId,
+      startDate,
+      endDate,
+    );
+  }
+
+  /**
+   * GET /reports/customer-retention?restaurant_id=xxx&start_date=2026-01-01&end_date=2026-01-31
+   * Task 3.4 - Advanced Reports
+   */
+  @Get('customer-retention')
+  async getCustomerRetention(
+    @Query('restaurant_id') restaurantId: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    return this.reportsService.getCustomerRetention(
+      restaurantId,
+      startDate,
+      endDate,
+    );
+  }
+
+  /**
+   * GET /reports/peak-hours?restaurant_id=xxx&start_date=2026-01-01&end_date=2026-01-31
+   * Task 3.4 - Advanced Reports
+   */
+  @Get('peak-hours')
+  async getPeakHours(
+    @Query('restaurant_id') restaurantId: string,
+    @Query('start_date') startDate?: string,
+    @Query('end_date') endDate?: string,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    return this.reportsService.getPeakHours(restaurantId, startDate, endDate);
+  }
 }
