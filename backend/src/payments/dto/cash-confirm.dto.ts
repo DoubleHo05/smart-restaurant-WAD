@@ -1,14 +1,28 @@
-import { IsUUID, IsNumber, IsString, IsOptional, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNumber, IsNotEmpty, Min } from 'class-validator';
 
 export class CashConfirmDto {
-  @IsUUID()
+  @ApiProperty({
+    example: 'payment-uuid',
+    description: 'UUID of the payment record',
+  })
+  @IsString()
+  @IsNotEmpty()
   payment_id: string;
 
+  @ApiProperty({
+    example: 500000,
+    description: 'Amount received from customer in VND',
+  })
   @IsNumber()
   @Min(0)
-  cash_amount: number; // Tiền khách đưa
+  received_amount: number;
 
+  @ApiProperty({
+    example: 'waiter-uuid',
+    description: 'UUID of waiter confirming payment (auto-filled from JWT)',
+  })
   @IsString()
-  @IsOptional()
-  notes?: string; // Ghi chú (optional)
+  @IsNotEmpty()
+  waiter_id: string;
 }

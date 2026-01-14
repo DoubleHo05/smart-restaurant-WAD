@@ -251,19 +251,29 @@ export class PaymentsService {
    * Helper: Complete bill payment - update orders và bill_request
    */
   private async completeBillPayment(bill_request_id: string) {
+    console.log('📋 [Complete Bill] Starting for bill:', bill_request_id);
+    
     const billRequest = await this.prisma.billRequest.findUnique({
       where: { id: bill_request_id },
     });
 
     if (!billRequest) {
+      console.error('❌ Bill request not found:', bill_request_id);
       throw new NotFoundException('Bill request not found');
     }
 
+    console.log('📦 Bill request found:', {
+      id: billRequest.id,
+      status: billRequest.status,
+      orderIds: billRequest.order_ids,
+    });
+
     // Lấy order IDs từ merged_order_ids hoặc bill_request
     const orderIds = billRequest.order_ids as string[];
+    console.log('🛒 Updating orders:', orderIds);
 
     // Update tất cả orders sang 'completed'
-    await this.prisma.order.updateMany({
+    const updatedOrders = await this.prisma.order.updateMany({
       where: {
         id: { in: orderIds },
       },
@@ -271,6 +281,8 @@ export class PaymentsService {
         status: 'completed',
       },
     });
+
+    console.log('✅ Orders updated:', updatedOrders.count, 'orders');
 
     // Update bill_request sang 'completed'
     await this.prisma.billRequest.update({
@@ -280,38 +292,75 @@ export class PaymentsService {
       },
     });
 
+    console.log('✅ Bill request completed:', bill_request_id);
+
     // TODO Phase 4: Emit socket event 'bill-paid'
 
     return { success: true };
   }
 
   async handleVNPayIPN(query: any) {
+    console.log('🔍 [VNPay IPN Handler] Starting...');
+    console.log('📦 Received query:', JSON.stringify(query, null, 2));
+    
     // 1. Verify signature
     const isValid = this.vnpayService.verifySignature(query);
+    console.log('🔐 Signature valid:', isValid);
+    
     if (!isValid) {
+      console.error('❌ Invalid signature');
       return { RspCode: '97', Message: 'Invalid signature' };
     }
 
     // 2. Lấy payment_id từ vnp_TxnRef
     const payment_id = query.vnp_TxnRef;
+    console.log('🔑 Payment ID:', payment_id);
+    
     const payment = await this.prisma.payment.findUnique({
       where: { id: payment_id },
       include: { bill_requests: true },
     });
 
     if (!payment) {
+      console.error('❌ Payment not found:', payment_id);
       return { RspCode: '01', Message: 'Order not found' };
     }
 
+    console.log('💰 Payment found:', {
+      id: payment.id,
+      amount: payment.amount.toNumber(),
+      status: payment.status,
+      bill_request_id: payment.bill_request_id,
+    });
+
     // 3. Kiểm tra amount (convert Decimal to number)
     const vnp_Amount = parseInt(query.vnp_Amount) / 100;
-    if (vnp_Amount !== payment.amount.toNumber()) {
+    const paymentAmount = payment.amount.toNumber();
+    
+    // So sánh với tolerance 1 VND do rounding
+    const amountDiff = Math.abs(vnp_Amount - paymentAmount);
+    
+    console.log('💵 Amount check:', {
+      vnpAmount: vnp_Amount,
+      paymentAmount: paymentAmount,
+      difference: amountDiff,
+      withinTolerance: amountDiff < 1,
+    });
+    
+    if (amountDiff >= 1) {
+      console.error('❌ Amount mismatch (difference >= 1 VND)');
       return { RspCode: '04', Message: 'Invalid amount' };
     }
 
     // 4. Update payment status (dùng đúng column names)
     const responseCode = query.vnp_ResponseCode;
     const status = responseCode === '00' ? 'completed' : 'failed';
+    
+    console.log('📝 Updating payment:', {
+      responseCode,
+      status,
+      transactionNo: query.vnp_TransactionNo,
+    });
 
     await this.prisma.payment.update({
       where: { id: payment.id },
@@ -323,11 +372,16 @@ export class PaymentsService {
       },
     });
 
+    console.log('✅ Payment updated to:', status);
+
     // 5. Nếu thành công, complete bill
     if (status === 'completed' && payment.bill_request_id) {
+      console.log('🔄 Completing bill request:', payment.bill_request_id);
       await this.completeBillPayment(payment.bill_request_id);
+      console.log('✅ Bill request completed');
     }
 
+    console.log('🎉 VNPay IPN processed successfully');
     return { RspCode: '00', Message: 'Confirm Success' };
   }
 

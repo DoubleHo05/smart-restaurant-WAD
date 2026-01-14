@@ -5,7 +5,7 @@ export class MoMoCallbackDto {
   amount: number;
   orderInfo: string;
   orderType: string;
-  transId: number; // MoMo transaction ID
+  transId: string; // MoMo transaction ID
   resultCode: number; // 0 = success
   message: string;
   payType: string;

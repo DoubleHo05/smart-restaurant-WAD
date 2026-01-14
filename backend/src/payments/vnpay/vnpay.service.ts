@@ -66,13 +66,29 @@ export class VnPayService {
     };
 
     vnp_Params = this.sortObject(vnp_Params);
-    const signData = querystring.stringify(vnp_Params, '&', '=', {
-      encodeURIComponent: (str) => str,
-    });
-    const secureHash = this.createHash(signData);
-    vnp_Params['vnp_SecureHash'] = secureHash;
 
-    const paymentUrl = this.url + '?' + querystring.stringify(vnp_Params);
+    // VNPay uses PHP urlencode which converts space to +
+    // encodeURIComponent converts space to %20, need to replace
+    const vnpayEncode = (str: string) => {
+      return encodeURIComponent(String(str)).replace(/%20/g, '+');
+    };
+
+    // Build signature string WITH URL encoding (VNPay requirement)
+    const signData = Object.keys(vnp_Params)
+      .map((key) => `${vnpayEncode(key)}=${vnpayEncode(vnp_Params[key])}`)
+      .join('&');
+
+    console.log('🔐 [VNPay] Creating signature:');
+    console.log('   TMN Code:', this.tmnCode);
+    console.log('   Hash Secret:', this.hashSecret);
+    console.log('   Sign Data:', signData);
+
+    const secureHash = this.createHash(signData);
+    console.log('   Secure Hash:', secureHash);
+
+    // Build URL with same encoded params + hash
+    const paymentUrl =
+      this.url + '?' + signData + '&vnp_SecureHash=' + secureHash;
 
     return {
       transaction_id: payment_id,
@@ -82,15 +98,34 @@ export class VnPayService {
   }
 
   verifySignature(query: any): boolean {
-    const vnp_SecureHash = query['vnp_SecureHash'];
-    delete query['vnp_SecureHash'];
-    delete query['vnp_SecureHashType'];
+    console.log('🔍 [VNPay Verify] Starting signature verification');
+    
+    // Clone query để không mutate original
+    const params = { ...query };
+    const vnp_SecureHash = params['vnp_SecureHash'];
+    delete params['vnp_SecureHash'];
+    delete params['vnp_SecureHashType'];
 
-    const sortedParams = this.sortObject(query);
-    const signData = querystring.stringify(sortedParams, '&', '=', {
-      encodeURIComponent: (str) => str,
-    });
+    console.log('📦 Hash received:', vnp_SecureHash);
+
+    const sortedParams = this.sortObject(params);
+
+    // VNPay PHP dùng urlencode, cần match với cách họ tạo hash
+    // Khi return, VNPay gửi data đã decode, nên cần encode lại để verify
+    const signData = Object.keys(sortedParams)
+      .map((key) => {
+        // Encode như PHP urlencode (space → +)
+        const encodedKey = encodeURIComponent(key).replace(/%20/g, '+');
+        const encodedValue = encodeURIComponent(sortedParams[key]).replace(/%20/g, '+');
+        return `${encodedKey}=${encodedValue}`;
+      })
+      .join('&');
+
+    console.log('📝 Sign data (encoded):', signData.substring(0, 200) + '...');
+
     const expectedHash = this.createHash(signData);
+    console.log('🔐 Expected hash:', expectedHash);
+    console.log('✅ Match:', vnp_SecureHash === expectedHash);
 
     return vnp_SecureHash === expectedHash;
   }

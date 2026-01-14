@@ -1,0 +1,33 @@
+# GET TOKENS FOR TESTING
+
+# 1. Login as Customer
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "customer@test.com",
+  "password": "password123"
+}
+
+# Copy access_token từ response → Đây là customerToken
+
+###
+
+# 2. Login as Waiter
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "waiter@test.com",
+  "password": "password123"
+}
+
+# Copy access_token từ response → Đây là waiterToken
+
+###
+
+# 3. Get Table ID (nếu chưa có)
+GET http://localhost:3000/api/tables
+Authorization: Bearer {{waiterToken}}
+
+# Copy table.id từ response → Đây là tableId

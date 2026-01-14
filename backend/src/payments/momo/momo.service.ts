@@ -11,16 +11,28 @@ export class MomoService {
   private readonly endpoint: string;
   private readonly ipnUrl: string;
   private readonly redirectUrl: string;
+  private readonly testMode: boolean;
 
   constructor(private configService: ConfigService) {
+    // Enable test mode to bypass MoMo API calls
+    this.testMode =
+      this.configService.get<string>('PAYMENT_TEST_MODE') === 'true';
+
     this.partnerCode =
-      this.configService.getOrThrow<string>('MOMO_PARTNER_CODE');
-    this.accessKey = this.configService.getOrThrow<string>('MOMO_ACCESS_KEY');
-    this.secretKey = this.configService.getOrThrow<string>('MOMO_SECRET_KEY');
-    this.endpoint = this.configService.getOrThrow<string>('MOMO_ENDPOINT');
-    this.ipnUrl = this.configService.getOrThrow<string>('MOMO_IPN_URL');
+      this.configService.get<string>('MOMO_PARTNER_CODE') || 'TEST_PARTNER';
+    this.accessKey =
+      this.configService.get<string>('MOMO_ACCESS_KEY') || 'TEST_ACCESS_KEY';
+    this.secretKey =
+      this.configService.get<string>('MOMO_SECRET_KEY') || 'TEST_SECRET_KEY';
+    this.endpoint =
+      this.configService.get<string>('MOMO_ENDPOINT') ||
+      'https://test-payment.momo.vn/v2/gateway/api/create';
+    this.ipnUrl =
+      this.configService.get<string>('MOMO_IPN_URL') ||
+      'http://localhost:3000/api/payments/momo/callback';
     this.redirectUrl =
-      this.configService.getOrThrow<string>('MOMO_REDIRECT_URL');
+      this.configService.get<string>('MOMO_REDIRECT_URL') ||
+      'http://localhost:5173/payment/result';
   }
 
   private createSignature(rawData: string): string {
@@ -36,6 +48,16 @@ export class MomoService {
     order_info: string;
     restaurant_id: string;
   }) {
+    // 🧪 TEST MODE: Return mock data without calling MoMo API
+    if (this.testMode) {
+      console.log('🧪 [TEST MODE] MoMo API call bypassed');
+      return {
+        transaction_id: `MOMO-TEST-${Date.now()}`,
+        qr_code: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=MOCK_MOMO_${dto.payment_id}`,
+        payment_url: `http://localhost:5173/payment/mock?gateway=momo&payment_id=${dto.payment_id}&amount=${dto.amount}`,
+      };
+    }
+
     const { payment_id, amount, order_info } = dto;
     const requestId = `${payment_id}-${Date.now()}`;
     const orderId = payment_id;
@@ -79,6 +101,12 @@ export class MomoService {
   }
 
   verifySignature(data: any): boolean {
+    // 🧪 TEST MODE: Bypass signature verification
+    if (this.testMode) {
+      console.log('🧪 [TEST MODE] MoMo signature verification bypassed');
+      return true;
+    }
+
     const {
       orderId,
       requestId,
