@@ -330,4 +330,48 @@ export class PaymentsService {
 
     return { RspCode: '00', Message: 'Confirm Success' };
   }
+
+  async confirmCashPayment(dto: {
+    payment_id: string;
+    received_amount: number;
+    waiter_id: string;
+  }) {
+    const { payment_id, received_amount, waiter_id } = dto;
+
+    const payment = await this.prisma.payment.findUnique({
+      where: { id: payment_id },
+      include: { bill_requests: true },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (received_amount < payment.amount.toNumber()) {
+      throw new BadRequestException(
+        'Received amount is less than total amount',
+      );
+    }
+
+    const change = received_amount - payment.amount.toNumber();
+
+    await this.prisma.payment.update({
+      where: { id: payment.id },
+      data: {
+        status: 'completed',
+        completed_at: new Date(),
+        gateway_trans_id: `CASH-${Date.now()}`,
+      },
+    });
+
+    if (payment.bill_request_id) {
+      await this.completeBillPayment(payment.bill_request_id);
+    }
+
+    return {
+      payment_id,
+      change_amount: change,
+      message: 'Cash payment confirmed',
+    };
+  }
 }
