@@ -6,12 +6,14 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBillRequestDto } from './dto/create-bill-request.dto';
 import { PaymentsService } from '../payments/payments.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class BillRequestsService {
   constructor(
     private prisma: PrismaService,
     private paymentsService: PaymentsService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -81,9 +83,20 @@ export class BillRequestsService {
         customer_note: dto.customer_note,
         status: 'pending',
       },
+      include: {
+        tables: true,
+      },
     });
 
-    // 6. TODO: Notify waiters qua Socket.IO (Phase 4)
+    // 6. Notify waiters qua Socket.IO (Phase 4)
+    try {
+      await this.notificationsGateway.notifyBillRequestCreated({
+        ...billRequest,
+        payment_method: dto.payment_method,
+      });
+    } catch (error) {
+      console.error('❌ Failed to emit bill request notification:', error.message);
+    }
 
     // 7. Return response
     return {

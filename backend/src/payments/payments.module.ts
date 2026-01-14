@@ -6,9 +6,10 @@ import { ZaloPayService } from './zalopay/zalopay.service';
 import { VnPayService } from './vnpay/vnpay.service';
 import { CashService } from './cash/cash.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, NotificationsModule],
   controllers: [PaymentsController],
   providers: [
     PaymentsService,

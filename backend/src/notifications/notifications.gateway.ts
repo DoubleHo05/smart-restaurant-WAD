@@ -232,4 +232,118 @@ export class NotificationsGateway
 
     this.logger.log(`Notified: Order ${order.order_number} rejected`);
   }
+
+  /**
+   * ============================================
+   * PHASE 4: PAYMENT NOTIFICATIONS
+   * ============================================
+   */
+
+  // Notify when bill request is created
+  async notifyBillRequestCreated(billRequest: any) {
+    const notification = {
+      type: 'bill_request_created',
+      title: 'Bill Request',
+      message: `Table ${billRequest.tables?.table_number || 'N/A'} requested bill`,
+      data: {
+        bill_request_id: billRequest.id,
+        table_id: billRequest.table_id,
+        table_number: billRequest.tables?.table_number,
+        total_amount: billRequest.total_amount,
+        payment_method: billRequest.payment_method,
+        order_count: billRequest.order_ids?.length || 0,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify all waiters
+    this.emitToRole('waiter', 'bill_request_created', notification);
+    
+    // Notify admins
+    this.emitToRole('admin', 'bill_request_created', notification);
+
+    this.logger.log(`Notified: Bill request ${billRequest.id} created`);
+  }
+
+  // Notify when payment is completed
+  async notifyPaymentCompleted(payment: any, billRequest: any) {
+    const notification = {
+      type: 'payment_completed',
+      title: 'Payment Completed',
+      message: `Payment of ${payment.amount.toLocaleString()} VND completed`,
+      data: {
+        payment_id: payment.id,
+        bill_request_id: billRequest.id,
+        table_id: billRequest.table_id,
+        table_number: billRequest.tables?.table_number,
+        amount: payment.amount,
+        payment_method: billRequest.payment_method,
+        transaction_no: payment.gateway_trans_id,
+        completed_at: payment.completed_at,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify waiters
+    this.emitToRole('waiter', 'payment_completed', notification);
+    
+    // Notify admins
+    this.emitToRole('admin', 'payment_completed', notification);
+
+    // Notify customer who made payment
+    if (billRequest.customer_id) {
+      this.emitToUser(billRequest.customer_id, 'payment_completed', {
+        type: 'payment_success',
+        title: 'Payment Successful',
+        message: 'Your payment has been completed successfully',
+        data: {
+          payment_id: payment.id,
+          amount: payment.amount,
+          payment_method: billRequest.payment_method,
+          change: payment.change_amount || 0,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    this.logger.log(`Notified: Payment ${payment.id} completed`);
+  }
+
+  // Notify when payment fails
+  async notifyPaymentFailed(payment: any, billRequest: any, reason: string) {
+    const notification = {
+      type: 'payment_failed',
+      title: 'Payment Failed',
+      message: `Payment failed: ${reason}`,
+      data: {
+        payment_id: payment.id,
+        bill_request_id: billRequest.id,
+        table_id: billRequest.table_id,
+        table_number: billRequest.table?.table_number,
+        amount: payment.amount,
+        payment_method: billRequest.payment_method,
+        reason,
+      },
+      timestamp: new Date().toISOString(),
+    };
+
+    // Notify waiters
+    this.emitToRole('waiter', 'payment_failed', notification);
+
+    // Notify customer
+    if (billRequest.customer_id) {
+      this.emitToUser(billRequest.customer_id, 'payment_failed', {
+        type: 'payment_error',
+        title: 'Payment Failed',
+        message: reason,
+        data: {
+          payment_id: payment.id,
+          bill_request_id: billRequest.id,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    this.logger.log(`Notified: Payment ${payment.id} failed`);
+  }
 }

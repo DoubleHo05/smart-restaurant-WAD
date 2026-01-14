@@ -8,6 +8,7 @@ import { MomoService } from './momo/momo.service';
 import { ZaloPayService } from './zalopay/zalopay.service';
 import { VnPayService } from './vnpay/vnpay.service';
 import { CashService } from './cash/cash.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
 export class PaymentsService {
@@ -17,6 +18,7 @@ export class PaymentsService {
     private readonly zaloPayService: ZaloPayService,
     private readonly vnpayService: VnPayService,
     private readonly cashService: CashService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -294,7 +296,29 @@ export class PaymentsService {
 
     console.log('✅ Bill request completed:', bill_request_id);
 
-    // TODO Phase 4: Emit socket event 'bill-paid'
+    // Phase 4: Emit socket event 'bill-paid'
+    try {
+      // Lấy payment info để emit
+      const payment = await this.prisma.payment.findFirst({
+        where: { bill_request_id },
+        include: {
+          bill_requests: {
+            include: {
+              tables: true,
+            },
+          },
+        },
+      });
+
+      if (payment) {
+        await this.notificationsGateway.notifyPaymentCompleted(
+          payment,
+          payment.bill_requests,
+        );
+      }
+    } catch (error) {
+      console.error('❌ Failed to emit payment notification:', error.message);
+    }
 
     return { success: true };
   }
