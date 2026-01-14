@@ -6,7 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { MomoService } from './momo/momo.service';
 import { ZaloPayService } from './zalopay/zalopay.service';
-import { VnpayService } from './vnpay/vnpay.service';
+import { VnPayService } from './vnpay/vnpay.service';
 import { CashService } from './cash/cash.service';
 
 @Injectable()
@@ -15,7 +15,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly momoService: MomoService,
     private readonly zaloPayService: ZaloPayService,
-    private readonly vnpayService: VnpayService,
+    private readonly vnpayService: VnPayService,
     private readonly cashService: CashService,
   ) {}
 }
