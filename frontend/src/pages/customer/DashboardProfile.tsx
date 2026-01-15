@@ -21,7 +21,7 @@ const DashboardProfile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'history'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
 
     // Profile form
     const [fullName, setFullName] = useState('');
@@ -267,13 +267,7 @@ const DashboardProfile: React.FC = () => {
                     <span className="tab-icon">🔒</span>
                     Password
                 </button>
-                <button
-                    className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('history')}
-                >
-                    <span className="tab-icon">📦</span>
-                    Order History
-                </button>
+
             </div>
 
             {/* Alert Messages */}
@@ -319,8 +313,7 @@ const DashboardProfile: React.FC = () => {
                                 type="email"
                                 className="form-input"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
+                                disabled
                             />
                         </div>
 
@@ -425,11 +418,7 @@ const DashboardProfile: React.FC = () => {
                     </form>
                 )}
 
-                {activeTab === 'history' && (
-                    <div className="order-history-section">
-                        <p className="coming-soon">Order history coming soon...</p>
-                    </div>
-                )}
+
             </div>
         </div>
     );
