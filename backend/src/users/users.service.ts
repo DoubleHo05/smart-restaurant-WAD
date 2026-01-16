@@ -7,12 +7,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { RestaurantStaffService } from '../restaurant-staff/restaurant-staff.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private restaurantStaffService: RestaurantStaffService,
+  ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, restaurantId?: string) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: createUserDto.email },
     });
@@ -58,23 +62,77 @@ export class UsersService {
       },
     });
 
+    // Auto-create restaurant_staff record if user is waiter or kitchen and restaurantId is provided
+    const staffRoles = filteredRoles.filter(
+      (role) => role === 'waiter' || role === 'kitchen',
+    );
+
+    console.log(
+      '🔍 [UsersService.create] Checking restaurant_staff creation...',
+    );
+    console.log('  - staffRoles:', staffRoles);
+    console.log('  - restaurantId:', restaurantId);
+
+    if (staffRoles.length > 0 && restaurantId) {
+      console.log('  ✅ Creating restaurant_staff records...');
+      for (const role of staffRoles) {
+        const staffRecord = await this.restaurantStaffService.create({
+          restaurant_id: restaurantId,
+          user_id: user.id,
+          role: role as 'waiter' | 'kitchen',
+          status: 'active',
+        });
+        console.log('  ✅ Created staff record:', staffRecord);
+      }
+      console.log(
+        `✅ [UsersService.create] Created restaurant_staff records for ${staffRoles.join(', ')}`,
+      );
+    } else {
+      console.warn('⚠️ [UsersService.create] NOT creating restaurant_staff:');
+      console.warn('  - staffRoles.length:', staffRoles.length);
+      console.warn('  - restaurantId:', restaurantId);
+    }
+
     return this.formatUser(user);
   }
 
-  async findAll(roleFilter?: string) {
-    const users = await this.prisma.user.findMany({
-      where: {
-        is_deleted: false,
-        ...(roleFilter && {
-          user_roles: {
-            some: {
-              role: {
-                name: roleFilter,
-              },
+  async findAll(roleFilter?: string, isSuperAdmin: boolean = false) {
+    // Build where clause based on user type
+    const whereClause: any = {
+      is_deleted: false,
+    };
+
+    // If roleFilter provided, filter by role
+    if (roleFilter) {
+      whereClause.user_roles = {
+        some: {
+          role: {
+            name: roleFilter,
+          },
+        },
+      };
+    } else if (!isSuperAdmin) {
+      // If admin (not superadmin) and no specific filter, only show waiter and kitchen
+      whereClause.user_roles = {
+        some: {
+          role: {
+            name: {
+              in: ['waiter', 'kitchen'],
             },
           },
-        }),
-      },
+        },
+      };
+    }
+    // SuperAdmin without filter sees all users (no additional where clause)
+
+    console.log('🔍 [UsersService.findAll]', {
+      isSuperAdmin,
+      roleFilter,
+      whereClause: JSON.stringify(whereClause),
+    });
+
+    const users = await this.prisma.user.findMany({
+      where: whereClause,
       include: {
         user_roles: {
           include: {
@@ -178,6 +236,17 @@ export class UsersService {
     });
 
     return { message: 'User deleted successfully' };
+  }
+
+  async findAdminRestaurant(userId: string) {
+    // Find restaurant owned by admin user
+    const restaurant = await this.prisma.restaurant.findFirst({
+      where: {
+        owner_id: userId,
+        is_deleted: false,
+      },
+    });
+    return restaurant;
   }
 
   private formatUser(user: any) {

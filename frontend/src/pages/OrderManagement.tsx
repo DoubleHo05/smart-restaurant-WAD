@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ordersApi, Order, OrdersResponse } from "../api/ordersApi";
 import OrderDetailModal, { OrderDetail } from "../components/OrderDetailModal";
 import OrderStatusBadge from "../components/OrderStatusBadge";
+import { useRestaurant } from "../contexts/RestaurantContext";
 import "../App.css";
 
 type OrderStatusFilter =
@@ -18,6 +19,8 @@ type ViewMode = "active" | "history";
 
 export default function OrderManagement() {
   const navigate = useNavigate();
+  const { selectedRestaurant, loading: restaurantLoading } = useRestaurant();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,15 +80,15 @@ export default function OrderManagement() {
 
   // Load orders
   const loadOrders = useCallback(async () => {
+    if (!selectedRestaurant || restaurantLoading) {
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
 
-      const restaurantId = localStorage.getItem("restaurant_id");
-      if (!restaurantId) {
-        setError("Restaurant ID not found");
-        return;
-      }
+      const restaurantId = selectedRestaurant.id;
 
       let response;
 

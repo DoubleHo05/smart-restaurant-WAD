@@ -3,12 +3,27 @@ import { usersApi } from "../../../api/usersApi";
 import type { User, CreateUserData } from "../../../types/user.types";
 import { useToast } from "../../../contexts/ToastContext";
 import { useConfirm } from "../../../components/ConfirmDialog";
+import { useAuth } from "../../../contexts/AuthContext";
+import { useRestaurant } from "../../../contexts/RestaurantContext";
 
-const AVAILABLE_ROLES = [
-  { value: "admin", label: "Admin - Restaurant Administrator" },
-  { value: "waiter", label: "Waiter - Service Staff" },
-  { value: "kitchen", label: "Kitchen - Kitchen Staff" },
-  { value: "customer", label: "Customer - End User" },
+// All possible roles with restrictions
+const ALL_ROLES = [
+  {
+    value: "admin",
+    label: "Admin - Restaurant Administrator",
+    forSuperAdminOnly: true,
+  },
+  {
+    value: "waiter",
+    label: "Waiter - Service Staff",
+    forSuperAdminOnly: false,
+  },
+  {
+    value: "kitchen",
+    label: "Kitchen - Kitchen Staff",
+    forSuperAdminOnly: false,
+  },
+  { value: "customer", label: "Customer", forSuperAdminOnly: false },
 ];
 
 export default function UsersTab() {
@@ -18,6 +33,16 @@ export default function UsersTab() {
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
+  const { user } = useAuth();
+  const { selectedRestaurant } = useRestaurant();
+
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+  const isAdmin = user?.roles?.includes("admin") && !isSuperAdmin;
+
+  // Filter available roles based on user type
+  const AVAILABLE_ROLES = isSuperAdmin
+    ? ALL_ROLES // SuperAdmin sees all roles (admin, waiter, kitchen, customer)
+    : ALL_ROLES.filter((r) => r.value === "waiter" || r.value === "kitchen"); // Admin sees only waiter and kitchen
 
   // Filters
   const [roleFilter, setRoleFilter] = useState<string>("");
@@ -64,7 +89,14 @@ export default function UsersTab() {
     }
 
     try {
-      await usersApi.create(formData);
+      // For admin creating waiter/kitchen, include restaurant_id
+      const dataToSend = {
+        ...formData,
+        restaurant_id:
+          isAdmin && selectedRestaurant ? selectedRestaurant.id : undefined,
+      };
+
+      await usersApi.create(dataToSend);
       setShowCreateModal(false);
       setFormData({
         email: "",

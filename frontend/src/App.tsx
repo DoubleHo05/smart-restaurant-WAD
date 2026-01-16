@@ -81,20 +81,82 @@ function App() {
                   />
 
                   {/* Browse menu (before QR scan) - view only */}
-                  <Route path="/customer/menu/item/:id" element={<ItemDetailView />} />
+                  <Route
+                    path="/customer/menu/item/:id"
+                    element={<ItemDetailView />}
+                  />
 
                   {/* Ordering menu (after QR scan) - with cart functionality */}
-                  <Route path="/customer/order" element={<CustomerLayout><OrderingMenu /></CustomerLayout>} />
-                  <Route path="/customer/order/item/:id" element={<CustomerLayout><ItemDetail /></CustomerLayout>} />
-                  <Route path="/customer/cart" element={<CustomerLayout><ShoppingCart /></CustomerLayout>} />
-                  <Route path="/customer/order-status/:id?" element={<CustomerLayout><OrderStatus /></CustomerLayout>} />
-                  <Route path="/customer/payment" element={<CustomerLayout><Payment /></CustomerLayout>} />
-                  <Route path="/customer/payment-status/:billRequestId" element={<CustomerLayout><PaymentStatus /></CustomerLayout>} />
+                  <Route
+                    path="/customer/order"
+                    element={
+                      <CustomerLayout>
+                        <OrderingMenu />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/order/item/:id"
+                    element={
+                      <CustomerLayout>
+                        <ItemDetail />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/cart"
+                    element={
+                      <CustomerLayout>
+                        <ShoppingCart />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/order-status/:id?"
+                    element={
+                      <CustomerLayout>
+                        <OrderStatus />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/payment"
+                    element={
+                      <CustomerLayout>
+                        <Payment />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/payment-status/:billRequestId"
+                    element={
+                      <CustomerLayout>
+                        <PaymentStatus />
+                      </CustomerLayout>
+                    }
+                  />
 
                   {/* Customer account routes */}
-                  <Route path="/customer/order-history" element={<OrderHistory />} />
-                  <Route path="/customer/profile" element={<CustomerLayout><ProfileWrapper /></CustomerLayout>} />
-                  <Route path="/customer/dashboard-profile" element={<CustomerLayout><DashboardProfile /></CustomerLayout>} />
+                  <Route
+                    path="/customer/order-history"
+                    element={<OrderHistory />}
+                  />
+                  <Route
+                    path="/customer/profile"
+                    element={
+                      <CustomerLayout>
+                        <ProfileWrapper />
+                      </CustomerLayout>
+                    }
+                  />
+                  <Route
+                    path="/customer/dashboard-profile"
+                    element={
+                      <CustomerLayout>
+                        <DashboardProfile />
+                      </CustomerLayout>
+                    }
+                  />
 
                   {/* Admin routes */}
                   <Route path="/admin/login" element={<AdminLogin />} />
@@ -223,7 +285,7 @@ function App() {
                     }
                   />
 
-                  {/* Default redirect - shows both options */}
+                  {/* Default redirect - unified login page */}
                   <Route
                     path="/"
                     element={
@@ -247,6 +309,7 @@ function App() {
                             borderRadius: "20px",
                             boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
                             maxWidth: "400px",
+                            width: "100%",
                           }}
                         >
                           <h1
@@ -269,7 +332,7 @@ function App() {
                             }}
                           >
                             <a
-                              href="/customer/login"
+                              href="/admin/login"
                               style={{
                                 padding: "15px 30px",
                                 background: "#e74c3c",
@@ -281,10 +344,10 @@ function App() {
                                 display: "block",
                               }}
                             >
-                              Customer Login
+                              🔐 Login
                             </a>
                             <a
-                              href="/admin/login"
+                              href="/customer/register"
                               style={{
                                 padding: "15px 30px",
                                 background: "#27ae60",
@@ -296,7 +359,22 @@ function App() {
                                 display: "block",
                               }}
                             >
-                              Admin Login
+                              📝 Register
+                            </a>
+                            <a
+                              href="/customer/restaurants"
+                              style={{
+                                padding: "15px 30px",
+                                background: "#3498db",
+                                color: "white",
+                                textDecoration: "none",
+                                borderRadius: "12px",
+                                fontWeight: "600",
+                                transition: "all 0.3s",
+                                display: "block",
+                              }}
+                            >
+                              👤 Continue as Guest
                             </a>
                           </div>
                         </div>

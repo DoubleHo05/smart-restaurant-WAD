@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import UsersTab from "./tabs/UsersTab";
 import RestaurantsTab from "./tabs/RestaurantsTab";
@@ -12,8 +12,11 @@ export default function SystemAdminPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Only super_admin can access
-  if (!user?.roles?.includes("super_admin")) {
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+  const isAdmin = user?.roles?.includes("admin");
+
+  // Only super_admin and admin can access
+  if (!isSuperAdmin && !isAdmin) {
     return (
       <div className="app">
         <div
@@ -29,7 +32,7 @@ export default function SystemAdminPage() {
             🚫 Access Denied
           </h2>
           <p style={{ color: "#cbd5e1" }}>
-            Only Super Administrators can access system administration.
+            Only Administrators can access system administration.
           </p>
           <button
             className="btn btn-secondary"
@@ -47,9 +50,14 @@ export default function SystemAdminPage() {
     <div className="app">
       {/* Header */}
       <header className="header">
-        <h1>⚙️ System Administration</h1>
+        <h1>
+          ⚙️ {isSuperAdmin ? "System Administration" : "Staff Management"}
+        </h1>
         <div style={{ display: "flex", gap: "10px" }}>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/admin/dashboard")}
+          >
             ← Back to Dashboard
           </button>
         </div>
@@ -78,37 +86,41 @@ export default function SystemAdminPage() {
             color: activeTab === "users" ? "white" : "#94a3b8",
             transition: "all 0.3s ease",
             borderBottom:
-              activeTab === "users" ? "3px solid #6366f1" : "3px solid transparent",
-          }}
-        >
-          👥 Users
-        </button>
-        <button
-          onClick={() => setActiveTab("restaurants")}
-          style={{
-            padding: "12px 24px",
-            fontSize: "16px",
-            fontWeight: "600",
-            border: "none",
-            borderRadius: "8px 8px 0 0",
-            cursor: "pointer",
-            background: activeTab === "restaurants" ? "#6366f1" : "#1e293b",
-            color: activeTab === "restaurants" ? "white" : "#94a3b8",
-            transition: "all 0.3s ease",
-            borderBottom:
-              activeTab === "restaurants"
+              activeTab === "users"
                 ? "3px solid #6366f1"
                 : "3px solid transparent",
           }}
         >
-          🏪 Restaurants
+          {isSuperAdmin ? "👥 All Users" : "👥 Staff (Waiter/Kitchen)"}
         </button>
+        {isSuperAdmin && (
+          <button
+            onClick={() => setActiveTab("restaurants")}
+            style={{
+              padding: "12px 24px",
+              fontSize: "16px",
+              fontWeight: "600",
+              border: "none",
+              borderRadius: "8px 8px 0 0",
+              cursor: "pointer",
+              background: activeTab === "restaurants" ? "#6366f1" : "#1e293b",
+              color: activeTab === "restaurants" ? "white" : "#94a3b8",
+              transition: "all 0.3s ease",
+              borderBottom:
+                activeTab === "restaurants"
+                  ? "3px solid #6366f1"
+                  : "3px solid transparent",
+            }}
+          >
+            🏪 Restaurants
+          </button>
+        )}
       </div>
 
       {/* Tab Content */}
       <div>
         {activeTab === "users" && <UsersTab />}
-        {activeTab === "restaurants" && <RestaurantsTab />}
+        {activeTab === "restaurants" && isSuperAdmin && <RestaurantsTab />}
       </div>
     </div>
   );

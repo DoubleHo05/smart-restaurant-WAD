@@ -15,6 +15,7 @@ export interface CreateUserData {
   full_name?: string;
   phone?: string;
   roles: string[];
+  restaurant_id?: string; // For admin creating staff
 }
 
 export interface UpdateUserData {

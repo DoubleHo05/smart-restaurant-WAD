@@ -1,18 +1,14 @@
 import { useState, useEffect } from "react";
-import { usersApi } from '../../api/usersApi';
+import { usersApi } from "../../api/usersApi";
 import type { User, CreateUserData } from "../../types/user.types";
-import { useToast } from '../../contexts/ToastContext';
-import { useConfirm } from '../../components/ConfirmDialog';
-import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirm } from "../../components/ConfirmDialog";
+import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "../../App.css";
 
-const AVAILABLE_ROLES = [
-  { value: "admin", label: "Admin - Restaurant Administrator" },
-  { value: "waiter", label: "Waiter - Service Staff" },
-  { value: "kitchen", label: "Kitchen - Kitchen Staff" },
-  { value: "customer", label: "Customer - End User" },
-];
+// Only customer role - this page is for admin to manage customers
+const AVAILABLE_ROLES = [{ value: "customer", label: "Customer - End User" }];
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
@@ -24,8 +20,11 @@ export default function UserManagement() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+  const isAdmin = user?.roles?.includes("admin") && !isSuperAdmin;
+
   // Filters
-  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("customer"); // Default filter to customer
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -38,16 +37,19 @@ export default function UserManagement() {
     password: "",
     full_name: "",
     phone: "",
-    roles: [],
+    roles: ["customer"], // Default to customer
   });
 
-  // Check if user is super_admin
+  // Check if user has permission - only admin (not superadmin) can manage customers
   useEffect(() => {
-    if (user && !user.roles?.includes("super_admin")) {
-      toast.error("Access Denied: Only Super Admin can manage users");
-      navigate("/");
+    if (user && isSuperAdmin) {
+      console.log(
+        "[UserManagement] Access check: SuperAdmin cannot access customer management"
+      );
+      toast.error("Access Denied: This page is for Restaurant Admin only");
+      navigate("/admin/super_admin/users");
     }
-  }, [user, navigate]); // Removed toast from dependencies
+  }, [user, navigate, isSuperAdmin, toast]);
 
   // Load users
   const loadUsers = async () => {
@@ -65,10 +67,10 @@ export default function UserManagement() {
   };
 
   useEffect(() => {
-    if (user?.roles?.includes("super_admin")) {
+    if (isAdmin) {
       loadUsers();
     }
-  }, [roleFilter, user]);
+  }, [roleFilter, user, isAdmin]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,7 +166,8 @@ export default function UserManagement() {
     }));
   };
 
-  if (!user?.roles?.includes("super_admin")) {
+  // Only admin (not superadmin) can access customer management
+  if (!isAdmin) {
     return (
       <div className="app">
         <div
@@ -180,7 +183,7 @@ export default function UserManagement() {
             🚫 Access Denied
           </h2>
           <p style={{ color: "#cbd5e1" }}>
-            Only Super Administrators can access user management.
+            Only Restaurant Admins can access customer management.
           </p>
           <button
             className="btn btn-secondary"

@@ -12,11 +12,39 @@ import {
 import OrderDetailModal, {
   OrderDetail,
 } from "../../components/OrderDetailModal";
+import { useStaffRestaurant } from "../../hooks/useStaffRestaurant";
+import { useRestaurant } from "../../contexts/RestaurantContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 type OrderColumn = "received" | "preparing" | "ready";
 
 export default function KitchenDisplay() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  // For kitchen/waiter staff - get restaurant from restaurant_staff table
+  const {
+    restaurantId: staffRestaurantId,
+    restaurantName: staffRestaurantName,
+    loading: staffLoading,
+    error: staffError,
+  } = useStaffRestaurant();
+
+  // For admin - get restaurant from context
+  const { selectedRestaurant, loading: adminLoading } = useRestaurant();
+
+  // Determine which restaurant to use based on user role
+  const isAdmin =
+    user?.roles?.includes("admin") && !user?.roles?.includes("super_admin");
+  const isKitchenStaff = user?.roles?.includes("kitchen");
+
+  const restaurantId = isAdmin ? selectedRestaurant?.id : staffRestaurantId;
+  const restaurantName = isAdmin
+    ? selectedRestaurant?.name
+    : staffRestaurantName;
+  const restaurantLoading = isAdmin ? adminLoading : staffLoading;
+  const restaurantError = isAdmin ? null : staffError;
+
   const [receivedOrders, setReceivedOrders] = useState<KitchenOrder[]>([]);
   const [preparingOrders, setPreparingOrders] = useState<KitchenOrder[]>([]);
   const [readyOrders, setReadyOrders] = useState<KitchenOrder[]>([]);
@@ -35,10 +63,12 @@ export default function KitchenDisplay() {
   const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
   const newOrderSoundRef = useState<HTMLAudioElement | null>(null)[0];
 
-  // TODO: Replace with actual restaurant ID from auth context
-  const restaurantId = "temp-restaurant-id";
-
   useEffect(() => {
+    // Don't load orders if restaurant not loaded yet
+    if (!restaurantId || restaurantLoading) {
+      return;
+    }
+
     // Initialize audio context for sound
     try {
       const ctx = new (window.AudioContext ||
@@ -72,7 +102,7 @@ export default function KitchenDisplay() {
       clearInterval(clockInterval);
       audioContext?.close();
     };
-  }, []);
+  }, [restaurantId, restaurantLoading]);
 
   // Detect new orders and play sound
   useEffect(() => {
@@ -87,6 +117,11 @@ export default function KitchenDisplay() {
   }, [receivedOrders.length]);
 
   const loadOrders = async () => {
+    if (!restaurantId) {
+      console.warn("[KitchenDisplay] No restaurant ID available");
+      return;
+    }
+
     try {
       setLoading(true);
       const orders = await getKitchenOrders(restaurantId);
@@ -114,6 +149,13 @@ export default function KitchenDisplay() {
   };
 
   const loadDelayedOrders = async () => {
+    if (!restaurantId) {
+      console.warn(
+        "[KitchenDisplay] No restaurant ID available for delayed orders"
+      );
+      return;
+    }
+
     try {
       const delayed = await getDelayedOrders(restaurantId, 0); // Get all delayed orders
       setDelayedOrders(delayed);
@@ -128,6 +170,8 @@ export default function KitchenDisplay() {
   };
 
   const handleStartPreparing = async (orderId: string) => {
+    if (!restaurantId) return;
+
     try {
       await startPreparing(orderId, restaurantId);
       await loadOrders();
@@ -138,6 +182,8 @@ export default function KitchenDisplay() {
   };
 
   const handleMarkReady = async (orderId: string) => {
+    if (!restaurantId) return;
+
     try {
       await markReady(orderId, restaurantId);
       await loadOrders();
@@ -148,6 +194,8 @@ export default function KitchenDisplay() {
   };
 
   const handleBatchPrepare = async () => {
+    if (!restaurantId) return;
+
     if (selectedOrderIds.size === 0) {
       alert("Please select at least one order to batch prepare");
       return;
@@ -659,6 +707,64 @@ export default function KitchenDisplay() {
     };
   }, []);
 
+  // Show loading state while restaurant is being loaded
+  if (restaurantLoading) {
+    return (
+      <div
+        className="kitchen-display"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <div style={{ textAlign: "center", color: "white" }}>
+          <h2>🔄 Loading...</h2>
+          <p>Fetching your restaurant assignment</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if no restaurant assigned
+  if (restaurantError || !restaurantId) {
+    return (
+      <div
+        className="kitchen-display"
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+        }}
+      >
+        <div style={{ textAlign: "center", color: "white", maxWidth: "500px" }}>
+          <h2>⚠️ No Restaurant Assigned</h2>
+          <p style={{ marginTop: "20px", fontSize: "18px" }}>
+            {restaurantError ||
+              "You are not assigned to any restaurant. Please contact your administrator."}
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            style={{
+              marginTop: "30px",
+              padding: "12px 24px",
+              fontSize: "16px",
+              background: "#6366f1",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+            }}
+          >
+            Back to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="kitchen-display">
       {/* Landscape orientation hint for small devices */}
@@ -672,7 +778,7 @@ export default function KitchenDisplay() {
         <div className="header-left">
           <div className="kds-title">
             <span className="title-icon">🍴</span>
-            <h1>Kitchen Display</h1>
+            <h1>Kitchen Display{restaurantName && ` - ${restaurantName}`}</h1>
           </div>
         </div>
 

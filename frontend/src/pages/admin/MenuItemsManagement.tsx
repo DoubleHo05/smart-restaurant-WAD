@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import { menuItemsApi } from '../../api/menuItemsApi';
+import { menuItemsApi } from "../../api/menuItemsApi";
 import type {
   MenuItem,
   CreateMenuItemData,
   UpdateMenuItemData,
 } from "../../types/menuItems.types";
-import type { Restaurant } from "../../types/restaurant.types";
-import axiosInstance from '../../api/axiosConfig';
-import ImageUpload from '../../components/ImageUpload';
-import RestaurantSelector from '../../components/RestaurantSelector';
+import axiosInstance from "../../api/axiosConfig";
+import ImageUpload from "../../components/ImageUpload";
+import RestaurantSelector from "../../components/RestaurantSelector";
+import { useRestaurant } from "../../contexts/RestaurantContext";
 import "../../App.css";
 
 interface Category {
@@ -24,8 +24,7 @@ interface ModifierGroup {
 }
 
 export default function MenuItemsManagement() {
-  const [selectedRestaurant, setSelectedRestaurant] =
-    useState<Restaurant | null>(null);
+  const { selectedRestaurant } = useRestaurant();
 
   // Data states
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -355,10 +354,7 @@ export default function MenuItemsManagement() {
           </p>
         </div>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector
-            selectedRestaurant={selectedRestaurant}
-            onSelectRestaurant={setSelectedRestaurant}
-          />
+          <RestaurantSelector />
           <button
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}

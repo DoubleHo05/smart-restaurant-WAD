@@ -4,18 +4,17 @@ import type {
   Category,
   CreateCategoryData,
 } from "../../types/categories.types";
-import type { Restaurant } from "../../types/restaurant.types";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirm } from "../../components/ConfirmDialog";
+import { useRestaurant } from "../../contexts/RestaurantContext";
 import RestaurantSelector from "../../components/RestaurantSelector";
 import "../../App.css";
 
 export default function CategoriesManagement() {
+  const { selectedRestaurant, loading: restaurantLoading } = useRestaurant();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRestaurant, setSelectedRestaurant] =
-    useState<Restaurant | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
@@ -182,10 +181,7 @@ export default function CategoriesManagement() {
       <header className="header">
         <h1>📁 Categories Management</h1>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector
-            selectedRestaurant={selectedRestaurant}
-            onSelectRestaurant={setSelectedRestaurant}
-          />
+          <RestaurantSelector />
           <button
             className="btn btn-secondary"
             onClick={() => (window.location.href = "/")}

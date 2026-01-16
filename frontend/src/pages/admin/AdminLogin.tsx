@@ -1,7 +1,7 @@
 import { useState, FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from '../../contexts/AuthContext';
-import { authApi } from '../../api/authApi';
+import { useAuth } from "../../contexts/AuthContext";
+import { authApi } from "../../api/authApi";
 import "./AdminLogin.css";
 
 export default function AdminLogin() {
@@ -25,7 +25,19 @@ export default function AdminLogin() {
     try {
       const response = await authApi.login({ email, password });
       login(response.access_token, response.user);
-      navigate(from, { replace: true });
+
+      // Route based on role
+      const roles = response.user.roles || [];
+      if (roles.includes("kitchen")) {
+        navigate("/kitchen/kds", { replace: true });
+      } else if (roles.includes("waiter")) {
+        navigate("/waiter/dashboard", { replace: true });
+      } else if (roles.includes("admin") || roles.includes("super_admin")) {
+        navigate(from, { replace: true });
+      } else {
+        // Customer or other roles
+        navigate("/customer/restaurants", { replace: true });
+      }
     } catch (err: any) {
       setError(
         err.response?.data?.message ||

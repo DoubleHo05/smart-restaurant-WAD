@@ -27,7 +27,8 @@ export class RestaurantsController {
     @CurrentUser() user: any,
     @Body() createDto: CreateRestaurantDto,
   ) {
-    return this.restaurantsService.create(user.userId, createDto);
+    // SuperAdmin can specify owner_id in DTO
+    return this.restaurantsService.create(createDto);
   }
 
   @Get()

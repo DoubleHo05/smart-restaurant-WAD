@@ -26,17 +26,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Check user roles
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+  const isAdmin = user?.roles?.includes("admin") && !isSuperAdmin;
+
   // Show loading while checking authentication
   if (isLoading) {
     return (
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        fontSize: "18px",
-        color: "#7f8c8d",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+          fontSize: "18px",
+          color: "#7f8c8d",
+        }}
+      >
         Loading...
       </div>
     );
@@ -66,13 +72,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="nav-icon">📊</span>
             Dashboard
           </Link>
-          <Link
-            to="/admin/menu"
-            className={`nav-link ${isActive("/admin/menu") ? "active" : ""}`}
-          >
-            <span className="nav-icon">📋</span>
-            Menu
-          </Link>
+
+          {/* Menu Management - Both Admin and SuperAdmin */}
           <Link
             to="/admin/menu-items"
             className={`nav-link ${
@@ -107,34 +108,52 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <span className="nav-icon">🪑</span>
             Tables
           </Link>
+
+          {/* Operations - Only for Admin (not SuperAdmin) */}
+          {isAdmin && (
+            <>
+              <Link
+                to="/admin/orders"
+                className={`nav-link ${
+                  isActive("/admin/orders") ? "active" : ""
+                }`}
+              >
+                <span className="nav-icon">📦</span>
+                Orders
+              </Link>
+              <Link
+                to="/kitchen/kds"
+                className={`nav-link ${
+                  isActive("/kitchen/kds") ? "active" : ""
+                }`}
+              >
+                <span className="nav-icon">👨‍🍳</span>
+                Kitchen Display
+              </Link>
+              <Link
+                to="/admin/users"
+                className={`nav-link ${
+                  isActive("/admin/users") ? "active" : ""
+                }`}
+              >
+                <span className="nav-icon">👥</span>
+                Users
+              </Link>
+            </>
+          )}
+
+          {/* Reports - Both Admin and SuperAdmin */}
           <Link
-            to="/admin/orders"
-            className={`nav-link ${isActive("/admin/orders") ? "active" : ""}`}
-          >
-            <span className="nav-icon">📦</span>
-            Orders
-          </Link>
-          <Link
-            to="/kitchen/kds"
-            className={`nav-link ${isActive("/kitchen/kds") ? "active" : ""}`}
-          >
-            <span className="nav-icon">👨‍🍳</span>
-            Kitchen Display
-          </Link>
-          <Link
-            to="/admin/users"
-            className={`nav-link ${isActive("/admin/users") ? "active" : ""}`}
-          >
-            <span className="nav-icon">👥</span>
-            Users
-          </Link>
-          <Link            to="/admin/reports"
+            to="/admin/reports"
             className={`nav-link ${isActive("/admin/reports") ? "active" : ""}`}
           >
             <span className="nav-icon">📈</span>
             Reports
           </Link>
-          <Link            to="/admin/system"
+
+          {/* System - Both Admin and SuperAdmin but different functions */}
+          <Link
+            to="/admin/system"
             className={`nav-link ${isActive("/admin/system") ? "active" : ""}`}
           >
             <span className="nav-icon">⚙️</span>
@@ -154,7 +173,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <div className="admin-info">
               <div className="admin-name">{user?.full_name || user?.email}</div>
               <div className="admin-role">
-                {user?.role === "super_admin" || user?.roles?.includes("super_admin")
+                {user?.role === "super_admin" ||
+                user?.roles?.includes("super_admin")
                   ? "Super Admin"
                   : user?.role === "admin" || user?.roles?.includes("admin")
                   ? "Restaurant Admin"

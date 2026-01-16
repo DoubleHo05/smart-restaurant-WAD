@@ -25,6 +25,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ReportsModule } from './reports/reports.module';
 import { PaymentsModule } from './payments/payments.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { RestaurantStaffModule } from './restaurant-staff/restaurant-staff.module';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { SuperAdminModule } from './super-admin/super-admin.module';
     ReportsModule,
     PaymentsModule,
     SuperAdminModule,
+    RestaurantStaffModule,
   ],
   controllers: [AppController],
   providers: [AppService],

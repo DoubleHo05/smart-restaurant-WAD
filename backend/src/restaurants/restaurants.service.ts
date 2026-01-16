@@ -13,13 +13,20 @@ export class RestaurantsService {
 
   /**
    * Create a new restaurant
-   * Owner will be the current user
+   * Owner will be specified in DTO (for super_admin)
    */
-  async create(userId: string, createDto: CreateRestaurantDto) {
+  async create(createDto: CreateRestaurantDto) {
+    console.log('🔍 [RestaurantsService.create] Creating restaurant:', {
+      name: createDto.name,
+      owner_id: createDto.owner_id,
+    });
+
     return this.prisma.restaurant.create({
       data: {
-        ...createDto,
-        owner_id: userId,
+        name: createDto.name,
+        address: createDto.address,
+        phone: createDto.phone,
+        owner_id: createDto.owner_id,
         status: 'active',
       },
       include: {

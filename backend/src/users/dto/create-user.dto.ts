@@ -27,4 +27,8 @@ export class CreateUserDto {
   @IsArray()
   @IsString({ each: true })
   roles: string[]; // ['admin', 'waiter', 'kitchen']
+
+  @IsOptional()
+  @IsString()
+  restaurant_id?: string; // For admin creating staff
 }

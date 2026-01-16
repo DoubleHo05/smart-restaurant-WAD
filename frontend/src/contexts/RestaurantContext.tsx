@@ -3,6 +3,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { restaurantsApi } from "../api/restaurantsApi";
@@ -11,6 +12,8 @@ import type { Restaurant } from "../types/restaurant.types";
 
 interface RestaurantContextType {
   restaurants: Restaurant[];
+  selectedRestaurant: Restaurant | null;
+  setSelectedRestaurant: (restaurant: Restaurant | null) => void;
   loading: boolean;
   error: string | null;
   refreshRestaurants: () => Promise<void>;
@@ -22,38 +25,110 @@ const RestaurantContext = createContext<RestaurantContextType | undefined>(
 
 export function RestaurantProvider({ children }: { children: ReactNode }) {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [selectedRestaurant, setSelectedRestaurant] =
+    useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user, isAuthenticated } = useAuth();
 
-  const loadRestaurants = async () => {
+  const loadRestaurants = useCallback(async () => {
     // Only load if user is authenticated
     const token = localStorage.getItem("auth_token");
-    if (!token) {
+    if (!token || !user) {
+      console.log(
+        "🔍 [RestaurantContext] No token or user found, clearing restaurants"
+      );
       setRestaurants([]);
+      setSelectedRestaurant(null);
       setLoading(false);
       return;
     }
 
     try {
       setLoading(true);
+      console.log("🔍 [RestaurantContext] Loading restaurants...", {
+        userId: user?.id,
+        roles: user?.roles,
+      });
+
       const data = await restaurantsApi.getAll();
+      console.log("✅ [RestaurantContext] Restaurants loaded:", data);
+
       setRestaurants(data);
       setError(null);
+
+      // Auto-select restaurant for admin (not superadmin)
+      const isAdmin =
+        user?.roles?.includes("admin") && !user?.roles?.includes("super_admin");
+      const isSuperAdmin = user?.roles?.includes("super_admin");
+
+      console.log("🔍 [RestaurantContext] User roles:", {
+        isAdmin,
+        isSuperAdmin,
+        restaurantCount: data.length,
+        userRoles: user?.roles,
+        userId: user?.id,
+      });
+
+      if (isAdmin && data.length > 0) {
+        // Admin should only have one restaurant, auto-select it
+        const restaurantToSelect = data[0];
+        console.log(
+          "🔍 [RestaurantContext] Auto-selecting restaurant for admin:",
+          restaurantToSelect
+        );
+        setSelectedRestaurant(restaurantToSelect);
+        localStorage.setItem("selectedRestaurantId", restaurantToSelect.id);
+        console.log(
+          "✅ [RestaurantContext] Restaurant auto-selected successfully"
+        );
+      } else if (isSuperAdmin) {
+        // Superadmin: load from localStorage if exists
+        const savedId = localStorage.getItem("selectedRestaurantId");
+        const saved = data.find((r) => r.id === savedId);
+        console.log(
+          "🔍 [RestaurantContext] SuperAdmin - restoring from localStorage:",
+          {
+            savedId,
+            found: !!saved,
+          }
+        );
+        setSelectedRestaurant(saved || null);
+      } else {
+        console.log("⚠️ [RestaurantContext] No auto-select - user roles:", {
+          roles: user?.roles,
+          isAdmin,
+          isSuperAdmin,
+        });
+      }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to load restaurants");
-      console.error("Error loading restaurants:", err);
+      const errorMsg =
+        err.response?.data?.message || "Failed to load restaurants";
+      console.error("❌ [RestaurantContext] Error loading restaurants:", {
+        error: err,
+        message: errorMsg,
+        status: err.response?.status,
+        data: err.response?.data,
+      });
+      setError(errorMsg);
+      setRestaurants([]);
+      setSelectedRestaurant(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     console.log("🔄 [RestaurantContext] Auth state changed:", {
       isAuthenticated,
       userId: user?.id,
+      userRoles: user?.roles,
     });
-    loadRestaurants();
+
+    // Only load if we have user roles (needed for auto-select logic)
+    if (isAuthenticated && user?.roles) {
+      loadRestaurants();
+    }
 
     // Listen for storage changes (when user logs in/out from another tab)
     const handleStorageChange = (e: StorageEvent) => {
@@ -68,12 +143,21 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
-  }, [isAuthenticated, user?.id]);
+  }, [isAuthenticated, user?.roles, loadRestaurants]);
 
   return (
     <RestaurantContext.Provider
       value={{
         restaurants,
+        selectedRestaurant,
+        setSelectedRestaurant: (restaurant: Restaurant | null) => {
+          setSelectedRestaurant(restaurant);
+          if (restaurant) {
+            localStorage.setItem("selectedRestaurantId", restaurant.id);
+          } else {
+            localStorage.removeItem("selectedRestaurantId");
+          }
+        },
         loading,
         error,
         refreshRestaurants: loadRestaurants,

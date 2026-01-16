@@ -34,11 +34,12 @@ const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function UnifiedDashboard() {
   const { user } = useAuth();
-  const { restaurants } = useRestaurant();
+  const {
+    restaurants,
+    selectedRestaurant,
+    loading: restaurantLoading,
+  } = useRestaurant();
   const isSuperAdmin = user?.role === "super_admin";
-
-  // Local restaurant selection (scope limited to this dashboard)
-  const [localSelectedRestaurant, setLocalSelectedRestaurant] = useState<any>(null);
 
   // State for dashboard data
   const [loading, setLoading] = useState(false);
@@ -85,7 +86,7 @@ export default function UnifiedDashboard() {
           superAdminApi.getSystemStats(),
           superAdminApi.getAllRestaurants(),
         ]);
-        
+
         if (mounted) {
           setSystemStats(stats);
           setAllRestaurants(restaurants);
@@ -111,7 +112,7 @@ export default function UnifiedDashboard() {
 
   // Load per-restaurant data
   useEffect(() => {
-    if (!localSelectedRestaurant?.id) {
+    if (!selectedRestaurant?.id) {
       // Reset data when no restaurant selected
       setSummary(null);
       setRevenueByCategory(null);
@@ -127,7 +128,7 @@ export default function UnifiedDashboard() {
     const loadDashboardData = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const [
           summaryData,
@@ -137,31 +138,31 @@ export default function UnifiedDashboard() {
           retentionData,
           hoursData,
         ] = await Promise.all([
-          reportsApi.getDashboardSummary(localSelectedRestaurant.id),
+          reportsApi.getDashboardSummary(selectedRestaurant.id),
           reportsApi.getRevenueByCategory(
-            localSelectedRestaurant.id,
+            selectedRestaurant.id,
             dateRange.start,
             dateRange.end
           ),
           reportsApi
             .getWaiterPerformance(
-              localSelectedRestaurant.id,
+              selectedRestaurant.id,
               dateRange.start,
               dateRange.end
             )
             .catch(() => null), // Waiter performance might fail if migration not run
           reportsApi.getKitchenEfficiency(
-            localSelectedRestaurant.id,
+            selectedRestaurant.id,
             dateRange.start,
             dateRange.end
           ),
           reportsApi.getCustomerRetention(
-            localSelectedRestaurant.id,
+            selectedRestaurant.id,
             dateRange.start,
             dateRange.end
           ),
           reportsApi.getPeakHours(
-            localSelectedRestaurant.id,
+            selectedRestaurant.id,
             dateRange.start,
             dateRange.end
           ),
@@ -178,7 +179,9 @@ export default function UnifiedDashboard() {
       } catch (error: any) {
         console.error("Failed to load dashboard data:", error);
         if (mounted) {
-          setError(error?.response?.data?.message || "Failed to load dashboard data");
+          setError(
+            error?.response?.data?.message || "Failed to load dashboard data"
+          );
         }
       } finally {
         if (mounted) {
@@ -192,7 +195,7 @@ export default function UnifiedDashboard() {
     return () => {
       mounted = false;
     };
-  }, [localSelectedRestaurant, dateRange]);
+  }, [selectedRestaurant, dateRange]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -204,13 +207,13 @@ export default function UnifiedDashboard() {
   const handleDateChange = (field: "start" | "end", value: string) => {
     setDateRange((prev) => {
       const newRange = { ...prev, [field]: value };
-      
+
       // Validate date range
       if (new Date(newRange.start) > new Date(newRange.end)) {
         console.warn("Start date cannot be after end date");
         return prev;
       }
-      
+
       return newRange;
     });
   };
@@ -234,22 +237,21 @@ export default function UnifiedDashboard() {
             {isSuperAdmin ? "Super Admin Dashboard" : "Dashboard"}
           </h1>
           <p className="page-subtitle">
-            {localSelectedRestaurant
-              ? `${localSelectedRestaurant.name} - Analytics & Reports`
+            {selectedRestaurant
+              ? `${selectedRestaurant.name} - Analytics & Reports`
+              : restaurantLoading
+              ? "Loading restaurant..."
               : "Select a restaurant to view analytics"}
           </p>
         </div>
-        
+
         {/* Restaurant Selector - Only for non-super-admin */}
         {!isSuperAdmin && (
           <div style={{ marginRight: "20px" }}>
-            <RestaurantSelector 
-              selectedRestaurant={localSelectedRestaurant}
-              onSelectRestaurant={setLocalSelectedRestaurant}
-            />
+            <RestaurantSelector />
           </div>
         )}
-        
+
         <div className="date-range-filter">
           <label>From:</label>
           <input
@@ -271,14 +273,17 @@ export default function UnifiedDashboard() {
 
       {/* Error Message */}
       {error && (
-        <div className="error-banner" style={{
-          background: "#fee2e2",
-          color: "#991b1b",
-          padding: "1rem",
-          borderRadius: "8px",
-          marginBottom: "1.5rem",
-          border: "1px solid #fecaca"
-        }}>
+        <div
+          className="error-banner"
+          style={{
+            background: "#fee2e2",
+            color: "#991b1b",
+            padding: "1rem",
+            borderRadius: "8px",
+            marginBottom: "1.5rem",
+            border: "1px solid #fecaca",
+          }}
+        >
           <strong>⚠️ Error:</strong> {error}
         </div>
       )}
@@ -293,7 +298,9 @@ export default function UnifiedDashboard() {
                 🏢
               </div>
               <div className="stat-content">
-                <div className="stat-value">{systemStats.restaurants.total}</div>
+                <div className="stat-value">
+                  {systemStats.restaurants.total}
+                </div>
                 <div className="stat-label">Total Restaurants</div>
                 <div className="stat-change positive">
                   {systemStats.restaurants.active} active
@@ -321,7 +328,13 @@ export default function UnifiedDashboard() {
               <div className="stat-content">
                 <div className="stat-value">{systemStats.orders.total}</div>
                 <div className="stat-label">Total Orders</div>
-                <div className={`stat-change ${systemStats.orders.growth_vs_yesterday >= 0 ? 'positive' : 'negative'}`}>
+                <div
+                  className={`stat-change ${
+                    systemStats.orders.growth_vs_yesterday >= 0
+                      ? "positive"
+                      : "negative"
+                  }`}
+                >
                   {systemStats.orders.today} today (
                   {systemStats.orders.growth_vs_yesterday > 0 ? "+" : ""}
                   {systemStats.orders.growth_vs_yesterday.toFixed(1)}%)
@@ -338,7 +351,13 @@ export default function UnifiedDashboard() {
                   {formatCurrency(systemStats.revenue.total)}
                 </div>
                 <div className="stat-label">Total Revenue</div>
-                <div className={`stat-change ${systemStats.revenue.growth_vs_yesterday >= 0 ? 'positive' : 'negative'}`}>
+                <div
+                  className={`stat-change ${
+                    systemStats.revenue.growth_vs_yesterday >= 0
+                      ? "positive"
+                      : "negative"
+                  }`}
+                >
                   {formatCurrency(systemStats.revenue.today)} today (
                   {systemStats.revenue.growth_vs_yesterday > 0 ? "+" : ""}
                   {systemStats.revenue.growth_vs_yesterday.toFixed(1)}%)
@@ -383,7 +402,9 @@ export default function UnifiedDashboard() {
                           </span>
                         </td>
                         <td>{restaurant.stats.total_orders}</td>
-                        <td>{formatCurrency(restaurant.stats.total_revenue)}</td>
+                        <td>
+                          {formatCurrency(restaurant.stats.total_revenue)}
+                        </td>
                         <td>{restaurant.stats.tables_count}</td>
                         <td>{restaurant.stats.active_menu_items}</td>
                       </tr>
@@ -397,7 +418,7 @@ export default function UnifiedDashboard() {
       )}
 
       {/* Per-Restaurant Analytics */}
-      {localSelectedRestaurant && (
+      {selectedRestaurant && (
         <>
           {/* Loading Indicator */}
           {loading && (
@@ -435,7 +456,9 @@ export default function UnifiedDashboard() {
                     📦
                   </div>
                   <div className="stat-content">
-                    <div className="stat-value">{summary.today_orders_count}</div>
+                    <div className="stat-value">
+                      {summary.today_orders_count}
+                    </div>
                     <div className="stat-label">Orders Today</div>
                   </div>
                 </div>
@@ -476,62 +499,69 @@ export default function UnifiedDashboard() {
 
               <div className="charts-grid">
                 {/* Revenue by Category */}
-                {revenueByCategory && revenueByCategory.categories.length > 0 && (
-                  <div className="card chart-card">
-                    <h3>Revenue by Category</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={revenueByCategory.categories}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="category_name" />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(value) => formatCurrency(Number(value))}
-                        />
-                        <Legend />
-                        <Bar dataKey="total_revenue" fill="#3b82f6" name="Revenue" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <div className="chart-summary">
-                      <strong>Total:</strong>{" "}
-                      {formatCurrency(revenueByCategory.total_revenue)}
+                {revenueByCategory &&
+                  revenueByCategory.categories.length > 0 && (
+                    <div className="card chart-card">
+                      <h3>Revenue by Category</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={revenueByCategory.categories}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="category_name" />
+                          <YAxis />
+                          <Tooltip
+                            formatter={(value) => formatCurrency(Number(value))}
+                          />
+                          <Legend />
+                          <Bar
+                            dataKey="total_revenue"
+                            fill="#3b82f6"
+                            name="Revenue"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                      <div className="chart-summary">
+                        <strong>Total:</strong>{" "}
+                        {formatCurrency(revenueByCategory.total_revenue)}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Kitchen Efficiency */}
-                {kitchenEfficiency && kitchenEfficiency.orders_by_prep_time.length > 0 && (
-                  <div className="card chart-card">
-                    <h3>Kitchen Efficiency</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={kitchenEfficiency.orders_by_prep_time as any}
-                          dataKey="order_count"
-                          nameKey="time_range"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={100}
-                          label
-                        >
-                          {kitchenEfficiency.orders_by_prep_time.map(
-                            (_, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={COLORS[index % COLORS.length]}
-                              />
-                            )
-                          )}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="chart-summary">
-                      <strong>Avg Prep Time:</strong>{" "}
-                      {kitchenEfficiency.average_prep_time_minutes.toFixed(1)} min
+                {kitchenEfficiency &&
+                  kitchenEfficiency.orders_by_prep_time.length > 0 && (
+                    <div className="card chart-card">
+                      <h3>Kitchen Efficiency</h3>
+                      <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                          <Pie
+                            data={kitchenEfficiency.orders_by_prep_time as any}
+                            dataKey="order_count"
+                            nameKey="time_range"
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            label
+                          >
+                            {kitchenEfficiency.orders_by_prep_time.map(
+                              (_, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={COLORS[index % COLORS.length]}
+                                />
+                              )
+                            )}
+                          </Pie>
+                          <Tooltip />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="chart-summary">
+                        <strong>Avg Prep Time:</strong>{" "}
+                        {kitchenEfficiency.average_prep_time_minutes.toFixed(1)}{" "}
+                        min
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
                 {/* Peak Hours */}
                 {peakHours && peakHours.hourly_breakdown.length > 0 && (
@@ -569,8 +599,8 @@ export default function UnifiedDashboard() {
                       </LineChart>
                     </ResponsiveContainer>
                     <div className="chart-summary">
-                      <strong>Peak Hour:</strong> {peakHours.peak_hour.hour}:00 (
-                      {peakHours.peak_hour.order_count} orders,{" "}
+                      <strong>Peak Hour:</strong> {peakHours.peak_hour.hour}:00
+                      ({peakHours.peak_hour.order_count} orders,{" "}
                       {formatCurrency(peakHours.peak_hour.total_revenue)})
                     </div>
                   </div>
@@ -588,7 +618,8 @@ export default function UnifiedDashboard() {
                         <Tooltip
                           formatter={(value, name) => {
                             const nameStr = String(name);
-                            return nameStr.includes("revenue") || nameStr.includes("value")
+                            return nameStr.includes("revenue") ||
+                              nameStr.includes("value")
                               ? formatCurrency(Number(value))
                               : value;
                           }}
@@ -608,24 +639,29 @@ export default function UnifiedDashboard() {
                     </ResponsiveContainer>
                   </div>
                 )}
-                
+
                 {/* Waiter Performance - Empty State */}
-                {waiterPerformance && waiterPerformance.waiters.length === 0 && (
-                  <div className="card full-width" style={{
-                    padding: "2rem",
-                    textAlign: "center",
-                    background: "#f8f9fa",
-                    border: "1px dashed #cbd5e1"
-                  }}>
-                    <h3 style={{ color: "#64748b", marginBottom: "0.5rem" }}>
-                      No Waiter Performance Data
-                    </h3>
-                    <p style={{ color: "#94a3b8", margin: 0 }}>
-                      No orders with assigned waiters found in the selected period. 
-                      Assign waiters to orders to track their performance.
-                    </p>
-                  </div>
-                )}
+                {waiterPerformance &&
+                  waiterPerformance.waiters.length === 0 && (
+                    <div
+                      className="card full-width"
+                      style={{
+                        padding: "2rem",
+                        textAlign: "center",
+                        background: "#f8f9fa",
+                        border: "1px dashed #cbd5e1",
+                      }}
+                    >
+                      <h3 style={{ color: "#64748b", marginBottom: "0.5rem" }}>
+                        No Waiter Performance Data
+                      </h3>
+                      <p style={{ color: "#94a3b8", margin: 0 }}>
+                        No orders with assigned waiters found in the selected
+                        period. Assign waiters to orders to track their
+                        performance.
+                      </p>
+                    </div>
+                  )}
 
                 {/* Customer Retention */}
                 {customerRetention && (
@@ -648,44 +684,60 @@ export default function UnifiedDashboard() {
                         <div className="retention-value">
                           {customerRetention.summary.returning_customers}
                         </div>
-                        <div className="retention-label">Returning Customers</div>
+                        <div className="retention-label">
+                          Returning Customers
+                        </div>
                       </div>
                       <div className="retention-card">
                         <div className="retention-value">
-                          {typeof customerRetention.summary.retention_rate === 'string' 
-                            ? customerRetention.summary.retention_rate 
-                            : `${customerRetention.summary.retention_rate.toFixed(1)}%`}
+                          {typeof customerRetention.summary.retention_rate ===
+                          "string"
+                            ? customerRetention.summary.retention_rate
+                            : `${customerRetention.summary.retention_rate.toFixed(
+                                1
+                              )}%`}
                         </div>
                         <div className="retention-label">Retention Rate</div>
                       </div>
                       <div className="retention-card">
                         <div className="retention-value">
-                          {typeof customerRetention.average_orders_per_customer === 'string'
+                          {typeof customerRetention.average_orders_per_customer ===
+                          "string"
                             ? customerRetention.average_orders_per_customer
-                            : customerRetention.average_orders_per_customer.toFixed(1)}
+                            : customerRetention.average_orders_per_customer.toFixed(
+                                1
+                              )}
                         </div>
-                        <div className="retention-label">Avg Orders/Customer</div>
+                        <div className="retention-label">
+                          Avg Orders/Customer
+                        </div>
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* No Data Message */}
-                {!revenueByCategory && !kitchenEfficiency && !peakHours && !customerRetention && (
-                  <div className="card full-width">
-                    <div className="empty-state">
-                      <h3>No Analytics Data Available</h3>
-                      <p>There is no data for the selected date range. Try selecting a different period.</p>
+                {!revenueByCategory &&
+                  !kitchenEfficiency &&
+                  !peakHours &&
+                  !customerRetention && (
+                    <div className="card full-width">
+                      <div className="empty-state">
+                        <h3>No Analytics Data Available</h3>
+                        <p>
+                          There is no data for the selected date range. Try
+                          selecting a different period.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           )}
         </>
       )}
 
-      {!localSelectedRestaurant && !isSuperAdmin && (
+      {!selectedRestaurant && !isSuperAdmin && (
         <div className="empty-state">
           <h3>No Restaurant Selected</h3>
           <p>Please select a restaurant above to view analytics</p>

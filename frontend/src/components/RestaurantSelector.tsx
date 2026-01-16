@@ -1,4 +1,5 @@
 import { useRestaurant } from "../contexts/RestaurantContext";
+import { useAuth } from "../contexts/AuthContext";
 import type { Restaurant } from "../types/restaurant.types";
 
 interface RestaurantSelectorProps {
@@ -10,11 +11,34 @@ export default function RestaurantSelector({
   selectedRestaurant: propSelectedRestaurant,
   onSelectRestaurant: propOnSelectRestaurant,
 }: RestaurantSelectorProps = {}) {
-  const { restaurants, loading, selectedRestaurant: contextSelectedRestaurant, setSelectedRestaurant } = useRestaurant();
+  const {
+    restaurants,
+    loading,
+    selectedRestaurant: contextSelectedRestaurant,
+    setSelectedRestaurant,
+  } = useRestaurant();
+  const { user } = useAuth();
 
   // Use props if provided (for backward compatibility), otherwise use context
-  const selectedRestaurant = propSelectedRestaurant !== undefined ? propSelectedRestaurant : contextSelectedRestaurant;
+  const selectedRestaurant =
+    propSelectedRestaurant !== undefined
+      ? propSelectedRestaurant
+      : contextSelectedRestaurant;
   const handleSelect = propOnSelectRestaurant || setSelectedRestaurant;
+
+  // Check if user is admin (not superadmin)
+  const isAdmin =
+    user?.roles?.includes("admin") && !user?.roles?.includes("super_admin");
+  const isSuperAdmin = user?.roles?.includes("super_admin");
+
+  console.log("🔍 [RestaurantSelector] State:", {
+    loading,
+    restaurantCount: restaurants.length,
+    selectedRestaurant: selectedRestaurant?.name,
+    isAdmin,
+    isSuperAdmin,
+    userRoles: user?.roles,
+  });
 
   if (loading) {
     return (
@@ -32,6 +56,39 @@ export default function RestaurantSelector({
     );
   }
 
+  // Admin: Show restaurant name as read-only
+  if (isAdmin) {
+    return (
+      <div style={{ marginBottom: "20px" }}>
+        <label
+          style={{
+            display: "block",
+            marginBottom: "8px",
+            fontWeight: "600",
+            color: "#cbd5e1",
+            fontSize: "14px",
+          }}
+        >
+          🏪 Restaurant
+        </label>
+        <div
+          style={{
+            width: "100%",
+            padding: "12px 15px",
+            fontSize: "14px",
+            border: "1px solid #334155",
+            borderRadius: "8px",
+            background: "#1e293b",
+            color: "#f1f5f9",
+          }}
+        >
+          {selectedRestaurant?.name || "Loading..."}
+        </div>
+      </div>
+    );
+  }
+
+  // Superadmin: Show dropdown to select restaurant
   return (
     <div style={{ marginBottom: "20px" }}>
       <label

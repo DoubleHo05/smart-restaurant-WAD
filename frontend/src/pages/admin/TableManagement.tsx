@@ -1,20 +1,19 @@
 import { useState, useEffect } from "react";
-import { tablesApi } from '../../api/tablesApi';
+import { tablesApi } from "../../api/tablesApi";
 import type { Table, CreateTableData } from "../../types/tables.types";
-import type { Restaurant } from "../../types/restaurant.types";
 import QRCode from "react-qr-code";
-import { useToast } from '../../contexts/ToastContext';
-import { useConfirm } from '../../components/ConfirmDialog';
-import RestaurantSelector from '../../components/RestaurantSelector';
+import { useToast } from "../../contexts/ToastContext";
+import { useConfirm } from "../../components/ConfirmDialog";
+import { useRestaurant } from "../../contexts/RestaurantContext";
+import RestaurantSelector from "../../components/RestaurantSelector";
 import "../../App.css";
 
 export default function TableManagement() {
+  const { selectedRestaurant, loading: restaurantLoading } = useRestaurant();
   const [tables, setTables] = useState<Table[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRestaurant, setSelectedRestaurant] =
-    useState<Restaurant | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
@@ -104,9 +103,9 @@ export default function TableManagement() {
         ...formData,
         restaurant_id: selectedRestaurant.id,
       };
-      
+
       console.log("📤 Creating table with payload:", payload);
-      
+
       await tablesApi.create(payload);
       setShowCreateModal(false);
       setFormData({
@@ -248,10 +247,7 @@ export default function TableManagement() {
       <header className="header">
         <h1>🍽️ Table Management</h1>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector
-            selectedRestaurant={selectedRestaurant}
-            onSelectRestaurant={setSelectedRestaurant}
-          />
+          <RestaurantSelector />
           <button
             className="btn btn-primary"
             onClick={() => setShowCreateModal(true)}
@@ -463,13 +459,15 @@ export default function TableManagement() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Create New Table</h2>
             {selectedRestaurant && (
-              <div style={{
-                backgroundColor: "#e3f2fd",
-                padding: "12px",
-                borderRadius: "4px",
-                marginBottom: "16px",
-                borderLeft: "4px solid #2196F3"
-              }}>
+              <div
+                style={{
+                  backgroundColor: "#e3f2fd",
+                  padding: "12px",
+                  borderRadius: "4px",
+                  marginBottom: "16px",
+                  borderLeft: "4px solid #2196F3",
+                }}
+              >
                 <strong>Restaurant:</strong> {selectedRestaurant.name}
               </div>
             )}

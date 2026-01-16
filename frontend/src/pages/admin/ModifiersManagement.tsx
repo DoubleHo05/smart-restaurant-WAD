@@ -6,19 +6,18 @@ import type {
   CreateModifierGroupData,
   CreateModifierOptionData,
 } from "../../types/modifiers.types";
-import type { Restaurant } from "../../types/restaurant.types";
 import { useToast } from "../../contexts/ToastContext";
 import { useConfirm } from "../../components/ConfirmDialog";
+import { useRestaurant } from "../../contexts/RestaurantContext";
 import RestaurantSelector from "../../components/RestaurantSelector";
 import "../../App.css";
 
 export default function ModifiersManagement() {
+  const { selectedRestaurant, loading: restaurantLoading } = useRestaurant();
   const [groups, setGroups] = useState<ModifierGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const [selectedRestaurant, setSelectedRestaurant] =
-    useState<Restaurant | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialogComponent } = useConfirm();
@@ -282,10 +281,7 @@ export default function ModifiersManagement() {
       <header className="header">
         <h1>🎛️ Modifiers Management</h1>
         <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
-          <RestaurantSelector
-            selectedRestaurant={selectedRestaurant}
-            onSelectRestaurant={setSelectedRestaurant}
-          />
+          <RestaurantSelector />
           <button
             className="btn btn-secondary"
             onClick={() => (window.location.href = "/")}

@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { reportsApi } from "../../api/reportsApi";
 import { format, subDays } from "date-fns";
+import { useRestaurant } from "../../contexts/RestaurantContext";
 import RestaurantSelector from "../../components/RestaurantSelector";
 import type {
   DailyRevenueData,
@@ -23,7 +24,6 @@ import type {
   OrdersByStatus,
   AveragePrepTimeData,
 } from "../../types/reports.types";
-import type { Restaurant } from "../../types/restaurant.types";
 import "./ReportsPage.css";
 
 const COLORS = [
@@ -36,8 +36,7 @@ const COLORS = [
 ];
 
 export const ReportsPage: React.FC = () => {
-  const [selectedRestaurant, setSelectedRestaurant] =
-    useState<Restaurant | null>(null);
+  const { selectedRestaurant, loading: restaurantLoading } = useRestaurant();
   const [dateRange, setDateRange] = useState({
     startDate: format(subDays(new Date(), 30), "yyyy-MM-dd"),
     endDate: format(new Date(), "yyyy-MM-dd"),
@@ -94,11 +93,12 @@ export const ReportsPage: React.FC = () => {
         <div className="page-header">
           <h1>Reports & Analytics</h1>
         </div>
-        <RestaurantSelector
-          selectedRestaurant={selectedRestaurant}
-          onSelectRestaurant={setSelectedRestaurant}
-        />
-        <div className="loading">Please select a restaurant to view reports</div>
+        <RestaurantSelector />
+        <div className="loading">
+          {restaurantLoading
+            ? "Loading restaurant..."
+            : "Please select a restaurant to view reports"}
+        </div>
       </div>
     );
   }
@@ -109,10 +109,7 @@ export const ReportsPage: React.FC = () => {
         <div className="page-header">
           <h1>Reports & Analytics</h1>
         </div>
-        <RestaurantSelector
-          selectedRestaurant={selectedRestaurant}
-          onSelectRestaurant={setSelectedRestaurant}
-        />
+        <RestaurantSelector />
         <div className="loading">Loading reports...</div>
       </div>
     );
@@ -147,10 +144,7 @@ export const ReportsPage: React.FC = () => {
       </div>
 
       {/* Restaurant Selector */}
-      <RestaurantSelector
-        selectedRestaurant={selectedRestaurant}
-        onSelectRestaurant={setSelectedRestaurant}
-      />
+      <RestaurantSelector />
 
       {/* Empty State Warning */}
       {revenueData.length === 0 && (
@@ -165,8 +159,8 @@ export const ReportsPage: React.FC = () => {
             textAlign: "center",
           }}
         >
-          ℹ️ No order data available for the selected period. Charts will appear once
-          you have orders.
+          ℹ️ No order data available for the selected period. Charts will appear
+          once you have orders.
         </div>
       )}
 
@@ -234,7 +228,12 @@ export const ReportsPage: React.FC = () => {
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={popularItems}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" angle={-45} textAnchor="end" height={100} />
+                <XAxis
+                  dataKey="name"
+                  angle={-45}
+                  textAnchor="end"
+                  height={100}
+                />
                 <YAxis />
                 <Tooltip />
                 <Bar

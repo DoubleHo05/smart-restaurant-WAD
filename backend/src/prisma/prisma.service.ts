@@ -17,6 +17,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
   public role;
   public userRole;
   public restaurant;
+  public restaurantStaff;
   public order;
   public orderItem;
   public orderItemModifier;
@@ -45,6 +46,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
     // Initialize all models
     this.restaurant = this.client.restaurant;
+    this.restaurantStaff = this.client.restaurantStaff;
     this.table = this.client.table;
     this.menuCategory = this.client.menuCategory;
     this.menuItem = this.client.menuItem;
