@@ -341,9 +341,7 @@ export default function TableManagement() {
                 {table.qr_token ? (
                   <div className="qr-section">
                     <QRCode
-                      value={`${import.meta.env.VITE_MENU_URL}?table=${
-                        table.id
-                      }&token=${table.qr_token}`}
+                      value={`${import.meta.env.VITE_MENU_URL}/qr/${table.qr_token}`}
                       size={120}
                       level="H"
                       style={{
@@ -362,8 +360,8 @@ export default function TableManagement() {
                       Created:{" "}
                       {table.qr_token_created_at
                         ? new Date(
-                            table.qr_token_created_at
-                          ).toLocaleDateString()
+                          table.qr_token_created_at
+                        ).toLocaleDateString()
                         : "N/A"}
                     </small>
                   </div>
@@ -425,9 +423,8 @@ export default function TableManagement() {
                   ✏️ Edit
                 </button>
                 <button
-                  className={`btn btn-sm ${
-                    table.status === "active" ? "btn-warning" : "btn-success"
-                  }`}
+                  className={`btn btn-sm ${table.status === "active" ? "btn-warning" : "btn-success"
+                    }`}
                   onClick={() => handleToggleStatus(table)}
                 >
                   {table.status === "active" ? "⏸️ Deactivate" : "▶️ Activate"}
