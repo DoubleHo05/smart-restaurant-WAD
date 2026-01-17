@@ -101,34 +101,12 @@ const CustomerLogin: React.FC = () => {
             {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
 
-          {/* Divider */}
-          <div className="divider">
-            <span>or</span>
-          </div>
-
-          {/* Guest Access */}
-          <button
-            type="button"
-            className="btn btn-guest"
-            onClick={() => navigate('/customer/restaurants')}
-          >
-            <span className="guest-icon">👤</span>
-            Continue as Guest
-          </button>
-
           {/* Sign Up Link */}
           <div className="auth-footer">
             Don't have an account?{' '}
-            <Link to="/customer/register" className="auth-link">
+            <Link to="/customer/register" state={location.state} className="auth-link">
               Sign Up
             </Link>
-          </div>
-
-          {/* Guest Info */}
-          <div className="guest-info">
-            <p className="guest-info-text">
-              🔓 Browse restaurants and menus without signing in
-            </p>
           </div>
         </form>
       </div>

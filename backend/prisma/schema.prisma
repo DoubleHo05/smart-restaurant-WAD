@@ -7,20 +7,20 @@ datasource db {
 }
 
 model Restaurant {
-  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name            String             @db.VarChar(100)
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String            @db.VarChar(100)
   address         String?
-  phone           String?            @db.VarChar(20)
-  owner_id        String             @db.Uuid
-  status          String             @default("active") @db.VarChar(20)
-  created_at      DateTime           @default(now()) @db.Timestamp(6)
-  updated_at      DateTime           @updatedAt @db.Timestamp(6)
+  phone           String?           @db.VarChar(20)
+  owner_id        String            @db.Uuid
+  status          String            @default("active") @db.VarChar(20)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at      DateTime          @updatedAt @db.Timestamp(6)
   bill_requests   bill_requests[]
   menu_categories MenuCategory[]
   modifier_groups ModifierGroup[]
-  owner           User               @relation(fields: [owner_id], references: [id], onDelete: Cascade)
-  tables          Table[]
   staff           RestaurantStaff[]
+  owner           User              @relation(fields: [owner_id], references: [id], onDelete: Cascade)
+  tables          Table[]
 
   @@index([owner_id])
   @@index([status])
@@ -79,10 +79,10 @@ model MenuItem {
   status              String                  @db.VarChar(20)
   is_chef_recommended Boolean                 @default(false)
   is_deleted          Boolean                 @default(false)
-  average_rating      Decimal?                @default(0) @db.Decimal(3, 2)
-  review_count        Int                     @default(0)
   created_at          DateTime                @default(now()) @db.Timestamp(6)
   updated_at          DateTime                @updatedAt @db.Timestamp(6)
+  average_rating      Decimal?                @default(0) @db.Decimal(3, 2)
+  review_count        Int                     @default(0)
   cart_items          CartItem[]
   modifier_groups     MenuItemModifierGroup[]
   photos              MenuItemPhoto[]
@@ -179,10 +179,10 @@ model User {
   orders                               Order[]
   payments_payments_received_byTousers payments[]        @relation("payments_received_byTousers")
   payments_payments_refunded_byTousers payments[]        @relation("payments_refunded_byTousers")
-  restaurants                          Restaurant[]
-  user_roles                           UserRole[]
-  reviews                              Review[]
   restaurant_staff                     RestaurantStaff[]
+  restaurants                          Restaurant[]
+  reviews                              Review[]
+  user_roles                           UserRole[]
 
   @@index([email])
   @@index([status])
@@ -201,23 +201,21 @@ model UserRole {
 }
 
 model Review {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  menu_item_id  String   @db.Uuid
-  user_id       String   @db.Uuid
-  rating        Int      // 1-5 stars
-  comment       String?  // Optional comment
-  created_at    DateTime @default(now()) @db.Timestamp(6)
-  updated_at    DateTime @updatedAt @db.Timestamp(6)
-  
-  menu_item     MenuItem @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  
-  @@unique([menu_item_id, user_id]) // One review per user per item
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  menu_item_id String   @db.Uuid
+  user_id      String   @db.Uuid
+  rating       Int
+  comment      String?
+  created_at   DateTime @default(now()) @db.Timestamp(6)
+  updated_at   DateTime @updatedAt @db.Timestamp(6)
+  menu_item    MenuItem @relation(fields: [menu_item_id], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([menu_item_id, user_id])
   @@index([menu_item_id])
   @@index([user_id])
   @@map("reviews")
 }
-
 
 model Order {
   id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -259,8 +257,8 @@ model OrderItem {
   unit_price       Decimal             @db.Decimal(12, 2)
   subtotal         Decimal             @db.Decimal(12, 2)
   special_requests String?
-  status           OrderItemStatus     @default(QUEUED)
   created_at       DateTime            @default(now()) @db.Timestamp(6)
+  status           OrderItemStatus     @default(QUEUED)
   modifiers        OrderItemModifier[]
   menu_item        MenuItem            @relation(fields: [menu_item_id], references: [id])
   order            Order               @relation(fields: [order_id], references: [id], onDelete: Cascade)
@@ -427,7 +425,7 @@ model RestaurantStaff {
   id            String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   restaurant_id String     @db.Uuid
   user_id       String     @db.Uuid
-  role          String     @db.VarChar(50) // 'waiter' or 'kitchen'
+  role          String     @db.VarChar(50)
   status        String     @default("active") @db.VarChar(20)
   created_at    DateTime   @default(now()) @db.Timestamp(6)
   updated_at    DateTime   @updatedAt @db.Timestamp(6)
@@ -440,7 +438,6 @@ model RestaurantStaff {
   @@index([role])
   @@map("restaurant_staff")
 }
-
 
 enum OrderStatus {
   pending

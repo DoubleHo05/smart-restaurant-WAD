@@ -21,7 +21,7 @@ export class OrdersService {
     private cartService: CartService,
     private notificationsGateway: NotificationsGateway,
     private notificationsService: NotificationsService,
-  ) {}
+  ) { }
 
   /**
    * Create a new order with items and modifiers
@@ -64,7 +64,7 @@ export class OrdersService {
 
     // Check if any items are unavailable
     const unavailableItems = menuItems.filter(
-      (item) => item.status !== 'available',
+      (item) => item.status !== 'active',
     );
     if (unavailableItems.length > 0) {
       throw new BadRequestException(

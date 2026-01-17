@@ -276,13 +276,15 @@ function OrderStatus() {
           })
         )}
 
-        {/* Add more items prompt */}
-        <div className="add-more-section">
-          <p>Want to order more?</p>
-          <button className="add-more-btn" onClick={() => navigate('/customer/order')}>
-            🍽️ Browse Menu
-          </button>
-        </div>
+        {/* Add more items prompt - only show when there are orders */}
+        {orders.length > 0 && (
+          <div className="add-more-section">
+            <p>Want to order more?</p>
+            <button className="add-more-btn" onClick={() => navigate('/customer/order')}>
+              🍽️ Browse Menu
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -304,7 +304,7 @@ const CustomerRegister: React.FC = () => {
           {/* Sign In Link */}
           <div className="auth-footer">
             Already have an account?{' '}
-            <Link to="/customer/login" className="auth-link">
+            <Link to="/customer/login" state={location.state} className="auth-link">
               Sign In
             </Link>
           </div>

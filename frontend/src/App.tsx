@@ -14,7 +14,6 @@ import CustomerLogin from "./pages/customer/Login";
 import CustomerRegister from "./pages/customer/Register";
 import RestaurantList from "./pages/customer/RestaurantList";
 import OrderHistory from "./pages/customer/OrderHistory";
-import Profile from "./pages/customer/Profile";
 import ProfileGuest from "./pages/customer/ProfileGuest";
 import ProfileWrapper from "./pages/customer/ProfileWrapper";
 import DashboardProfile from "./pages/customer/DashboardProfile";
@@ -73,7 +72,6 @@ function App() {
                     element={<RestaurantList />}
                   />
                   <Route path="/customer/menu" element={<CustomerMenu />} />
-                  <Route path="/customer/order" element={<OrderingMenu />} />
                   <Route path="/customer/login" element={<CustomerLogin />} />
                   <Route
                     path="/customer/register"

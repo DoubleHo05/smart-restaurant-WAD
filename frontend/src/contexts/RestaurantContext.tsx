@@ -44,6 +44,16 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Skip loading for customer/guest users (they don't need restaurant list)
+    // We use the user object from context, which is more reliable than localStorage for current state.
+    if (user?.roles?.includes('customer') || user?.roles?.includes('guest')) {
+      console.log("🔍 [RestaurantContext] User is customer or guest, skipping restaurant load.");
+      setRestaurants([]);
+      setSelectedRestaurant(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       console.log("🔍 [RestaurantContext] Loading restaurants...", {
