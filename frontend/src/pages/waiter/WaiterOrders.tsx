@@ -12,11 +12,15 @@ import {
 import OrderDetailModal, {
   OrderDetail,
 } from "../../components/OrderDetailModal";
+import { useRestaurant } from "../../contexts/RestaurantContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 type TabType = "pending" | "accepted" | "ready";
 
 export default function WaiterOrders() {
   const navigate = useNavigate();
+  const { restaurants } = useRestaurant();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingOrders, setPendingOrders] = useState<WaiterOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<WaiterOrder[]>([]);
@@ -27,33 +31,50 @@ export default function WaiterOrders() {
   const [selectedOrder, setSelectedOrder] = useState<WaiterOrder | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // TODO: Replace with actual restaurant ID from auth context
-  const restaurantId = "temp-restaurant-id";
+  // Get restaurant ID from user's first restaurant or context
+  const restaurantId = restaurants.length > 0 ? restaurants[0].id : null;
 
   useEffect(() => {
-    loadOrders();
+    if (restaurantId) {
+      loadOrders();
+    }
     // TODO: Setup Socket.IO for real-time updates
     // const socket = io(API_URL);
     // socket.on('new_order', () => loadOrders());
     // return () => socket.disconnect();
-  }, [activeTab]);
+  }, [activeTab, restaurantId]);
 
   const loadOrders = async () => {
+    if (!restaurantId) {
+      console.warn("No restaurant ID available");
+      return;
+    }
+    
     setLoading(true);
     try {
       const pending = await getPendingOrders({ restaurant_id: restaurantId });
-      setPendingOrders(pending);
+      console.log("Pending orders response:", pending);
+      // Backend returns {success, data, total} format
+      const pendingData = pending?.data || pending;
+      setPendingOrders(Array.isArray(pendingData) ? pendingData : []);
 
       const accepted = await getRestaurantOrders(
         restaurantId,
         "accepted,preparing"
       );
-      setAcceptedOrders(accepted);
+      console.log("Accepted orders response:", accepted);
+      const acceptedData = accepted?.data || accepted;
+      setAcceptedOrders(Array.isArray(acceptedData) ? acceptedData : []);
 
       const ready = await getRestaurantOrders(restaurantId, "ready");
-      setReadyOrders(ready);
+      console.log("Ready orders response:", ready);
+      const readyData = ready?.data || ready;
+      setReadyOrders(Array.isArray(readyData) ? readyData : []);
     } catch (error) {
       console.error("Error loading orders:", error);
+      setPendingOrders([]);
+      setAcceptedOrders([]);
+      setReadyOrders([]);
     } finally {
       setLoading(false);
     }
@@ -166,7 +187,7 @@ export default function WaiterOrders() {
       >
         <div className="order-header">
           <div className="order-table-badge">
-            {order.table_number || `Table ${order.table_id.slice(-2)}`}
+            {order.table_number || (order.table_id ? `Table ${order.table_id.slice(-2)}` : 'N/A')}
           </div>
           <div className="order-meta">
             <h3 className="order-number">{order.order_number}</h3>
@@ -228,11 +249,11 @@ export default function WaiterOrders() {
   const getCurrentOrders = (): WaiterOrder[] => {
     switch (activeTab) {
       case "pending":
-        return pendingOrders;
+        return pendingOrders || [];
       case "accepted":
-        return acceptedOrders;
+        return acceptedOrders || [];
       case "ready":
-        return readyOrders;
+        return readyOrders || [];
       default:
         return [];
     }
@@ -244,6 +265,46 @@ export default function WaiterOrders() {
         <h1>Order Management</h1>
         <p className="page-subtitle">Review and manage incoming orders</p>
       </div>
+
+      {/* Show error if no restaurant */}
+      {!restaurantId && (
+        <div className="empty-state" style={{
+          background: "#fee2e2",
+          color: "#991b1b",
+          padding: "2rem",
+          borderRadius: "8px",
+          marginBottom: "1.5rem",
+          border: "1px solid #fecaca"
+        }}>
+          <h3 style={{ marginTop: 0 }}>No Restaurant Assigned</h3>
+          <p>You need to be assigned to a restaurant to view orders.</p>
+          <p style={{ marginTop: '1rem', fontSize: '0.9em' }}>
+            <strong>Debug Info:</strong><br/>
+            • User ID: {user?.id}<br/>
+            • Roles: {user?.roles?.join(', ')}<br/>
+            • Restaurants in context: {restaurants.length}<br/>
+            • User has restaurants: {user?.restaurants ? 'Yes' : 'No'}<br/>
+            {user?.restaurants && `• Count: ${user.restaurants.length}`}
+          </p>
+          <button 
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = '/admin/login';
+            }}
+            style={{
+              marginTop: '1rem',
+              padding: '0.5rem 1rem',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Logout & Re-login
+          </button>
+        </div>
+      )}
 
       <div className="tabs-container">
         <button

@@ -49,7 +49,7 @@ export interface AcceptOrderDto {
 export const getPendingOrders = async (
   params: PendingOrdersParams
 ): Promise<WaiterOrder[]> => {
-  const response = await axiosInstance.get("/waiter/pending-orders", {
+  const response = await axiosInstance.get("/api/waiter/pending-orders", {
     params,
   });
   return response.data;
@@ -61,8 +61,7 @@ export const acceptOrder = async (
   data: AcceptOrderDto
 ): Promise<WaiterOrder> => {
   const response = await axiosInstance.post(
-    `/waiter/orders/${orderId}/accept`,
-    data
+    `/api/waiter/${orderId}/accept?restaurant_id=${data.restaurant_id}`
   );
   return response.data;
 };
@@ -73,8 +72,8 @@ export const rejectOrder = async (
   data: RejectOrderDto
 ): Promise<WaiterOrder> => {
   const response = await axiosInstance.post(
-    `/waiter/orders/${orderId}/reject`,
-    data
+    `/api/waiter/${orderId}/reject?restaurant_id=${data.restaurant_id}`,
+    { rejection_reason: data.rejection_reason }
   );
   return response.data;
 };
@@ -84,9 +83,9 @@ export const serveOrder = async (
   orderId: string,
   restaurantId: string
 ): Promise<WaiterOrder> => {
-  const response = await axiosInstance.post(`/waiter/orders/${orderId}/serve`, {
-    restaurant_id: restaurantId,
-  });
+  const response = await axiosInstance.post(
+    `/api/waiter/${orderId}/serve?restaurant_id=${restaurantId}`
+  );
   return response.data;
 };
 
@@ -97,7 +96,7 @@ export const getRestaurantOrders = async (
 ): Promise<WaiterOrder[]> => {
   const params: any = { restaurant_id: restaurantId };
   if (status) params.status = status;
-  const response = await axiosInstance.get("/waiter/orders", { params });
+  const response = await axiosInstance.get("/api/waiter/orders", { params });
   return response.data;
 };
 
@@ -137,7 +136,7 @@ export const getWaiterPerformance = async (
   waiterId: string,
   restaurantId: string
 ): Promise<WaiterPerformance> => {
-  const response = await axiosInstance.get(`/waiter/performance/${waiterId}`, {
+  const response = await axiosInstance.get(`/api/waiter/performance/${waiterId}`, {
     params: { restaurant_id: restaurantId },
   });
   return response.data;
@@ -147,7 +146,7 @@ export const getWaiterPerformance = async (
 export const getWaiterLeaderboard = async (
   restaurantId: string
 ): Promise<LeaderboardEntry[]> => {
-  const response = await axiosInstance.get("/waiter/leaderboard", {
+  const response = await axiosInstance.get("/api/waiter/leaderboard", {
     params: { restaurant_id: restaurantId },
   });
   return response.data;

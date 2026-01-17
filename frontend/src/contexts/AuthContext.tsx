@@ -1,5 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
+interface UserRestaurant {
+  id: string;
+  name: string;
+  role: string;
+  status: string;
+}
+
 interface User {
   id: string;
   email: string;
@@ -7,6 +14,7 @@ interface User {
   name?: string;
   roles?: string[];
   role?: string;
+  restaurants?: UserRestaurant[];
 }
 
 interface AuthContextType {

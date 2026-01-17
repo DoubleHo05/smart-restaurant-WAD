@@ -350,7 +350,9 @@ export class WaiterService {
     };
 
     if (status) {
-      whereClause.status = status;
+      // Parse comma-separated status string into array
+      const statusArray = status.split(',').map(s => s.trim());
+      whereClause.status = { in: statusArray };
     }
 
     if (tableId) {
@@ -388,14 +390,21 @@ export class WaiterService {
       data: orders.map((order) => ({
         id: order.id,
         order_number: order.order_number,
-        table: order.table,
+        table_id: order.table.id,
+        table_number: order.table.table_number,
         status: order.status,
-        total: order.total,
-        items_count: order.order_items.length,
+        total_price: order.total,
+        items: order.order_items.map((item) => ({
+          id: item.id,
+          menu_item_id: item.menu_item_id,
+          name: item.menu_item.name,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          notes: item.notes,
+          modifiers: [], // TODO: Map modifiers if needed
+        })),
         created_at: order.created_at,
-        accepted_at: order.accepted_at,
-        ready_at: order.ready_at,
-        served_at: order.served_at,
+        updated_at: order.updated_at,
       })),
       total: orders.length,
     };

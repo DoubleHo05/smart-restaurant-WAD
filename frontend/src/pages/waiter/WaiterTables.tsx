@@ -6,11 +6,13 @@ import {
   updateTableOccupancyStatus,
   TableStatusOverview,
 } from "../../api/waiterTablesApi";
+import { useRestaurant } from "../../contexts/RestaurantContext";
 
 type FilterType = "all" | "available" | "occupied" | "reserved";
 
 export default function WaiterTables() {
   const navigate = useNavigate();
+  const { restaurants } = useRestaurant();
   const [tables, setTables] = useState<TableStatusOverview[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<FilterType>("all");
@@ -18,18 +20,21 @@ export default function WaiterTables() {
     useState<TableStatusOverview | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
-  // TODO: Replace with actual restaurant ID from auth context
-  const restaurantId = "temp-restaurant-id";
+  const restaurantId = restaurants.length > 0 ? restaurants[0].id : null;
 
   useEffect(() => {
-    loadTables();
+    if (restaurantId) {
+      loadTables();
+    }
     // TODO: Setup Socket.IO for real-time updates
     // const socket = io(API_URL);
     // socket.on('table_status_updated', () => loadTables());
     // return () => socket.disconnect();
-  }, []);
+  }, [restaurantId]);
 
   const loadTables = async () => {
+    if (!restaurantId) return;
+    
     setLoading(true);
     try {
       const data = await getTableStatusOverview(restaurantId);

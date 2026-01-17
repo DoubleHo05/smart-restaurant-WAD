@@ -15,7 +15,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
   async login(loginDto: LoginDto) {
     const user = await this.prisma.user.findUnique({
@@ -24,6 +24,17 @@ export class AuthService {
         user_roles: {
           include: {
             role: true,
+          },
+        },
+        restaurant_staff: {
+          include: {
+            restaurant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
           },
         },
       },
@@ -64,6 +75,12 @@ export class AuthService {
         email: user.email,
         full_name: user.full_name,
         roles: user.user_roles.map((ur) => ur.role.name),
+        restaurants: user.restaurant_staff.map((rs) => ({
+          id: rs.restaurant.id,
+          name: rs.restaurant.name,
+          role: rs.role,
+          status: rs.status,
+        })),
       },
     };
   }
@@ -135,6 +152,17 @@ export class AuthService {
             role: true,
           },
         },
+        restaurant_staff: {
+          include: {
+            restaurant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -148,6 +176,12 @@ export class AuthService {
       full_name: user.full_name,
       phone: user.phone,
       roles: user.user_roles.map((ur) => ur.role.name),
+      restaurants: user.restaurant_staff.map((rs) => ({
+        id: rs.restaurant.id,
+        name: rs.restaurant.name,
+        role: rs.role,
+        status: rs.status,
+      })),
     };
   }
 }

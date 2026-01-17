@@ -8,10 +8,14 @@ import {
   ValidationPipe,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { WaiterService } from './waiter.service';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { PendingOrdersFilterDto } from './dto/pending-orders-filter.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 /**
  * Waiter Controller
@@ -19,8 +23,8 @@ import { PendingOrdersFilterDto } from './dto/pending-orders-filter.dto';
  * All endpoints are scoped by restaurant_id to ensure data isolation
  */
 @Controller('api/waiter')
-// @UseGuards(JwtAuthGuard, RolesGuard) // TODO: Uncomment when auth is implemented
-// @Roles('waiter', 'admin') // TODO: Uncomment when auth is implemented
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('waiter', 'admin', 'super_admin')
 export class WaiterController {
   constructor(private readonly waiterService: WaiterService) {}
 
@@ -35,13 +39,10 @@ export class WaiterController {
   async getPendingOrders(
     @Query('restaurant_id') restaurantId: string,
     @Query('table_id') tableId?: string,
-    // @Request() req?, // TODO: Get waiter info from JWT token
+    @Request() req?: any,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
     const filters: PendingOrdersFilterDto = {};
@@ -63,17 +64,13 @@ export class WaiterController {
   async acceptOrder(
     @Param('id') orderId: string,
     @Query('restaurant_id') restaurantId: string,
-    // @Request() req?, // TODO: Get waiter ID from JWT token
+    @Request() req: any,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
-    // TODO: Get waiterId from req.user.id
-    const waiterId = 'temp-waiter-id'; // Placeholder until auth is implemented
+    const waiterId = req.user.id;
 
     return this.waiterService.acceptOrder(orderId, restaurantId, waiterId);
   }
@@ -91,13 +88,10 @@ export class WaiterController {
     @Query('restaurant_id') restaurantId: string,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))
     rejectDto: RejectOrderDto,
-    // @Request() req?, // TODO: Get waiter info from JWT token
+    @Request() req: any,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
     return this.waiterService.rejectOrder(orderId, restaurantId, rejectDto);
@@ -114,17 +108,13 @@ export class WaiterController {
   async serveOrder(
     @Param('id') orderId: string,
     @Query('restaurant_id') restaurantId: string,
-    // @Request() req?, // TODO: Get waiter info from JWT token
+    @Request() req: any,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
-    // TODO: Get waiterId from req.user.id
-    const waiterId = 'temp-waiter-id'; // Placeholder until auth is implemented
+    const waiterId = req.user.id;
 
     return this.waiterService.serveOrder(orderId, restaurantId, waiterId);
   }
@@ -144,10 +134,7 @@ export class WaiterController {
     @Query('table_id') tableId?: string,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
     return this.waiterService.getRestaurantOrders(
@@ -169,10 +156,7 @@ export class WaiterController {
     @Query('restaurant_id') restaurantId: string,
   ) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
     return this.waiterService.getWaiterPerformance(waiterId, restaurantId);
@@ -187,10 +171,7 @@ export class WaiterController {
   @Get('leaderboard')
   async getLeaderboard(@Query('restaurant_id') restaurantId: string) {
     if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
+      throw new BadRequestException('restaurant_id is required');
     }
 
     return this.waiterService.getLeaderboard(restaurantId);
