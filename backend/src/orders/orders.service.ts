@@ -715,7 +715,7 @@ export class OrdersService {
   }
 
   /**
-   * Get order history with filters (completed orders only)
+   * Get order history with filters (all orders except pending/preparing)
    * Supports filtering by date range, customer, table, and restaurant
    */
   async getOrderHistory(filters: {
@@ -725,92 +725,92 @@ export class OrdersService {
     start_date?: Date;
     end_date?: Date;
   }) {
-    const where: any = {
-      status: OrderStatus.COMPLETED,
-    };
+    try {
+      console.log('🔍 getOrderHistory called with filters:', filters);
+      const where: any = {};
 
-    // Multi-restaurant support
-    if (filters.restaurant_id) {
-      where.restaurant_id = filters.restaurant_id;
-    }
-
-    // Filter by customer
-    if (filters.customer_id) {
-      where.customer_id = filters.customer_id;
-    }
-
-    // Filter by table
-    if (filters.table_id) {
-      where.table_id = filters.table_id;
-    }
-
-    // Filter by date range
-    if (filters.start_date || filters.end_date) {
-      where.created_at = {};
-      if (filters.start_date) {
-        where.created_at.gte = filters.start_date;
+      // Multi-restaurant support
+      if (filters.restaurant_id) {
+        where.restaurant_id = filters.restaurant_id;
       }
-      if (filters.end_date) {
-        // Set end date to end of day
-        const endDate = new Date(filters.end_date);
-        endDate.setHours(23, 59, 59, 999);
-        where.created_at.lte = endDate;
-      }
-    }
 
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where,
-        include: {
-          table: {
-            select: {
-              id: true,
-              table_number: true,
-              capacity: true,
-              restaurant_id: true,
-            },
-          },
-          order_items: {
-            include: {
-              menu_item: {
-                select: {
-                  id: true,
-                  name: true,
-                  price: true,
-                },
+      // Filter by customer
+      if (filters.customer_id) {
+        where.customer_id = filters.customer_id;
+      }
+
+      // Filter by table
+      if (filters.table_id) {
+        where.table_id = filters.table_id;
+      }
+
+      // Filter by date range
+      if (filters.start_date || filters.end_date) {
+        where.created_at = {};
+        if (filters.start_date) {
+          where.created_at.gte = filters.start_date;
+        }
+        if (filters.end_date) {
+          // Set end date to end of day
+          const endDate = new Date(filters.end_date);
+          endDate.setHours(23, 59, 59, 999);
+          where.created_at.lte = endDate;
+        }
+      }
+
+      console.log('📊 Prisma where clause:', JSON.stringify(where, null, 2));
+
+      const [orders, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          include: {
+            table: {
+              select: {
+                id: true,
+                table_number: true,
+                capacity: true,
+                restaurant_id: true,
+                status: true,
               },
-              modifiers: {
-                include: {
-                  modifier_option: {
-                    select: {
-                      id: true,
-                      name: true,
-                      price_adjustment: true,
-                    },
+            },
+            order_items: {
+              include: {
+                menu_item: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                    category_id: true,
                   },
                 },
               },
             },
           },
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      }),
-      this.prisma.order.count({ where }),
-    ]);
+          orderBy: {
+            created_at: 'desc',
+          },
+          take: 100, // Limit to 100 orders for performance
+        }),
+        this.prisma.order.count({ where }),
+      ]);
 
-    return {
-      data: orders,
-      total,
-      filters: {
-        restaurant_id: filters.restaurant_id,
-        customer_id: filters.customer_id,
-        table_id: filters.table_id,
-        start_date: filters.start_date,
-        end_date: filters.end_date,
-      },
-    };
+      console.log(`✅ Found ${orders.length} orders out of ${total} total`);
+
+      return {
+        data: orders,
+        total,
+        filters: {
+          restaurant_id: filters.restaurant_id,
+          customer_id: filters.customer_id,
+          table_id: filters.table_id,
+          start_date: filters.start_date,
+          end_date: filters.end_date,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error in getOrderHistory:', error);
+      throw error;
+    }
   }
 
   /**

@@ -33,11 +33,20 @@ export default function OrderManagement() {
   const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>("all");
   const [dateFilter, setDateFilter] = useState<
     "today" | "yesterday" | "week" | "month" | "all"
-  >("all"); // Changed from "today" to "all" to show all active orders
+  >("today"); // Active Orders always shows today only
 
-  // Advanced filters for history
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  // Advanced filters for history - default to last 30 days
+  const getDefaultStartDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  };
+  const getDefaultEndDate = () => {
+    return new Date().toISOString().split('T')[0];
+  };
+  
+  const [startDate, setStartDate] = useState(getDefaultStartDate());
+  const [endDate, setEndDate] = useState(getDefaultEndDate());
   const [customerSearch, setCustomerSearch] = useState("");
   const [tableSearch, setTableSearch] = useState("");
 
@@ -95,18 +104,31 @@ export default function OrderManagement() {
       let allOrdersResponse; // For badge counts
 
       if (viewMode === "history") {
-        // Use history endpoint for completed orders
-        const filters: any = {
-          restaurant_id: restaurantId,
+        // History uses same endpoint as active, just different date range
+        const dateRangeForHistory = {
+          start_date: new Date(startDate).toISOString(),
+          end_date: new Date(endDate + 'T23:59:59').toISOString(),
         };
-
-        if (startDate) filters.start_date = startDate;
-        if (endDate) filters.end_date = endDate;
-        if (customerSearch) filters.customer_id = customerSearch;
-        if (tableSearch) filters.table_id = tableSearch;
-        if (statusFilter !== "all") filters.status = statusFilter;
-
-        response = await ordersApi.getHistory(filters);
+        
+        // Fetch all orders for badge counts
+        const allParams: any = {
+          restaurant_id: restaurantId,
+          ...dateRangeForHistory,
+        };
+        allOrdersResponse = await ordersApi.getAll(allParams);
+        
+        // Fetch filtered orders for display
+        const params: any = {
+          restaurant_id: restaurantId,
+          ...dateRangeForHistory,
+        };
+        
+        if (statusFilter !== "all") {
+          params.status = statusFilter;
+        }
+        
+        console.log('📅 Fetching history with params:', params);
+        response = await ordersApi.getAll(params);
       } else {
         // Active orders (today by default)
         const dateRange = getDateRange();
@@ -134,32 +156,50 @@ export default function OrderManagement() {
       }
 
       // Handle both array and object response formats
+      let fetchedOrders: Order[] = [];
+      let allFetchedOrders: Order[] = [];
+      
       if (Array.isArray(response)) {
-        setOrders(response);
-        setTotalOrders(response.length);
+        fetchedOrders = response;
       } else {
         const data = response as OrdersResponse;
-        setOrders(data.data || []);
-        setTotalOrders(data.total || 0);
+        fetchedOrders = data.data || [];
       }
       
-      // Store all orders for badge counting (only in active mode)
+      // Store all orders for badge counting
       if (viewMode === "active" && allOrdersResponse) {
         if (Array.isArray(allOrdersResponse)) {
-          setAllOrders(allOrdersResponse);
+          allFetchedOrders = allOrdersResponse;
         } else {
           const allData = allOrdersResponse as OrdersResponse;
-          setAllOrders(allData.data || []);
+          allFetchedOrders = allData.data || [];
+        }
+      } else if (viewMode === "history" && allOrdersResponse) {
+        // In history mode, use allOrdersResponse for badge counts
+        if (Array.isArray(allOrdersResponse)) {
+          allFetchedOrders = allOrdersResponse;
+        } else {
+          const allData = allOrdersResponse as OrdersResponse;
+          allFetchedOrders = allData.data || [];
         }
       } else {
-        // In history mode, use filtered orders
-        setAllOrders(Array.isArray(response) ? response : (response as OrdersResponse).data || []);
+        allFetchedOrders = fetchedOrders;
       }
+      
+      // Filter orders by status on frontend (for history mode)
+      if (viewMode === "history" && statusFilter !== "all") {
+        fetchedOrders = fetchedOrders.filter(order => order.status === statusFilter);
+      }
+      
+      setOrders(fetchedOrders);
+      setAllOrders(allFetchedOrders);
+      setTotalOrders(fetchedOrders.length);
       
       console.log("✅ Final orders count:", orders.length);
     } catch (err: any) {
       console.error("Failed to load orders:", err);
-      setError(err.response?.data?.message || "Failed to load orders");
+      console.error("Backend error details:", err.response?.data);
+      setError(err.response?.data?.message || err.message || "Failed to load orders");
       setOrders([]);
       setTotalOrders(0);
     } finally {
@@ -298,6 +338,33 @@ export default function OrderManagement() {
     return allOrders.filter((o) => o.status.toLowerCase() === status).length;
   };
 
+  // Format time with date if not today
+  const formatTimeWithDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const isToday = 
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+
+    const time = date.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (isToday || viewMode === "active") {
+      return time;
+    }
+
+    // Show date for history orders
+    const dateStr = date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    return `${time} - ${dateStr}`;
+  };
+
   // Orders are already filtered by backend, no need for client-side filtering
   const filteredOrders = orders;
 
@@ -322,46 +389,81 @@ export default function OrderManagement() {
 
   const handleExportCSV = async () => {
     try {
-      const restaurantId = localStorage.getItem("restaurant_id");
-      if (!restaurantId) {
-        alert("Restaurant ID not found");
+      if (orders.length === 0) {
+        alert("No orders to export");
         return;
       }
 
-      const filters: any = {
-        restaurant_id: restaurantId,
-        export: "csv",
-      };
+      // Generate CSV from current orders displayed
+      const headers = [
+        "Order Number",
+        "Date",
+        "Time",
+        "Table Number",
+        "Items",
+        "Total Amount",
+        "Status",
+      ];
 
-      if (viewMode === "history") {
-        if (startDate) filters.start_date = startDate;
-        if (endDate) filters.end_date = endDate;
-        if (customerSearch) filters.customer_id = customerSearch;
-        if (tableSearch) filters.table_id = tableSearch;
-        if (statusFilter !== "all") filters.status = statusFilter;
-      } else {
-        const dateRange = getDateRange();
-        Object.assign(filters, dateRange);
-        if (statusFilter !== "all") filters.status = statusFilter;
-      }
+      const rows = orders.map((order) => {
+        const createdDate = new Date(order.created_at);
+        const itemsText = order.order_items
+          ?.map((item) => `${item.quantity}x ${item.menu_item?.name || "Item"}`)
+          .join("; ") || "N/A";
 
-      const csvData = await ordersApi.getHistory(filters);
+        return [
+          order.order_number,
+          createdDate.toLocaleDateString("vi-VN"),
+          createdDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+          order.table?.table_number || "N/A",
+          itemsText,
+          Number(order.total).toFixed(0),
+          order.status,
+        ];
+      });
+
+      // Create CSV content with UTF-8 BOM for Vietnamese support
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((row) =>
+          row
+            .map((cell) => {
+              const cellStr = String(cell);
+              if (cellStr.includes(",") || cellStr.includes('"')) {
+                return `"${cellStr.replace(/"/g, '""')}"`;
+              }
+              return cellStr;
+            })
+            .join(",")
+        ),
+      ].join("\n");
+
+      // Add BOM for UTF-8 encoding (fixes Vietnamese characters in Excel)
+      const bomContent = "\uFEFF" + csvContent;
 
       // Create download link
-      const blob = new Blob([csvData], { type: "text/csv" });
+      const blob = new Blob([bomContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `orders-${viewMode}-${
-        new Date().toISOString().split("T")[0]
-      }.csv`;
+      
+      // Generate filename with date range
+      const today = new Date().toISOString().split("T")[0];
+      let filename = `orders-${viewMode}-${statusFilter}`;
+      if (viewMode === "history" && startDate && endDate) {
+        filename += `-${startDate}_to_${endDate}`;
+      } else {
+        filename += `-${today}`;
+      }
+      link.download = `${filename}.csv`;
+      
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error("Failed to export CSV:", err);
-      alert(err.response?.data?.message || "Failed to export CSV");
+      alert("Failed to export CSV. Please try again.");
     }
   };
 
@@ -528,10 +630,10 @@ export default function OrderManagement() {
           onClick={() => {
             setViewMode("active");
             setStatusFilter("all");
-            setDateFilter("today");
+            setDateFilter("today"); // Always today for active orders
           }}
         >
-          📋 Active Orders
+          📋 Active Orders (Today)
           <span className="tab-count">
             {viewMode === "active" ? totalOrders : ""}
           </span>
@@ -541,10 +643,10 @@ export default function OrderManagement() {
           onClick={() => {
             setViewMode("history");
             setStatusFilter("all");
-            setDateFilter("all");
+            setDateFilter("all"); // Show all history
           }}
         >
-          📚 Order History
+          📚 Order History (All Time)
         </button>
       </div>
 
@@ -618,17 +720,9 @@ export default function OrderManagement() {
       {/* Filters */}
       {viewMode === "active" ? (
         <div className="filters-bar">
-          <select
-            className="filter-select"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value as any)}
-          >
-            <option value="today">Today</option>
-            <option value="yesterday">Yesterday</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="all">All Time</option>
-          </select>
+          <div style={{ padding: "10px", color: "#6b7280", fontSize: "14px" }}>
+            📅 Showing orders from today only
+          </div>
         </div>
       ) : (
         <div className="filters-bar" style={{ flexWrap: "wrap", gap: "10px" }}>
@@ -766,7 +860,7 @@ export default function OrderManagement() {
                     <td>
                       <OrderStatusBadge status={order.status} />
                     </td>
-                    <td>{formatTime(order.created_at)}</td>
+                    <td>{formatTimeWithDate(order.created_at)}</td>
                     <td>
                       <div
                         style={{

@@ -65,6 +65,44 @@ export class OrdersController {
   }
 
   /**
+   * GET /api/orders/history
+   * Get completed orders with filters (date, customer, table)
+   * Query params: restaurant_id, customer_id, table_id, start_date, end_date, export (csv)
+   */
+  @Get('history')
+  async getHistory(
+    @Query('restaurant_id') restaurant_id?: string,
+    @Query('customer_id') customer_id?: string,
+    @Query('table_id') table_id?: string,
+    @Query('start_date') start_date?: string,
+    @Query('end_date') end_date?: string,
+    @Query('export') exportFormat?: string,
+    @Res({ passthrough: false }) res?: Response,
+  ) {
+    const filters: any = {
+      restaurant_id,
+      customer_id,
+      table_id,
+      start_date: start_date ? new Date(start_date) : undefined,
+      end_date: end_date ? new Date(end_date) : undefined,
+    };
+
+    // If export=csv, return CSV file
+    if (exportFormat === 'csv' && res) {
+      const csv = await this.ordersService.exportHistoryToCSV(filters);
+      res.header('Content-Type', 'text/csv');
+      res.header(
+        'Content-Disposition',
+        `attachment; filename="orders-history-${new Date().toISOString().split('T')[0]}.csv"`,
+      );
+      return res.send(csv);
+    }
+
+    // Otherwise return JSON
+    return this.ordersService.getOrderHistory(filters);
+  }
+
+  /**
    * GET /api/orders/:id
    * Get order details
    */
@@ -111,44 +149,6 @@ export class OrdersController {
   @Post(':id/complete')
   async completeOrder(@Param('id') id: string) {
     return this.ordersService.completeOrder(id);
-  }
-
-  /**
-   * GET /api/orders/history
-   * Get completed orders with filters (date, customer, table)
-   * Query params: restaurant_id, customer_id, table_id, start_date, end_date, export (csv)
-   */
-  @Get('history')
-  async getHistory(
-    @Query('restaurant_id') restaurant_id?: string,
-    @Query('customer_id') customer_id?: string,
-    @Query('table_id') table_id?: string,
-    @Query('start_date') start_date?: string,
-    @Query('end_date') end_date?: string,
-    @Query('export') exportFormat?: string,
-    @Res({ passthrough: false }) res?: Response,
-  ) {
-    const filters: any = {
-      restaurant_id,
-      customer_id,
-      table_id,
-      start_date: start_date ? new Date(start_date) : undefined,
-      end_date: end_date ? new Date(end_date) : undefined,
-    };
-
-    // If export=csv, return CSV file
-    if (exportFormat === 'csv' && res) {
-      const csv = await this.ordersService.exportHistoryToCSV(filters);
-      res.header('Content-Type', 'text/csv');
-      res.header(
-        'Content-Disposition',
-        `attachment; filename="orders-history-${new Date().toISOString().split('T')[0]}.csv"`,
-      );
-      return res.send(csv);
-    }
-
-    // Otherwise return JSON
-    return this.ordersService.getOrderHistory(filters);
   }
 
   /**
