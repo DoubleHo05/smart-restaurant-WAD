@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getCustomerProfile } from '../../api/customersApi';
-import { ordersApi } from '../../api/ordersApi';
-import './ProfileGuest.css'; // Use same CSS as ProfileGuest
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getCustomerProfile } from "../../api/customersApi";
+import { ordersApi } from "../../api/ordersApi";
+import "./ProfileGuest.css"; // Use same CSS as ProfileGuest
 
 interface CustomerProfile {
   id: string;
@@ -44,9 +44,9 @@ const Profile: React.FC = () => {
     try {
       setLoading(true);
 
-      const authUser = localStorage.getItem('auth_user');
+      const authUser = localStorage.getItem("auth_user");
       if (!authUser) {
-        navigate('/customer/login');
+        navigate("/");
         return;
       }
 
@@ -54,7 +54,7 @@ const Profile: React.FC = () => {
       const profileData = await getCustomerProfile(user.id);
       setProfile(profileData);
     } catch (err: any) {
-      console.error('Error loading profile:', err);
+      console.error("Error loading profile:", err);
     } finally {
       setLoading(false);
     }
@@ -62,14 +62,14 @@ const Profile: React.FC = () => {
 
   const loadTableInfo = () => {
     try {
-      const storedTableInfo = localStorage.getItem('table_info');
+      const storedTableInfo = localStorage.getItem("table_info");
       if (storedTableInfo) {
         const table = JSON.parse(storedTableInfo);
         setTableInfo(table);
         loadSessionStats(table.id);
       }
     } catch (error) {
-      console.error('Error loading table info:', error);
+      console.error("Error loading table info:", error);
     }
   };
 
@@ -79,17 +79,26 @@ const Profile: React.FC = () => {
       const orders = (response as any).data || response;
 
       // Filter active orders (not completed/cancelled)
-      const activeOrders = orders.filter((order: any) =>
-        !['completed', 'cancelled', 'rejected'].includes(order.status)
+      const activeOrders = orders.filter(
+        (order: any) =>
+          !["completed", "cancelled", "rejected"].includes(order.status),
       );
 
-      const total = activeOrders.reduce((sum: number, order: any) =>
-        sum + parseFloat(order.total || '0'), 0
+      const total = activeOrders.reduce(
+        (sum: number, order: any) => sum + parseFloat(order.total || "0"),
+        0,
       );
 
-      const oldestOrder = activeOrders.length > 0
-        ? new Date(Math.min(...activeOrders.map((o: any) => new Date(o.created_at).getTime())))
-        : null;
+      const oldestOrder =
+        activeOrders.length > 0
+          ? new Date(
+              Math.min(
+                ...activeOrders.map((o: any) =>
+                  new Date(o.created_at).getTime(),
+                ),
+              ),
+            )
+          : null;
 
       setSessionStats({
         ordersCount: activeOrders.length,
@@ -97,12 +106,12 @@ const Profile: React.FC = () => {
         sessionStart: oldestOrder,
       });
     } catch (error) {
-      console.error('Error loading session stats:', error);
+      console.error("Error loading session stats:", error);
     }
   };
 
   const getSessionDuration = () => {
-    if (!sessionStats.sessionStart) return '0 min';
+    if (!sessionStats.sessionStart) return "0 min";
 
     const now = new Date();
     const diff = now.getTime() - sessionStats.sessionStart.getTime();
@@ -116,17 +125,17 @@ const Profile: React.FC = () => {
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
       .toUpperCase()
       .substring(0, 2);
   };
 
   const handleLogout = () => {
-    if (confirm('Are you sure you want to logout?')) {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+    if (confirm("Are you sure you want to logout?")) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
       window.location.reload();
     }
   };
@@ -145,28 +154,30 @@ const Profile: React.FC = () => {
       <div className="header">
         <span className="header-title">Profile</span>
         <span className="header-table">
-          {tableInfo ? `Table ${tableInfo.tableNumber}` : ''}
+          {tableInfo ? `Table ${tableInfo.tableNumber}` : ""}
         </span>
       </div>
 
       {/* Content */}
-      <div className="content" style={{ paddingBottom: '100px' }}>
+      <div className="content" style={{ paddingBottom: "100px" }}>
         {/* Profile Card */}
         <div className="profile-card">
           <div
             className="profile-avatar"
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              fontSize: '32px',
-              fontWeight: '700'
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+              fontSize: "32px",
+              fontWeight: "700",
             }}
           >
-            {profile ? getInitials(profile.full_name) : 'U'}
+            {profile ? getInitials(profile.full_name) : "U"}
           </div>
           <h2 className="profile-name">{profile?.full_name}</h2>
           <p className="profile-email">{profile?.email}</p>
-          {profile?.phone && <p className="profile-phone">📱 {profile.phone}</p>}
+          {profile?.phone && (
+            <p className="profile-phone">📱 {profile.phone}</p>
+          )}
         </div>
 
         {/* Session Stats */}
@@ -180,12 +191,17 @@ const Profile: React.FC = () => {
               </div>
               <div className="stat-compact">
                 <span className="stat-icon">📋</span>
-                <span className="stat-text">{sessionStats.ordersCount} orders</span>
+                <span className="stat-text">
+                  {sessionStats.ordersCount} orders
+                </span>
               </div>
               <div className="stat-compact">
                 <span className="stat-icon">💰</span>
                 <span className="stat-text">
-                  {Math.round(Number(sessionStats.sessionTotal)).toLocaleString('vi-VN')}₫
+                  {Math.round(Number(sessionStats.sessionTotal)).toLocaleString(
+                    "vi-VN",
+                  )}
+                  ₫
                 </span>
               </div>
             </div>
@@ -198,7 +214,7 @@ const Profile: React.FC = () => {
 
           <button
             className="account-btn"
-            onClick={() => navigate('/customer/dashboard-profile')}
+            onClick={() => navigate("/customer/dashboard-profile")}
           >
             <span className="account-icon">✏️</span>
             <span className="account-text">Edit Profile</span>
@@ -207,7 +223,7 @@ const Profile: React.FC = () => {
 
           <button
             className="account-btn"
-            onClick={() => navigate('/customer/order-history')}
+            onClick={() => navigate("/customer/order-history")}
           >
             <span className="account-icon">📦</span>
             <span className="account-text">Order History</span>
