@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TablesService } from '../tables/tables.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { PendingOrdersFilterDto } from './dto/pending-orders-filter.dto';
 
@@ -14,6 +15,7 @@ export class WaiterService {
   constructor(
     private prisma: PrismaService,
     private tablesService: TablesService,
+    private notificationsGateway: NotificationsGateway,
   ) {}
 
   /**
@@ -79,30 +81,27 @@ export class WaiterService {
       data: orders.map((order) => ({
         id: order.id,
         order_number: order.order_number,
-        table: {
-          id: order.table.id,
-          number: order.table.table_number,
-          location: order.table.location,
-        },
+        table_id: order.table?.id || null,
+        table_number: order.table?.table_number || null,
+        customer_id: order.customer_id || null,
+        customer_name: null, // TODO: Join with users table if needed
         status: order.status,
-        total: order.total,
-        items_count: order.order_items.reduce(
-          (sum, item) => sum + item.quantity,
-          0,
-        ),
-        special_requests: order.special_requests,
+        total_price: order.total,
+        special_instructions: order.special_requests,
         created_at: order.created_at,
+        updated_at: order.updated_at,
         items: order.order_items.map((item) => ({
           id: item.id,
+          menu_item_id: item.menu_item_id,
           name: item.menu_item.name,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          subtotal: item.subtotal,
+          notes: item.special_requests,
           modifiers: item.modifiers.map((mod) => ({
+            id: mod.modifier_option?.id || mod.id,
             name: mod.modifier_option.name,
-            price_adjustment: mod.price_adjustment,
+            price: mod.price_adjustment,
           })),
-          special_requests: item.special_requests,
         })),
       })),
       total: orders.length,
@@ -180,8 +179,24 @@ export class WaiterService {
       },
     });
 
-    // TODO: Emit Socket.IO event to kitchen (order_accepted)
-    // TODO: Emit Socket.IO event to customer (order_accepted)
+    // Emit Socket.IO event to kitchen (order_accepted)
+    this.notificationsGateway.emitToRole('kitchen', 'order_accepted', {
+      order_id: updatedOrder.id,
+      order_number: updatedOrder.order_number,
+      restaurant_id: restaurantId,
+      table_number: updatedOrder.table.table_number,
+      items_count: updatedOrder.order_items.length,
+    });
+
+    // Emit Socket.IO event to customer (order_status_update)
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: updatedOrder.id,
+        order_number: updatedOrder.order_number,
+        status: 'accepted',
+        message: 'Your order has been accepted by the waiter',
+      });
+    }
 
     // Auto-update table status
     await this.tablesService.autoUpdateTableStatusByOrder(orderId);
@@ -193,13 +208,31 @@ export class WaiterService {
         id: updatedOrder.id,
         order_number: updatedOrder.order_number,
         status: updatedOrder.status,
-        table: updatedOrder.table,
-        total: updatedOrder.total,
+        table_id: updatedOrder.table.id,
+        table_number: updatedOrder.table.table_number,
+        customer_id: updatedOrder.customer_id,
+        customer_name: null,
+        total_price: updatedOrder.total,
+        special_instructions: updatedOrder.special_requests,
+        created_at: updatedOrder.created_at,
+        updated_at: updatedOrder.updated_at,
         accepted_at: updatedOrder.accepted_at,
+        preparing_started_at: updatedOrder.preparing_started_at,
+        ready_at: updatedOrder.ready_at,
+        served_at: updatedOrder.served_at,
+        completed_at: updatedOrder.completed_at,
         items: updatedOrder.order_items.map((item) => ({
+          id: item.id,
+          menu_item_id: item.menu_item_id,
           name: item.menu_item.name,
           quantity: item.quantity,
-          prep_time: item.menu_item.prep_time_minutes,
+          unit_price: item.unit_price,
+          notes: item.special_requests,
+          modifiers: item.modifiers.map((mod) => ({
+            id: mod.modifier_option?.id || mod.id,
+            name: mod.modifier_option.name,
+            price: mod.price_adjustment,
+          })),
         })),
       },
     };
@@ -255,7 +288,15 @@ export class WaiterService {
       },
     });
 
-    // TODO: Emit Socket.IO event to customer (order_rejected)
+    // Emit Socket.IO event to customer (order_rejected)
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_rejected', {
+        order_id: updatedOrder.id,
+        order_number: updatedOrder.order_number,
+        reason: rejectDto.reason,
+        message: 'Your order has been rejected',
+      });
+    }
 
     // Auto-update table status (table might become available if no other orders)
     await this.tablesService.autoUpdateTableStatusByOrder(orderId);
@@ -318,7 +359,15 @@ export class WaiterService {
       },
     });
 
-    // TODO: Emit Socket.IO event to customer (order_served)
+    // Emit Socket.IO event to customer (order_served)
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
+        order_id: updatedOrder.id,
+        order_number: updatedOrder.order_number,
+        status: 'served',
+        message: 'Your order has been served',
+      });
+    }
 
     // Auto-update table status (table still occupied until order completed)
     await this.tablesService.autoUpdateTableStatusByOrder(orderId);
@@ -390,21 +439,29 @@ export class WaiterService {
       data: orders.map((order) => ({
         id: order.id,
         order_number: order.order_number,
-        table_id: order.table.id,
-        table_number: order.table.table_number,
+        table_id: order.table?.id || null,
+        table_number: order.table?.table_number || null,
+        customer_id: order.customer_id || null,
+        customer_name: null,
         status: order.status,
         total_price: order.total,
+        special_instructions: order.special_requests,
         items: order.order_items.map((item) => ({
           id: item.id,
           menu_item_id: item.menu_item_id,
           name: item.menu_item.name,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          notes: item.notes,
-          modifiers: [], // TODO: Map modifiers if needed
+          notes: item.special_requests,
+          modifiers: [],
         })),
         created_at: order.created_at,
         updated_at: order.updated_at,
+        accepted_at: order.accepted_at,
+        preparing_started_at: order.preparing_started_at,
+        ready_at: order.ready_at,
+        served_at: order.served_at,
+        completed_at: order.completed_at,
       })),
       total: orders.length,
     };
@@ -504,32 +561,34 @@ export class WaiterService {
       success: true,
       data: {
         waiter_id: waiterId,
-        restaurant_id: restaurantId,
-        statistics: {
-          total_orders_accepted: totalAccepted,
-          total_orders_served: totalServed,
-          total_orders_completed: totalCompleted,
-          total_orders_rejected: rejectedOrders, // Note: This is restaurant-wide, not waiter-specific
-          average_service_time_minutes: averageServiceTimeMinutes,
-          total_revenue: totalRevenue,
-          acceptance_rate:
-            totalAccepted > 0
-              ? (
-                  (totalAccepted / (totalAccepted + rejectedOrders)) *
-                  100
-                ).toFixed(2)
-              : '0.00',
-        },
-        today: {
+        waiter_name: '', // TODO: Join with users table to get name
+        today_stats: {
           orders_accepted: todayOrders.length,
+          orders_rejected: 0, // TODO: Track per-waiter rejections
           orders_served: todayOrders.filter(
             (o) => o.status === 'served' || o.status === 'completed',
           ).length,
-          revenue: todayOrders
-            .filter((o) => o.status === 'completed')
-            .reduce((sum, order) => sum + Number(order.total), 0),
+          average_service_time_minutes: averageServiceTimeMinutes,
         },
-        recent_orders: recentOrders,
+        week_stats: {
+          total_orders: totalAccepted,
+          acceptance_rate: parseFloat(
+            totalAccepted > 0
+              ? ((totalAccepted / (totalAccepted + rejectedOrders)) * 100).toFixed(2)
+              : '0.00'
+          ),
+          rejection_rate: parseFloat(
+            rejectedOrders > 0
+              ? ((rejectedOrders / (totalAccepted + rejectedOrders)) * 100).toFixed(2)
+              : '0.00'
+          ),
+          average_daily_orders: Math.round(totalAccepted / 7),
+        },
+        all_time_stats: {
+          total_orders_served: totalServed,
+          total_orders_accepted: totalAccepted,
+          total_orders_rejected: rejectedOrders,
+        },
       },
     };
   }
@@ -655,19 +714,19 @@ export class WaiterService {
       return b.acceptance_rate - a.acceptance_rate;
     });
 
-    // Add rank
+    // Add rank and format for frontend
     const rankedLeaderboard = leaderboard.map((entry, index) => ({
+      waiter_id: entry.waiter_id,
+      waiter_name: '', // TODO: Join with users table to get name
+      orders_served: entry.orders_served,
+      acceptance_rate: entry.acceptance_rate,
+      average_service_time: entry.average_service_time,
       rank: index + 1,
-      ...entry,
     }));
 
     return {
       success: true,
-      data: {
-        restaurant_id: restaurantId,
-        period,
-        leaderboard: rankedLeaderboard,
-      },
+      data: rankedLeaderboard,
     };
   }
 }
