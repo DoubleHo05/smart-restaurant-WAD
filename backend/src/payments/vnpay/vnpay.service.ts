@@ -99,7 +99,7 @@ export class VnPayService {
 
   verifySignature(query: any): boolean {
     console.log('🔍 [VNPay Verify] Starting signature verification');
-    
+
     // Clone query để không mutate original
     const params = { ...query };
     const vnp_SecureHash = params['vnp_SecureHash'];
@@ -116,7 +116,10 @@ export class VnPayService {
       .map((key) => {
         // Encode như PHP urlencode (space → +)
         const encodedKey = encodeURIComponent(key).replace(/%20/g, '+');
-        const encodedValue = encodeURIComponent(sortedParams[key]).replace(/%20/g, '+');
+        const encodedValue = encodeURIComponent(sortedParams[key]).replace(
+          /%20/g,
+          '+',
+        );
         return `${encodedKey}=${encodedValue}`;
       })
       .join('&');

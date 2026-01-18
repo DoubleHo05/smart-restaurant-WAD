@@ -25,7 +25,7 @@ const waiterSocket = io(SOCKET_URL, {
   transports: ['websocket'],
 });
 
-// Connect customer socket  
+// Connect customer socket
 const customerSocket = io(SOCKET_URL, {
   auth: { token: TOKENS.customer },
   transports: ['websocket'],
@@ -40,13 +40,21 @@ waiterSocket.on('connect', () => {
 waiterSocket.on('bill_request_created', (data) => {
   console.log('\n🔔 [WAITER] Bill Request Created:');
   console.log(JSON.stringify(data, null, 2));
-  receivedNotifications.push({ role: 'waiter', event: 'bill_request_created', data });
+  receivedNotifications.push({
+    role: 'waiter',
+    event: 'bill_request_created',
+    data,
+  });
 });
 
 waiterSocket.on('payment_completed', (data) => {
   console.log('\n🎉 [WAITER] Payment Completed:');
   console.log(JSON.stringify(data, null, 2));
-  receivedNotifications.push({ role: 'waiter', event: 'payment_completed', data });
+  receivedNotifications.push({
+    role: 'waiter',
+    event: 'payment_completed',
+    data,
+  });
 });
 
 waiterSocket.on('payment_failed', (data) => {
@@ -58,7 +66,7 @@ waiterSocket.on('payment_failed', (data) => {
 customerSocket.on('connect', () => {
   console.log('✅ Customer socket connected:', customerSocket.id);
   console.log('\n📡 Listening for notifications...\n');
-  
+
   // Start payment flow after sockets connected
   setTimeout(startPaymentFlow, 2000);
 });
@@ -66,13 +74,21 @@ customerSocket.on('connect', () => {
 customerSocket.on('payment_completed', (data) => {
   console.log('\n🎉 [CUSTOMER] Payment Completed:');
   console.log(JSON.stringify(data, null, 2));
-  receivedNotifications.push({ role: 'customer', event: 'payment_completed', data });
+  receivedNotifications.push({
+    role: 'customer',
+    event: 'payment_completed',
+    data,
+  });
 });
 
 customerSocket.on('payment_failed', (data) => {
   console.log('\n❌ [CUSTOMER] Payment Failed:');
   console.log(JSON.stringify(data, null, 2));
-  receivedNotifications.push({ role: 'customer', event: 'payment_failed', data });
+  receivedNotifications.push({
+    role: 'customer',
+    event: 'payment_failed',
+    data,
+  });
 });
 
 waiterSocket.on('connect_error', (error) => {
@@ -136,17 +152,22 @@ async function startPaymentFlow() {
 
     rl.question('Paste return URL here: ', async (returnUrl) => {
       rl.close();
-      
+
       try {
         console.log('\n4️⃣  Processing payment return...');
-        
+
         // Call backend return endpoint
-        const response = await axios.get(returnUrl.replace('http://localhost:5173/payment/result', `${BACKEND_URL}/payments/vnpay/return`));
-        
+        const response = await axios.get(
+          returnUrl.replace(
+            'http://localhost:5173/payment/result',
+            `${BACKEND_URL}/payments/vnpay/return`,
+          ),
+        );
+
         if (response.data.success) {
           console.log('✅ Payment verified successfully!');
           console.log('   Waiting for socket notifications...');
-          
+
           // Wait for socket notifications
           setTimeout(showSummary, 3000);
         } else {
@@ -168,7 +189,9 @@ function showSummary() {
   console.log('\n\n' + '='.repeat(60));
   console.log('📊 NOTIFICATION SUMMARY');
   console.log('='.repeat(60));
-  console.log(`Total notifications received: ${receivedNotifications.length}\n`);
+  console.log(
+    `Total notifications received: ${receivedNotifications.length}\n`,
+  );
 
   if (receivedNotifications.length === 0) {
     console.log('❌ No notifications received!');
@@ -185,11 +208,11 @@ function showSummary() {
   }
 
   console.log('='.repeat(60));
-  
+
   // Disconnect
   waiterSocket.disconnect();
   customerSocket.disconnect();
-  
+
   setTimeout(() => process.exit(0), 1000);
 }
 

@@ -190,12 +190,16 @@ export class WaiterService {
 
     // Emit Socket.IO event to customer (order_status_update)
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
-        order_id: updatedOrder.id,
-        order_number: updatedOrder.order_number,
-        status: 'accepted',
-        message: 'Your order has been accepted by the waiter',
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: updatedOrder.id,
+          order_number: updatedOrder.order_number,
+          status: 'accepted',
+          message: 'Your order has been accepted by the waiter',
+        },
+      );
     }
 
     // Auto-update table status
@@ -290,12 +294,16 @@ export class WaiterService {
 
     // Emit Socket.IO event to customer (order_rejected)
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_rejected', {
-        order_id: updatedOrder.id,
-        order_number: updatedOrder.order_number,
-        reason: rejectDto.reason,
-        message: 'Your order has been rejected',
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_rejected',
+        {
+          order_id: updatedOrder.id,
+          order_number: updatedOrder.order_number,
+          reason: rejectDto.reason,
+          message: 'Your order has been rejected',
+        },
+      );
     }
 
     // Auto-update table status (table might become available if no other orders)
@@ -361,12 +369,16 @@ export class WaiterService {
 
     // Emit Socket.IO event to customer (order_served)
     if (order.customer_id) {
-      this.notificationsGateway.emitToUser(order.customer_id, 'order_status_update', {
-        order_id: updatedOrder.id,
-        order_number: updatedOrder.order_number,
-        status: 'served',
-        message: 'Your order has been served',
-      });
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: updatedOrder.id,
+          order_number: updatedOrder.order_number,
+          status: 'served',
+          message: 'Your order has been served',
+        },
+      );
     }
 
     // Auto-update table status (table still occupied until order completed)
@@ -386,6 +398,81 @@ export class WaiterService {
   }
 
   /**
+   * Complete an order (customer paid at counter)
+   * Status: served -> completed
+   */
+  async completeOrder(orderId: string, restaurantId: string, waiterId: string) {
+    // Find the order and verify it belongs to the restaurant
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        table: {
+          select: {
+            id: true,
+            table_number: true,
+          },
+        },
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Verify order belongs to waiter's restaurant
+    if (order.restaurant_id !== restaurantId) {
+      throw new ForbiddenException(
+        'You can only complete orders from your restaurant',
+      );
+    }
+
+    // Check if order is in served status (or allow ready for direct completion)
+    if (!['served', 'ready'].includes(order.status)) {
+      throw new BadRequestException(
+        `Order cannot be completed. Current status: ${order.status}. Order must be in 'served' or 'ready' status.`,
+      );
+    }
+
+    // Update order status to completed
+    const updatedOrder = await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'completed',
+        completed_at: new Date(),
+      },
+    });
+
+    // Emit Socket.IO event to customer
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_status_update',
+        {
+          order_id: updatedOrder.id,
+          order_number: updatedOrder.order_number,
+          status: 'completed',
+          message: 'Your order has been completed',
+        },
+      );
+    }
+
+    // Auto-update table status (free table if all orders completed)
+    await this.tablesService.autoUpdateTableStatusByOrder(orderId);
+
+    return {
+      success: true,
+      message: 'Order marked as completed',
+      data: {
+        id: updatedOrder.id,
+        order_number: updatedOrder.order_number,
+        status: updatedOrder.status,
+        table_number: order.table.table_number,
+        completed_at: updatedOrder.completed_at,
+      },
+    };
+  }
+
+  /**
    * Get all orders for waiter's restaurant with various statuses
    * Useful for waiter dashboard
    */
@@ -400,7 +487,7 @@ export class WaiterService {
 
     if (status) {
       // Parse comma-separated status string into array
-      const statusArray = status.split(',').map(s => s.trim());
+      const statusArray = status.split(',').map((s) => s.trim());
       whereClause.status = { in: statusArray };
     }
 
@@ -574,13 +661,19 @@ export class WaiterService {
           total_orders: totalAccepted,
           acceptance_rate: parseFloat(
             totalAccepted > 0
-              ? ((totalAccepted / (totalAccepted + rejectedOrders)) * 100).toFixed(2)
-              : '0.00'
+              ? (
+                  (totalAccepted / (totalAccepted + rejectedOrders)) *
+                  100
+                ).toFixed(2)
+              : '0.00',
           ),
           rejection_rate: parseFloat(
             rejectedOrders > 0
-              ? ((rejectedOrders / (totalAccepted + rejectedOrders)) * 100).toFixed(2)
-              : '0.00'
+              ? (
+                  (rejectedOrders / (totalAccepted + rejectedOrders)) *
+                  100
+                ).toFixed(2)
+              : '0.00',
           ),
           average_daily_orders: Math.round(totalAccepted / 7),
         },

@@ -7,6 +7,7 @@ import {
   acceptOrder,
   rejectOrder,
   serveOrder,
+  completeOrder,
   WaiterOrder,
 } from "../../api/waiterApi";
 import OrderDetailModal, {
@@ -15,7 +16,7 @@ import OrderDetailModal, {
 import { useRestaurant } from "../../contexts/RestaurantContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-type TabType = "pending" | "accepted" | "ready";
+type TabType = "pending" | "accepted" | "ready" | "completed";
 
 export default function WaiterOrders() {
   const navigate = useNavigate();
@@ -25,6 +26,7 @@ export default function WaiterOrders() {
   const [pendingOrders, setPendingOrders] = useState<WaiterOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<WaiterOrder[]>([]);
   const [readyOrders, setReadyOrders] = useState<WaiterOrder[]>([]);
+  const [completedOrders, setCompletedOrders] = useState<WaiterOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -49,7 +51,7 @@ export default function WaiterOrders() {
       console.warn("No restaurant ID available");
       return;
     }
-    
+
     setLoading(true);
     try {
       const pending = await getPendingOrders({ restaurant_id: restaurantId });
@@ -60,7 +62,7 @@ export default function WaiterOrders() {
 
       const accepted = await getRestaurantOrders(
         restaurantId,
-        "accepted,preparing"
+        "accepted,preparing",
       );
       console.log("Accepted orders response:", accepted);
       const acceptedData = accepted?.data || accepted;
@@ -70,11 +72,20 @@ export default function WaiterOrders() {
       console.log("Ready orders response:", ready);
       const readyData = ready?.data || ready;
       setReadyOrders(Array.isArray(readyData) ? readyData : []);
+
+      const completed = await getRestaurantOrders(
+        restaurantId,
+        "served,completed",
+      );
+      console.log("Completed orders response:", completed);
+      const completedData = completed?.data || completed;
+      setCompletedOrders(Array.isArray(completedData) ? completedData : []);
     } catch (error) {
       console.error("Error loading orders:", error);
       setPendingOrders([]);
       setAcceptedOrders([]);
       setReadyOrders([]);
+      setCompletedOrders([]);
     } finally {
       setLoading(false);
     }
@@ -174,7 +185,7 @@ export default function WaiterOrders() {
   const renderOrderCard = (order: WaiterOrder) => {
     const totalItems = order.items.reduce(
       (sum, item) => sum + item.quantity,
-      0
+      0,
     );
     const timeAgo = getTimeAgo(order.created_at);
 
@@ -187,7 +198,8 @@ export default function WaiterOrders() {
       >
         <div className="order-header">
           <div className="order-table-badge">
-            {order.table_number || (order.table_id ? `Table ${order.table_id.slice(-2)}` : 'N/A')}
+            {order.table_number ||
+              (order.table_id ? `Table ${order.table_id.slice(-2)}` : "N/A")}
           </div>
           <div className="order-meta">
             <h3 className="order-number">{order.order_number}</h3>
@@ -242,6 +254,44 @@ export default function WaiterOrders() {
             </button>
           </div>
         )}
+
+        {activeTab === "ready" && (
+          <div className="order-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="btn-accept"
+              onClick={async () => {
+                try {
+                  await serveOrder(order.id, restaurantId);
+                  await loadOrders();
+                } catch (error) {
+                  console.error("Error serving order:", error);
+                  alert("Failed to mark order as served. Please try again.");
+                }
+              }}
+            >
+              Mark as Served
+            </button>
+          </div>
+        )}
+
+        {activeTab === "completed" && order.status === "served" && (
+          <div className="order-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="btn-accept"
+              onClick={async () => {
+                try {
+                  await completeOrder(order.id, restaurantId);
+                  await loadOrders();
+                } catch (error) {
+                  console.error("Error completing order:", error);
+                  alert("Failed to mark order as completed. Please try again.");
+                }
+              }}
+            >
+              Mark as Completed
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -254,6 +304,8 @@ export default function WaiterOrders() {
         return acceptedOrders || [];
       case "ready":
         return readyOrders || [];
+      case "completed":
+        return completedOrders || [];
       default:
         return [];
     }
@@ -268,37 +320,41 @@ export default function WaiterOrders() {
 
       {/* Show error if no restaurant */}
       {!restaurantId && (
-        <div className="empty-state" style={{
-          background: "#fee2e2",
-          color: "#991b1b",
-          padding: "2rem",
-          borderRadius: "8px",
-          marginBottom: "1.5rem",
-          border: "1px solid #fecaca"
-        }}>
+        <div
+          className="empty-state"
+          style={{
+            background: "#fee2e2",
+            color: "#991b1b",
+            padding: "2rem",
+            borderRadius: "8px",
+            marginBottom: "1.5rem",
+            border: "1px solid #fecaca",
+          }}
+        >
           <h3 style={{ marginTop: 0 }}>No Restaurant Assigned</h3>
           <p>You need to be assigned to a restaurant to view orders.</p>
-          <p style={{ marginTop: '1rem', fontSize: '0.9em' }}>
-            <strong>Debug Info:</strong><br/>
-            • User ID: {user?.id}<br/>
-            • Roles: {user?.roles?.join(', ')}<br/>
-            • Restaurants in context: {restaurants.length}<br/>
-            • User has restaurants: {user?.restaurants ? 'Yes' : 'No'}<br/>
+          <p style={{ marginTop: "1rem", fontSize: "0.9em" }}>
+            <strong>Debug Info:</strong>
+            <br />• User ID: {user?.id}
+            <br />• Roles: {user?.roles?.join(", ")}
+            <br />• Restaurants in context: {restaurants.length}
+            <br />• User has restaurants: {user?.restaurants ? "Yes" : "No"}
+            <br />
             {user?.restaurants && `• Count: ${user.restaurants.length}`}
           </p>
-          <button 
+          <button
             onClick={() => {
               localStorage.clear();
-              window.location.href = '/admin/login';
+              window.location.href = "/admin/login";
             }}
             style={{
-              marginTop: '1rem',
-              padding: '0.5rem 1rem',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
+              marginTop: "1rem",
+              padding: "0.5rem 1rem",
+              background: "#dc2626",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
             }}
           >
             Logout & Re-login
@@ -327,6 +383,12 @@ export default function WaiterOrders() {
           onClick={() => setActiveTab("ready")}
         >
           Ready to Serve
+        </button>
+        <button
+          className={`tab ${activeTab === "completed" ? "active" : ""}`}
+          onClick={() => setActiveTab("completed")}
+        >
+          Completed
         </button>
       </div>
 

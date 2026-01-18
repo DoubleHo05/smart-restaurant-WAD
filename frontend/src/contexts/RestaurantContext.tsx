@@ -20,7 +20,7 @@ interface RestaurantContextType {
 }
 
 const RestaurantContext = createContext<RestaurantContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function RestaurantProvider({ children }: { children: ReactNode }) {
@@ -36,7 +36,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("auth_token");
     if (!token || !user) {
       console.log(
-        "🔍 [RestaurantContext] No token or user found, clearing restaurants"
+        "🔍 [RestaurantContext] No token or user found, clearing restaurants",
       );
       setRestaurants([]);
       setSelectedRestaurant(null);
@@ -65,8 +65,10 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
 
     // Skip loading for customer/guest users (they don't need restaurant list)
     // We use the user object from context, which is more reliable than localStorage for current state.
-    if (user?.roles?.includes('customer') || user?.roles?.includes('guest')) {
-      console.log("🔍 [RestaurantContext] User is customer or guest, skipping restaurant load.");
+    if (user?.roles?.includes("customer") || user?.roles?.includes("guest")) {
+      console.log(
+        "🔍 [RestaurantContext] User is customer or guest, skipping restaurant load.",
+      );
       setRestaurants([]);
       setSelectedRestaurant(null);
       setLoading(false);
@@ -104,12 +106,12 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
         const restaurantToSelect = data[0];
         console.log(
           "🔍 [RestaurantContext] Auto-selecting restaurant for admin:",
-          restaurantToSelect
+          restaurantToSelect,
         );
         setSelectedRestaurant(restaurantToSelect);
         localStorage.setItem("selectedRestaurantId", restaurantToSelect.id);
         console.log(
-          "✅ [RestaurantContext] Restaurant auto-selected successfully"
+          "✅ [RestaurantContext] Restaurant auto-selected successfully",
         );
       } else if (isSuperAdmin) {
         // Superadmin: load from localStorage if exists
@@ -120,7 +122,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
           {
             savedId,
             found: !!saved,
-          }
+          },
         );
         setSelectedRestaurant(saved || null);
       } else {
@@ -164,7 +166,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       if (e.key === "auth_token") {
         console.log(
           "🔄 [RestaurantContext] Token changed via storage event:",
-          e.newValue ? "Token added" : "Token removed"
+          e.newValue ? "Token added" : "Token removed",
         );
         loadRestaurants();
       }

@@ -425,10 +425,13 @@ export class ReportsService {
       }
 
       // Calculate averages
-      const performanceList = Array.from(waiterStats.values()).map((waiter) => ({
-        ...waiter,
-        avg_order_value: waiter.orders > 0 ? waiter.revenue / waiter.orders : 0,
-      }));
+      const performanceList = Array.from(waiterStats.values()).map(
+        (waiter) => ({
+          ...waiter,
+          avg_order_value:
+            waiter.orders > 0 ? waiter.revenue / waiter.orders : 0,
+        }),
+      );
 
       // Sort by revenue
       performanceList.sort((a, b) => b.revenue - a.revenue);

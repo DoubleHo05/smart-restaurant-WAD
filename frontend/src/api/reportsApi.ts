@@ -17,7 +17,7 @@ export const reportsApi = {
   getDailyRevenue: async (
     restaurantId: string,
     startDate: string,
-    endDate: string
+    endDate: string,
   ): Promise<DailyRevenueData[]> => {
     const response = await axiosInstance.get<DailyRevenueData[]>(
       "/reports/daily-revenue",
@@ -27,7 +27,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -36,7 +36,7 @@ export const reportsApi = {
   getPopularItems: async (
     restaurantId: string,
     limit = 10,
-    days = 30
+    days = 30,
   ): Promise<PopularItem[]> => {
     const response = await axiosInstance.get<PopularItem[]>(
       "/reports/popular-items",
@@ -46,7 +46,7 @@ export const reportsApi = {
           limit,
           days,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -55,7 +55,7 @@ export const reportsApi = {
   getOrdersByStatus: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<OrdersByStatus[]> => {
     const response = await axiosInstance.get<OrdersByStatus[]>(
       "/reports/orders-by-status",
@@ -65,7 +65,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -73,7 +73,7 @@ export const reportsApi = {
   // GET /reports/average-prep-time - Lấy thời gian chuẩn bị trung bình
   getAveragePrepTime: async (
     restaurantId: string,
-    days = 7
+    days = 7,
   ): Promise<AveragePrepTimeData> => {
     const response = await axiosInstance.get<AveragePrepTimeData>(
       "/reports/average-prep-time",
@@ -82,14 +82,14 @@ export const reportsApi = {
           restaurant_id: restaurantId,
           days,
         },
-      }
+      },
     );
     return response.data;
   },
 
   // GET /reports/dashboard-summary - Lấy tổng quan dashboard
   getDashboardSummary: async (
-    restaurantId: string
+    restaurantId: string,
   ): Promise<DashboardSummary> => {
     const response = await axiosInstance.get<DashboardSummary>(
       "/reports/dashboard-summary",
@@ -97,7 +97,7 @@ export const reportsApi = {
         params: {
           restaurant_id: restaurantId,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -110,7 +110,7 @@ export const reportsApi = {
   getRevenueByCategory: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<RevenueByCategoryResponse> => {
     const response = await axiosInstance.get<RevenueByCategoryResponse>(
       "/reports/revenue-by-category",
@@ -120,7 +120,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -129,7 +129,7 @@ export const reportsApi = {
   getWaiterPerformance: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<WaiterPerformanceResponse> => {
     const response = await axiosInstance.get<WaiterPerformanceResponse>(
       "/reports/waiter-performance",
@@ -139,7 +139,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -148,7 +148,7 @@ export const reportsApi = {
   getKitchenEfficiency: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<KitchenEfficiencyResponse> => {
     const response = await axiosInstance.get<KitchenEfficiencyResponse>(
       "/reports/kitchen-efficiency",
@@ -158,7 +158,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -167,7 +167,7 @@ export const reportsApi = {
   getCustomerRetention: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<CustomerRetentionResponse> => {
     const response = await axiosInstance.get<CustomerRetentionResponse>(
       "/reports/customer-retention",
@@ -177,7 +177,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },
@@ -186,7 +186,7 @@ export const reportsApi = {
   getPeakHours: async (
     restaurantId: string,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
   ): Promise<PeakHoursResponse> => {
     const response = await axiosInstance.get<PeakHoursResponse>(
       "/reports/peak-hours",
@@ -196,7 +196,7 @@ export const reportsApi = {
           start_date: startDate,
           end_date: endDate,
         },
-      }
+      },
     );
     return response.data;
   },

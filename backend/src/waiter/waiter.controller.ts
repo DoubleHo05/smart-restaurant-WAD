@@ -120,6 +120,28 @@ export class WaiterController {
   }
 
   /**
+   * POST /api/orders/:id/complete
+   * Mark an order as completed (customer paid at counter)
+   * Body: none
+   * Query params:
+   *  - restaurant_id: UUID (required) - Validates order belongs to this restaurant
+   */
+  @Post(':id/complete')
+  async completeOrder(
+    @Param('id') orderId: string,
+    @Query('restaurant_id') restaurantId: string,
+    @Request() req: any,
+  ) {
+    if (!restaurantId) {
+      throw new BadRequestException('restaurant_id is required');
+    }
+
+    const waiterId = req.user.id;
+
+    return this.waiterService.completeOrder(orderId, restaurantId, waiterId);
+  }
+
+  /**
    * GET /api/waiter/orders
    * Get all orders for the waiter's restaurant with optional filters
    * Query params:

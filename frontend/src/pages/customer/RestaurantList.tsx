@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { getPublicRestaurants } from '../../api/publicApi';
-import type { Restaurant } from '../../types/restaurant.types';
-import './RestaurantList.css';
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
+import { getPublicRestaurants } from "../../api/publicApi";
+import type { Restaurant } from "../../types/restaurant.types";
+import "./RestaurantList.css";
 
 const RestaurantList: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -22,14 +24,14 @@ const RestaurantList: React.FC = () => {
 
   useEffect(() => {
     // Filter restaurants based on search query
-    if (searchQuery.trim() === '') {
+    if (searchQuery.trim() === "") {
       setFilteredRestaurants(restaurants);
     } else {
       const query = searchQuery.toLowerCase();
       const filtered = restaurants.filter(
         (restaurant) =>
           restaurant.name.toLowerCase().includes(query) ||
-          restaurant.address?.toLowerCase().includes(query)
+          restaurant.address?.toLowerCase().includes(query),
       );
       setFilteredRestaurants(filtered);
     }
@@ -44,11 +46,11 @@ const RestaurantList: React.FC = () => {
     };
 
     if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [menuOpen]);
 
@@ -57,13 +59,15 @@ const RestaurantList: React.FC = () => {
       setLoading(true);
       const data = await getPublicRestaurants();
       // Only show active restaurants to customers
-      const activeRestaurants = data.filter((r: Restaurant) => r.status === 'active');
+      const activeRestaurants = data.filter(
+        (r: Restaurant) => r.status === "active",
+      );
       setRestaurants(activeRestaurants);
       setFilteredRestaurants(activeRestaurants);
-      setError('');
+      setError("");
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to load restaurants');
-      console.error('Error loading restaurants:', err);
+      setError(err.response?.data?.message || "Failed to load restaurants");
+      console.error("Error loading restaurants:", err);
     } finally {
       setLoading(false);
     }
@@ -72,23 +76,23 @@ const RestaurantList: React.FC = () => {
   const handleRestaurantClick = (restaurant: Restaurant) => {
     // Navigate to menu with restaurant ID and name
     navigate(`/customer/menu?restaurant=${restaurant.id}`, {
-      state: { restaurantName: restaurant.name }
+      state: { restaurantName: restaurant.name },
     });
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/customer/login');
+    navigate("/");
   };
 
   const isRegisteredUser = () => {
     // Check if user is registered (has auth_token)
-    return !!localStorage.getItem('auth_token');
+    return !!localStorage.getItem("auth_token");
   };
 
   const getRestaurantEmoji = () => {
     // Random emoji for now since we don't have cuisine_type
-    const emojis = ['🍽️', '🍝', '🍱', '�', '🥢', '�', '🥐', '🍛', '🍜', '�'];
+    const emojis = ["🍽️", "🍝", "🍱", "�", "🥢", "�", "🥐", "🍛", "🍜", "�"];
     return emojis[Math.floor(Math.random() * emojis.length)];
   };
 
@@ -99,11 +103,15 @@ const RestaurantList: React.FC = () => {
         <div className="header-content">
           <div className="header-left">
             <div className="user-avatar">
-              {user?.full_name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U'}
+              {user?.full_name?.charAt(0).toUpperCase() ||
+                user?.email?.charAt(0).toUpperCase() ||
+                "U"}
             </div>
             <div className="user-info">
               <div className="greeting">Hello,</div>
-              <div className="user-name">{user?.full_name || user?.email || 'Guest'}</div>
+              <div className="user-name">
+                {user?.full_name || user?.email || "Guest"}
+              </div>
             </div>
           </div>
 
@@ -125,7 +133,7 @@ const RestaurantList: React.FC = () => {
                       className="menu-item"
                       onClick={() => {
                         setMenuOpen(false);
-                        navigate('/customer/dashboard-profile');
+                        navigate("/customer/dashboard-profile");
                       }}
                     >
                       <span className="menu-icon">👤</span>
@@ -135,7 +143,7 @@ const RestaurantList: React.FC = () => {
                       className="menu-item"
                       onClick={() => {
                         setMenuOpen(false);
-                        navigate('/customer/order-history');
+                        navigate("/customer/order-history");
                       }}
                     >
                       <span className="menu-icon">📦</span>
@@ -158,7 +166,7 @@ const RestaurantList: React.FC = () => {
                     className="menu-item"
                     onClick={() => {
                       setMenuOpen(false);
-                      navigate('/customer/login');
+                      navigate("/customer/login");
                     }}
                   >
                     <span className="menu-icon">�</span>
@@ -189,10 +197,7 @@ const RestaurantList: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           {searchQuery && (
-            <button
-              className="search-clear"
-              onClick={() => setSearchQuery('')}
-            >
+            <button className="search-clear" onClick={() => setSearchQuery("")}>
               ✕
             </button>
           )}
@@ -219,8 +224,8 @@ const RestaurantList: React.FC = () => {
             <span className="empty-icon">🔍</span>
             <p>
               {searchQuery
-                ? 'No restaurants found matching your search'
-                : 'No restaurants available at the moment'}
+                ? "No restaurants found matching your search"
+                : "No restaurants available at the moment"}
             </p>
           </div>
         ) : (
@@ -232,9 +237,7 @@ const RestaurantList: React.FC = () => {
                 onClick={() => handleRestaurantClick(restaurant)}
               >
                 <div className="restaurant-card-header">
-                  <div className="restaurant-emoji">
-                    {getRestaurantEmoji()}
-                  </div>
+                  <div className="restaurant-emoji">{getRestaurantEmoji()}</div>
                   <div className="restaurant-status">
                     <span className="status-dot"></span>
                     <span className="status-text">Open</span>

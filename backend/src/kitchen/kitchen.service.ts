@@ -28,7 +28,7 @@ export class KitchenService {
     const whereClause: any = {
       restaurant_id: restaurantId,
       status: {
-        in: ['accepted', 'preparing'], // Orders that kitchen needs to handle
+        in: ['accepted', 'preparing', 'ready'], // Orders that kitchen needs to handle
       },
     };
 

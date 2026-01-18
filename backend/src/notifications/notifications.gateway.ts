@@ -45,8 +45,12 @@ export class NotificationsGateway
         client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
-        this.logger.warn(`Client ${client.id} connected without token`);
-        client.disconnect();
+        // Allow anonymous connections (guest customers)
+        this.logger.log(`Anonymous client connected: ${client.id}`);
+        this.connectedClients.set(client.id, {
+          userId: null,
+          roles: ['guest'],
+        });
         return;
       }
 
@@ -258,7 +262,7 @@ export class NotificationsGateway
 
     // Notify all waiters
     this.emitToRole('waiter', 'bill_request_created', notification);
-    
+
     // Notify admins
     this.emitToRole('admin', 'bill_request_created', notification);
 
@@ -286,7 +290,7 @@ export class NotificationsGateway
 
     // Notify waiters
     this.emitToRole('waiter', 'payment_completed', notification);
-    
+
     // Notify admins
     this.emitToRole('admin', 'payment_completed', notification);
 

@@ -19,12 +19,21 @@ export const getPublicRestaurants = async () => {
 };
 
 // Public Menu API
-export const getPublicMenu = async (categoryId?: string, searchTerm?: string, restaurantId?: string, sortBy?: string) => {
+export const getPublicMenu = async (
+  categoryId?: string,
+  searchTerm?: string,
+  restaurantId?: string,
+  sortBy?: string,
+  page?: number,
+  limit?: number,
+) => {
   const params = new URLSearchParams();
   if (categoryId) params.append('category', categoryId);
   if (searchTerm) params.append('search', searchTerm);
   if (restaurantId) params.append('restaurant', restaurantId);
   if (sortBy) params.append('sortBy', sortBy);
+  if (page) params.append('page', page.toString());
+  if (limit) params.append('limit', limit.toString());
 
   const response = await api.get(`/api/public/menu?${params.toString()}`);
   return response.data;

@@ -177,8 +177,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 user?.roles?.includes("super_admin")
                   ? "Super Admin"
                   : user?.role === "admin" || user?.roles?.includes("admin")
-                  ? "Restaurant Admin"
-                  : "Staff"}
+                    ? "Restaurant Admin"
+                    : "Staff"}
               </div>
             </div>
           </div>

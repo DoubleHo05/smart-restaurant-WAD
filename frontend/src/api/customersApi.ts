@@ -5,6 +5,7 @@ export interface CustomerProfile {
   email: string;
   full_name: string;
   phone?: string;
+  avatar_url?: string;
   created_at: string;
 }
 
@@ -70,5 +71,35 @@ export const getCustomerOrderHistory = async (
   const response = await axios.get(
     `/api/orders/customer/${customerId}${params.toString() ? '?' + params.toString() : ''}`
   );
+  return response.data;
+};
+
+/**
+ * Upload customer avatar
+ */
+export const uploadCustomerAvatar = async (
+  customerId: string,
+  file: File
+): Promise<{ message: string; data: { id: string; avatar_url: string; full_name: string } }> => {
+  const formData = new FormData();
+  formData.append('avatar', file);
+
+  const response = await axios.post(
+    `/api/customers/${customerId}/avatar`,
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }
+  );
+  return response.data;
+};
+
+/**
+ * Delete customer avatar
+ */
+export const deleteCustomerAvatar = async (
+  customerId: string
+): Promise<{ message: string }> => {
+  const response = await axios.delete(`/api/customers/${customerId}/avatar`);
   return response.data;
 };

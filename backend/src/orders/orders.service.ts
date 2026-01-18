@@ -21,7 +21,7 @@ export class OrdersService {
     private cartService: CartService,
     private notificationsGateway: NotificationsGateway,
     private notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
   /**
    * Create a new order with items and modifiers
@@ -44,9 +44,16 @@ export class OrdersService {
 
     // Validate all menu items exist and are available
     const menuItemIds = createDto.items.map((item) => item.menu_item_id);
+    const uniqueMenuItemIds = [...new Set(menuItemIds)]; // Get unique IDs
+
+    console.log('🔍 [Order Debug] Validating menu items...');
+    console.log('  - Restaurant ID:', createDto.restaurant_id);
+    console.log('  - Menu Item IDs requested:', menuItemIds);
+    console.log('  - Unique Menu Item IDs:', uniqueMenuItemIds);
+
     const menuItems = await this.prisma.menuItem.findMany({
       where: {
-        id: { in: menuItemIds },
+        id: { in: uniqueMenuItemIds }, // Use unique IDs for query
         restaurant_id: createDto.restaurant_id,
         is_deleted: false,
       },
@@ -55,16 +62,32 @@ export class OrdersService {
         name: true,
         price: true,
         status: true,
+        restaurant_id: true,
       },
     });
 
-    if (menuItems.length !== menuItemIds.length) {
-      throw new BadRequestException('One or more menu items not found');
+    console.log('  - Menu Items found:', menuItems.length);
+    console.log(
+      '  - Found IDs:',
+      menuItems.map((item) => item.id),
+    );
+
+    // Check if all unique menu items were found
+    if (menuItems.length !== uniqueMenuItemIds.length) {
+      const foundIds = menuItems.map((item) => item.id);
+      const missingIds = uniqueMenuItemIds.filter(
+        (id) => !foundIds.includes(id),
+      );
+      console.log('❌ Missing menu item IDs:', missingIds);
+
+      throw new BadRequestException(
+        `One or more menu items not found. Missing IDs: ${missingIds.join(', ')}`,
+      );
     }
 
     // Check if any items are unavailable
     const unavailableItems = menuItems.filter(
-      (item) => item.status !== 'active',
+      (item) => item.status !== 'available',
     );
     if (unavailableItems.length > 0) {
       throw new BadRequestException(
@@ -715,7 +738,7 @@ export class OrdersService {
   }
 
   /**
-   * Get order history with filters (completed orders only)
+   * Get order history with filters (all orders except pending/preparing)
    * Supports filtering by date range, customer, table, and restaurant
    */
   async getOrderHistory(filters: {
@@ -725,92 +748,92 @@ export class OrdersService {
     start_date?: Date;
     end_date?: Date;
   }) {
-    const where: any = {
-      status: OrderStatus.COMPLETED,
-    };
+    try {
+      console.log('🔍 getOrderHistory called with filters:', filters);
+      const where: any = {};
 
-    // Multi-restaurant support
-    if (filters.restaurant_id) {
-      where.restaurant_id = filters.restaurant_id;
-    }
-
-    // Filter by customer
-    if (filters.customer_id) {
-      where.customer_id = filters.customer_id;
-    }
-
-    // Filter by table
-    if (filters.table_id) {
-      where.table_id = filters.table_id;
-    }
-
-    // Filter by date range
-    if (filters.start_date || filters.end_date) {
-      where.created_at = {};
-      if (filters.start_date) {
-        where.created_at.gte = filters.start_date;
+      // Multi-restaurant support
+      if (filters.restaurant_id) {
+        where.restaurant_id = filters.restaurant_id;
       }
-      if (filters.end_date) {
-        // Set end date to end of day
-        const endDate = new Date(filters.end_date);
-        endDate.setHours(23, 59, 59, 999);
-        where.created_at.lte = endDate;
-      }
-    }
 
-    const [orders, total] = await Promise.all([
-      this.prisma.order.findMany({
-        where,
-        include: {
-          table: {
-            select: {
-              id: true,
-              table_number: true,
-              capacity: true,
-              restaurant_id: true,
-            },
-          },
-          order_items: {
-            include: {
-              menu_item: {
-                select: {
-                  id: true,
-                  name: true,
-                  price: true,
-                },
+      // Filter by customer
+      if (filters.customer_id) {
+        where.customer_id = filters.customer_id;
+      }
+
+      // Filter by table
+      if (filters.table_id) {
+        where.table_id = filters.table_id;
+      }
+
+      // Filter by date range
+      if (filters.start_date || filters.end_date) {
+        where.created_at = {};
+        if (filters.start_date) {
+          where.created_at.gte = filters.start_date;
+        }
+        if (filters.end_date) {
+          // Set end date to end of day
+          const endDate = new Date(filters.end_date);
+          endDate.setHours(23, 59, 59, 999);
+          where.created_at.lte = endDate;
+        }
+      }
+
+      console.log('📊 Prisma where clause:', JSON.stringify(where, null, 2));
+
+      const [orders, total] = await Promise.all([
+        this.prisma.order.findMany({
+          where,
+          include: {
+            table: {
+              select: {
+                id: true,
+                table_number: true,
+                capacity: true,
+                restaurant_id: true,
+                status: true,
               },
-              modifiers: {
-                include: {
-                  modifier_option: {
-                    select: {
-                      id: true,
-                      name: true,
-                      price_adjustment: true,
-                    },
+            },
+            order_items: {
+              include: {
+                menu_item: {
+                  select: {
+                    id: true,
+                    name: true,
+                    price: true,
+                    category_id: true,
                   },
                 },
               },
             },
           },
-        },
-        orderBy: {
-          created_at: 'desc',
-        },
-      }),
-      this.prisma.order.count({ where }),
-    ]);
+          orderBy: {
+            created_at: 'desc',
+          },
+          take: 100, // Limit to 100 orders for performance
+        }),
+        this.prisma.order.count({ where }),
+      ]);
 
-    return {
-      data: orders,
-      total,
-      filters: {
-        restaurant_id: filters.restaurant_id,
-        customer_id: filters.customer_id,
-        table_id: filters.table_id,
-        start_date: filters.start_date,
-        end_date: filters.end_date,
-      },
-    };
+      console.log(`✅ Found ${orders.length} orders out of ${total} total`);
+
+      return {
+        data: orders,
+        total,
+        filters: {
+          restaurant_id: filters.restaurant_id,
+          customer_id: filters.customer_id,
+          table_id: filters.table_id,
+          start_date: filters.start_date,
+          end_date: filters.end_date,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Error in getOrderHistory:', error);
+      throw error;
+    }
   }
 
   /**

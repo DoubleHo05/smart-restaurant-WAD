@@ -16,8 +16,19 @@ export class PublicMenuController {
     @Query('search') searchTerm?: string,
     @Query('restaurant') restaurantId?: string,
     @Query('sortBy') sortBy?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.publicMenuService.getMenu(categoryId, searchTerm, restaurantId, sortBy);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.publicMenuService.getMenu(
+      categoryId,
+      searchTerm,
+      restaurantId,
+      sortBy,
+      pageNum,
+      limitNum,
+    );
   }
 
   @Get('items/:id')

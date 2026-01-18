@@ -184,10 +184,9 @@ export default function MenuItemsManagement() {
     }
 
     try {
-      await menuItemsApi.create({
-        ...formData,
-        restaurant_id: selectedRestaurant.id,
-      });
+      // Don't send restaurant_id - backend gets it from category
+      const { ...createData } = formData;
+      await menuItemsApi.create(createData);
       setShowCreateModal(false);
       resetForm();
       loadMenuItems();
@@ -260,6 +259,12 @@ export default function MenuItemsManagement() {
     // Fetch full item details with photos
     try {
       const detailedItem = await menuItemsApi.getOne(item.id);
+      
+      // Filter out modifier groups that no longer exist (may have been deleted)
+      const validModifierGroupIds = detailedItem.modifierGroups
+        ?.map((g) => g.id)
+        .filter((id) => modifierGroups.some((mg) => mg.id === id)) || [];
+      
       setSelectedItem(detailedItem);
       setFormData({
         category_id: detailedItem.category.id,
@@ -267,9 +272,9 @@ export default function MenuItemsManagement() {
         description: detailedItem.description || "",
         price: detailedItem.price,
         prep_time_minutes: detailedItem.prepTimeMinutes,
-        status: detailedItem.status,
+        status: detailedItem.status.toLowerCase(), // Normalize to lowercase for validation
         is_chef_recommended: detailedItem.isChefRecommended,
-        modifier_group_ids: detailedItem.modifierGroups?.map((g) => g.id) || [],
+        modifier_group_ids: validModifierGroupIds,
       });
       setShowEditModal(true);
     } catch (err: any) {
@@ -949,15 +954,15 @@ export default function MenuItemsManagement() {
                             background:
                               item.status === "available"
                                 ? "#064e3b"
-                                : item.status === "sold_out"
-                                ? "#7f1d1d"
-                                : "#78350f",
+                                : item.status === "unavailable"
+                                ? "#78350f"
+                                : "#7f1d1d",
                             color:
                               item.status === "available"
                                 ? "#6ee7b7"
-                                : item.status === "sold_out"
-                                ? "#fca5a5"
-                                : "#fcd34d",
+                                : item.status === "unavailable"
+                                ? "#fcd34d"
+                                : "#fca5a5",
                           }}
                         >
                           <option value="available">✅ Available</option>
@@ -1328,16 +1333,17 @@ export default function MenuItemsManagement() {
                   </div>
 
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>Status *</label>
                     <select
                       value={formData.status}
                       onChange={(e) =>
                         setFormData({ ...formData, status: e.target.value })
                       }
+                      required
                     >
-                      <option value="available">Available</option>
-                      <option value="unavailable">Unavailable</option>
-                      <option value="sold_out">Sold Out</option>
+                      <option value="available">✅ Available</option>
+                      <option value="unavailable">⏸️ Unavailable</option>
+                      <option value="sold_out">🔴 Sold Out</option>
                     </select>
                   </div>
 
@@ -1572,16 +1578,17 @@ export default function MenuItemsManagement() {
                   </div>
 
                   <div className="form-group">
-                    <label>Status</label>
+                    <label>Status *</label>
                     <select
                       value={formData.status}
                       onChange={(e) =>
                         setFormData({ ...formData, status: e.target.value })
                       }
+                      required
                     >
-                      <option value="available">Available</option>
-                      <option value="unavailable">Unavailable</option>
-                      <option value="sold_out">Sold Out</option>
+                      <option value="available">✅ Available</option>
+                      <option value="unavailable">⏸️ Unavailable</option>
+                      <option value="sold_out">🔴 Sold Out</option>
                     </select>
                   </div>
 

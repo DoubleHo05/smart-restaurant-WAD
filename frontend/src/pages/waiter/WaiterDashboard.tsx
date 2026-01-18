@@ -15,7 +15,7 @@ export default function WaiterDashboard() {
   const { restaurants } = useRestaurant();
   const { user } = useAuth();
   const [performance, setPerformance] = useState<WaiterPerformance | null>(
-    null
+    null,
   );
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export default function WaiterDashboard() {
 
   const loadData = async () => {
     if (!restaurantId || !waiterId) return;
-    
+
     setLoading(true);
     try {
       const [perfData, leaderData] = await Promise.all([
@@ -102,8 +102,6 @@ export default function WaiterDashboard() {
     return myEntry?.rank || "-";
   };
 
-  const stats = getCurrentStats();
-
   if (loading) {
     return (
       <div className="waiter-dashboard loading">
@@ -111,6 +109,8 @@ export default function WaiterDashboard() {
       </div>
     );
   }
+
+  const stats = getCurrentStats();
 
   return (
     <div className="waiter-dashboard">
@@ -212,7 +212,7 @@ export default function WaiterDashboard() {
                       ((stats.orders - stats.rejected) /
                         Math.max(stats.orders, 1)) *
                         100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>
@@ -225,7 +225,7 @@ export default function WaiterDashboard() {
                   style={{
                     height: `${Math.min(
                       (stats.rejected / Math.max(stats.orders, 1)) * 100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>
@@ -238,7 +238,7 @@ export default function WaiterDashboard() {
                   style={{
                     height: `${Math.min(
                       (stats.served / Math.max(stats.orders, 1)) * 100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>

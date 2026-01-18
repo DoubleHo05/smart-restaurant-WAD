@@ -36,7 +36,16 @@ export interface KitchenOrder {
     table_number: string;
     location?: string;
   };
-  order_items: KitchenOrderItem[];
+  items: Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    prep_time_minutes?: number;
+    modifiers?: Array<{
+      name: string;
+    }>;
+    special_requests?: string;
+  }>;
   time_elapsed?: number;
   estimated_prep_time?: number;
   urgency?: "normal" | "warning" | "critical";
@@ -60,14 +69,14 @@ export interface KitchenStats {
 // Get all kitchen orders (accepted & preparing)
 export const getKitchenOrders = async (
   restaurantId: string,
-  tableId?: string
+  tableId?: string,
 ): Promise<KitchenOrder[]> => {
   const params: any = { restaurant_id: restaurantId };
   if (tableId) params.table_id = tableId;
 
   const response = await axiosInstance.get<KitchenOrdersResponse>(
-    "/kitchen/orders",
-    { params }
+    "/api/kitchen/orders",
+    { params },
   );
   return response.data.data || [];
 };
@@ -75,36 +84,38 @@ export const getKitchenOrders = async (
 // Start preparing an order
 export const startPreparing = async (
   orderId: string,
-  restaurantId: string
+  restaurantId: string,
 ): Promise<KitchenOrder> => {
   const response = await axiosInstance.post(
-    `/kitchen/orders/${orderId}/start-preparing`,
+    `/api/kitchen/orders/${orderId}/start-preparing`,
+    {},
     {
-      restaurant_id: restaurantId,
-    }
+      params: { restaurant_id: restaurantId },
+    },
   );
-  return response.data;
+  return response.data.data || response.data;
 };
 
 // Mark order as ready
 export const markReady = async (
   orderId: string,
-  restaurantId: string
+  restaurantId: string,
 ): Promise<KitchenOrder> => {
   const response = await axiosInstance.post(
-    `/kitchen/orders/${orderId}/mark-ready`,
+    `/api/kitchen/orders/${orderId}/mark-ready`,
+    {},
     {
-      restaurant_id: restaurantId,
-    }
+      params: { restaurant_id: restaurantId },
+    },
   );
-  return response.data;
+  return response.data.data || response.data;
 };
 
 // Get kitchen statistics
 export const getKitchenStats = async (
-  restaurantId: string
+  restaurantId: string,
 ): Promise<KitchenStats> => {
-  const response = await axiosInstance.get("/kitchen/stats", {
+  const response = await axiosInstance.get("/api/kitchen/stats", {
     params: { restaurant_id: restaurantId },
   });
   return response.data;
@@ -113,12 +124,15 @@ export const getKitchenStats = async (
 // Batch start preparing multiple orders
 export const batchStartPreparing = async (
   orderIds: string[],
-  restaurantId: string
+  restaurantId: string,
 ): Promise<any> => {
-  const response = await axiosInstance.post("/kitchen/orders/batch-prepare", {
-    order_ids: orderIds,
-    restaurant_id: restaurantId,
-  });
+  const response = await axiosInstance.post(
+    "/api/kitchen/orders/batch-prepare",
+    {
+      order_ids: orderIds,
+      restaurant_id: restaurantId,
+    },
+  );
   return response.data;
 };
 
@@ -126,7 +140,7 @@ export const batchStartPreparing = async (
 export const getDelayedOrders = async (
   restaurantId: string,
   delayThresholdMinutes?: number,
-  tableId?: string
+  tableId?: string,
 ): Promise<KitchenOrder[]> => {
   const params: any = { restaurant_id: restaurantId };
   if (delayThresholdMinutes !== undefined) {
@@ -135,8 +149,8 @@ export const getDelayedOrders = async (
   if (tableId) params.table_id = tableId;
 
   const response = await axiosInstance.get<KitchenOrdersResponse>(
-    "/kitchen/delayed-orders",
-    { params }
+    "/api/kitchen/delayed-orders",
+    { params },
   );
   return response.data.data || [];
 };

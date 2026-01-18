@@ -57,10 +57,27 @@ export class TablesService {
     },
   ): Promise<Table[]> {
     const isSuperAdmin = userRoles.includes('super_admin');
+    const isStaff =
+      userRoles.includes('waiter') || userRoles.includes('kitchen');
     const where: any = {};
 
     // Filter by user's restaurants
-    if (!isSuperAdmin) {
+    if (isSuperAdmin) {
+      // Super admin sees all tables
+    } else if (isStaff) {
+      // Staff sees tables from restaurants they're assigned to
+      const staffRestaurants = await this.prisma.restaurantStaff.findMany({
+        where: {
+          user_id: userId,
+          status: 'active',
+        },
+        select: { restaurant_id: true },
+      });
+      where.restaurant_id = {
+        in: staffRestaurants.map((sr) => sr.restaurant_id),
+      };
+    } else {
+      // Admin/owner sees tables from their own restaurants
       const userRestaurants = await this.prisma.restaurant.findMany({
         where: { owner_id: userId },
         select: { id: true },
@@ -210,7 +227,7 @@ export class TablesService {
         location: table.location,
         capacity: table.capacity,
         status: occupancyStatus,
-        current_orders: table.orders.map(order => ({
+        current_orders: table.orders.map((order) => ({
           id: order.id,
           order_number: order.order_number,
           status: order.status,

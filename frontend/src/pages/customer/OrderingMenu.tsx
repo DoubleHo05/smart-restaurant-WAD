@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPublicMenu, getMenuCategories } from '../../api/publicApi';
+import { fuzzySearchMenuItems } from '../../utils/fuzzySearch';
+import { useUrlSync, useUrlParams } from '../../hooks/useUrlSync';
+import { useInfiniteScroll } from '../../hooks/useInfiniteScroll';
+import { useDebounce } from '../../hooks/useDebounce';
 import './OrderingMenu.css';
 
 interface MenuItem {
@@ -43,9 +47,10 @@ interface RestaurantInfo {
 
 export default function OrderingMenu() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false like CustomerMenu
   const [categories, setCategories] = useState<Category[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [allMenuItems, setAllMenuItems] = useState<MenuItem[]>([]); // Store all items for fuzzy search
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -55,6 +60,69 @@ export default function OrderingMenu() {
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [menuLoaded, setMenuLoaded] = useState(false);
   const [sortBy, setSortBy] = useState<string>(''); // '', 'popularity', 'chef'
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Debounce search term with 300ms delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Get initial params from URL
+  const urlParams = useUrlParams();
+
+  // Sync state with URL
+  useUrlSync({
+    searchTerm,
+    selectedCategory,
+    sortBy,
+    page: page > 1 ? page : undefined,
+  });
+
+  // Infinite scroll logic
+  const handleLoadMore = useCallback(async () => {
+    if (!restaurantInfo?.id || searchTerm.trim() || page >= totalPages) return;
+
+    const nextPage = page + 1;
+    setPage(nextPage);
+
+    try {
+      const menuData = await getPublicMenu(
+        selectedCategory,
+        undefined,
+        restaurantInfo.id,
+        sortBy,
+        nextPage,
+        20
+      );
+
+      const newItems = menuData?.items || [];
+      // Filter out duplicates before appending
+      setAllMenuItems(prev => {
+        const existingIds = new Set(prev.map(item => item.id));
+        const uniqueNewItems = newItems.filter((item: MenuItem) => !existingIds.has(item.id));
+        return [...prev, ...uniqueNewItems];
+      });
+    } catch (error) {
+      console.error('Failed to load more items:', error);
+    }
+  }, [restaurantInfo?.id, searchTerm, page, totalPages, selectedCategory, sortBy]);
+
+  const { isLoadingMore, hasMore, setHasMore } = useInfiniteScroll(handleLoadMore, {
+    threshold: 500,
+    enabled: !searchTerm.trim() && page < totalPages,
+  });
+
+  // Update hasMore when pagination changes
+  useEffect(() => {
+    setHasMore(page < totalPages && !searchTerm.trim());
+  }, [page, totalPages, searchTerm, setHasMore]);
+
+  // Initialize state from URL params on mount
+  useEffect(() => {
+    if (urlParams.searchTerm) setSearchTerm(urlParams.searchTerm);
+    if (urlParams.selectedCategory) setSelectedCategory(urlParams.selectedCategory);
+    if (urlParams.sortBy) setSortBy(urlParams.sortBy);
+    if (urlParams.page) setPage(Number(urlParams.page));
+  }, []); // Only run once on mount
 
   useEffect(() => {
     // Get table and restaurant info from localStorage
@@ -75,7 +143,7 @@ export default function OrderingMenu() {
 
     // Only load menu if not already loaded
     if (!menuLoaded) {
-      loadMenu(restaurantData.id);
+      loadMenu(restaurantData.id, 1, false);
       setMenuLoaded(true);
     }
 
@@ -109,59 +177,129 @@ export default function OrderingMenu() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run once on mount - navigate is stable from react-router
 
-  const loadMenu = async (restaurantId: string) => {
+  const loadMenu = useCallback(async (restaurantId: string, pageNum: number = 1, append: boolean = false, categoryFilter?: string) => {
     try {
-      // Don't show loading spinner if we already have menu data
-      if (menuItems.length === 0) {
-        setLoading(true);
-      }
+      setLoading(true); // Always set loading when loading menu
+
+      // Use passed categoryFilter if provided, otherwise use selectedCategory from state
+      const categoryToUse = categoryFilter !== undefined ? categoryFilter : selectedCategory;
+
+      // If user is searching, load ALL items to ensure search works correctly
+      // Otherwise, use pagination (20 items per page)
+      const limit = searchTerm.trim() ? 1000 : 20;
 
       const [categoriesData, menuData] = await Promise.all([
-        getMenuCategories(restaurantId),
-        getPublicMenu(selectedCategory, searchTerm, restaurantId, sortBy),
+        pageNum === 1 ? getMenuCategories(restaurantId) : Promise.resolve(categories),
+        getPublicMenu(categoryToUse || undefined, undefined, restaurantId, sortBy, pageNum, limit),
       ]);
 
-      setCategories(categoriesData);
-      setMenuItems(menuData.items);
-      console.log('Menu items loaded:', menuData.items);
-      console.log('Chef recommended items:', menuData.items.filter((item: any) => item.isChefRecommended));
+      if (pageNum === 1) {
+        setCategories(categoriesData);
+      }
+
+      const items = menuData?.items || [];
+
+      if (append) {
+        setAllMenuItems(prev => [...prev, ...items]);
+      } else {
+        setAllMenuItems(items);
+        setPage(1);
+      }
+
+      setTotalPages(menuData?.pagination?.totalPages || 1);
+      console.log('Menu items loaded:', items);
+      console.log('Chef recommended items:', items.filter((item: any) => item.isChefRecommended));
     } catch (error) {
       console.error('Failed to load menu:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [categories, selectedCategory, sortBy, searchTerm]);
 
-  const handleSearch = async (term: string) => {
-    if (!restaurantInfo) return;
-    setSearchTerm(term);
-    try {
-      const menuData = await getPublicMenu(selectedCategory, term, restaurantInfo.id, sortBy);
-      setMenuItems(menuData.items);
-    } catch (error) {
-      console.error('Search failed:', error);
+  // Fuzzy search and filter logic
+  const filteredItems = useMemo(() => {
+    let items = allMenuItems;
+
+    // Note: Category filtering is done server-side, no need to filter here
+
+    // Apply fuzzy search
+    if (searchTerm.trim()) {
+      items = fuzzySearchMenuItems(items, searchTerm);
     }
+
+    // Apply sorting
+    if (sortBy === 'popularity') {
+      // Sort by popularity (you can add a popularity field later)
+      items = [...items]; // Keep order for now
+    } else if (sortBy === 'chef') {
+      items = [...items].sort((a, b) => {
+        if (a.isChefRecommended && !b.isChefRecommended) return -1;
+        if (!a.isChefRecommended && b.isChefRecommended) return 1;
+        return 0;
+      });
+    }
+
+    return items;
+  }, [allMenuItems, selectedCategory, searchTerm, sortBy]);
+
+  // Update displayed items when filters change
+  useEffect(() => {
+    setMenuItems(filteredItems);
+  }, [filteredItems]);
+
+  // Effect to handle debounced search
+  useEffect(() => {
+    const performSearch = async () => {
+      if (!restaurantInfo?.id) return;
+
+      // If searching, load ALL items for fuzzy search to work properly
+      if (debouncedSearchTerm.trim()) {
+        setLoading(true);
+        try {
+          const menuData = await getPublicMenu(
+            undefined,
+            undefined,
+            restaurantInfo.id,
+            sortBy,
+            1,
+            1000  // Load all items (adjust if you have more than 1000)
+          );
+          setAllMenuItems(menuData?.items || []);
+          setTotalPages(menuData?.pagination?.totalPages || 1);
+        } catch (error) {
+          console.error('Failed to load menu:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+      // Note: When search is cleared, items remain as-is.
+      // User can select a category to reload with proper filter.
+    };
+
+    performSearch();
+  }, [debouncedSearchTerm, restaurantInfo?.id, sortBy]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);  // Update immediately for UI
+    setPage(1);
+    // API call will be triggered by useEffect after debounce delay
   };
 
   const handleCategoryChange = async (categoryId: string) => {
-    if (!restaurantInfo) return;
     setSelectedCategory(categoryId);
-    try {
-      const menuData = await getPublicMenu(categoryId, searchTerm, restaurantInfo.id, sortBy);
-      setMenuItems(menuData.items);
-    } catch (error) {
-      console.error('Filter failed:', error);
+    setPage(1);
+    // Reload menu with new category filter - pass categoryId directly to avoid stale closure
+    if (restaurantInfo?.id) {
+      await loadMenu(restaurantInfo.id, 1, false, categoryId);
     }
   };
 
   const handleSortChange = async (newSortBy: string) => {
-    if (!restaurantInfo) return;
     setSortBy(newSortBy);
-    try {
-      const menuData = await getPublicMenu(selectedCategory, searchTerm, restaurantInfo.id, newSortBy);
-      setMenuItems(menuData.items);
-    } catch (error) {
-      console.error('Sort failed:', error);
+    setPage(1);
+    // Reload with new sort
+    if (restaurantInfo?.id) {
+      await loadMenu(restaurantInfo.id, 1, false);
     }
   };
 
@@ -203,17 +341,6 @@ export default function OrderingMenu() {
   const removeFromCart = (itemId: string) => {
     setCart(prevCart => prevCart.filter(item => item.id !== itemId));
   };
-
-  if (loading) {
-    return (
-      <div className="ordering-menu">
-        <div className="menu-loading">
-          <div className="spinner"></div>
-          <p>Loading menu...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="ordering-menu">
@@ -278,7 +405,12 @@ export default function OrderingMenu() {
 
           {/* Menu Items Grid */}
           <div className="menu-items-grid">
-            {menuItems.length === 0 ? (
+            {loading && menuItems.length === 0 ? (
+              <div className="menu-loading">
+                <div className="spinner"></div>
+                <p>Loading menu...</p>
+              </div>
+            ) : menuItems.length === 0 ? (
               <div className="no-items">
                 <p>No items found</p>
               </div>
@@ -331,6 +463,40 @@ export default function OrderingMenu() {
                   </div>
                 </div>
               ))
+            )}
+
+            {/* Loading indicator for infinite scroll */}
+            {isLoadingMore && (
+              <div style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: '#7f8c8d'
+              }}>
+                <div style={{
+                  display: 'inline-block',
+                  width: '30px',
+                  height: '30px',
+                  border: '3px solid #f3f3f3',
+                  borderTop: '3px solid #3498db',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }} />
+                <p style={{ marginTop: '10px' }}>Loading more items...</p>
+              </div>
+            )}
+
+            {/* End of results message */}
+            {!hasMore && menuItems.length > 0 && !searchTerm.trim() && (
+              <div style={{
+                gridColumn: '1 / -1',
+                textAlign: 'center',
+                padding: '40px 20px',
+                color: '#95a5a6',
+                fontSize: '14px'
+              }}>
+                ✓ You've reached the end
+              </div>
             )}
           </div>
         </>

@@ -130,6 +130,29 @@
     margin-top: 8px;
 }
 
+.delete-photo-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    margin-top: 10px;
+}
+
+.delete-photo-btn:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+
 /* Tabs */
 .dashboard-profile-container .profile-tabs {
     display: flex;

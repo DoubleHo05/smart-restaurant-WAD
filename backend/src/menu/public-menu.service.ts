@@ -3,12 +3,19 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PublicMenuService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-  async getMenu(categoryId?: string, searchTerm?: string, restaurantId?: string, sortBy?: string) {
+  async getMenu(
+    categoryId?: string,
+    searchTerm?: string,
+    restaurantId?: string,
+    sortBy?: string,
+    page: number = 1,
+    limit: number = 20,
+  ) {
     // Build where clause
     const where: any = {
-      status: 'active', // Only show active items
+      status: 'available', // Only show active items
       is_deleted: false,
     };
 
@@ -33,9 +40,18 @@ export class PublicMenuService {
       { name: 'asc' },
     ];
 
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    // Get total count for pagination metadata
+    const totalCount = await this.prisma.menuItem.count({ where });
+
     // Fetch menu items with categories and photos
     const items = await this.prisma.menuItem.findMany({
       where,
+      skip,
+      take,
       include: {
         category: {
           select: {
@@ -52,16 +68,19 @@ export class PublicMenuService {
           },
         },
         // Include order items for popularity calculation
-        order_items: sortBy === 'popularity' ? {
-          select: {
-            id: true,
-          },
-        } : false,
+        order_items:
+          sortBy === 'popularity'
+            ? {
+                select: {
+                  id: true,
+                },
+              }
+            : false,
       },
-      orderBy: sortBy === 'chef' ? [
-        { is_chef_recommended: 'desc' },
-        { name: 'asc' },
-      ] : orderBy,
+      orderBy:
+        sortBy === 'chef'
+          ? [{ is_chef_recommended: 'desc' }, { name: 'asc' }]
+          : orderBy,
     });
 
     // Sort by popularity if requested
@@ -75,7 +94,7 @@ export class PublicMenuService {
     }
 
     // Fetch all active categories
-    const categoriesWhere: any = { status: 'active' };
+    const categoriesWhere: any = { status: 'available' };
     if (restaurantId) {
       categoriesWhere.restaurant_id = restaurantId;
     }
@@ -91,24 +110,41 @@ export class PublicMenuService {
       },
     });
 
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+
     // Format response
     return {
       categories,
-      items: sortedItems.map(item => ({
+      items: sortedItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
         price: item.price,
         image: item.photos[0]?.url || null,
-        category: item.category ? {
-          id: item.category.id,
-          name: item.category.name,
-        } : null,
-        isAvailable: item.status === 'active',
+        category: item.category
+          ? {
+              id: item.category.id,
+              name: item.category.name,
+            }
+          : null,
+        isAvailable: item.status === 'available',
         isChefRecommended: item.is_chef_recommended,
-        orderCount: sortBy === 'popularity' ? ((item as any).order_items?.length || 0) : undefined,
+        orderCount:
+          sortBy === 'popularity'
+            ? (item as any).order_items?.length || 0
+            : undefined,
       })),
-      totalItems: sortedItems.length,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages,
+        hasNextPage,
+        hasPreviousPage,
+      },
     };
   }
 
@@ -135,7 +171,7 @@ export class PublicMenuService {
             modifier_group: {
               include: {
                 options: {
-                  where: { status: 'active' },
+                  where: { status: 'available' },
                 },
               },
             },
@@ -148,7 +184,7 @@ export class PublicMenuService {
       throw new NotFoundException(`Menu item with ID ${itemId} not found`);
     }
 
-    if (item.status !== 'active' || item.is_deleted) {
+    if (item.status !== 'available' || item.is_deleted) {
       throw new NotFoundException('This menu item is not available');
     }
 
@@ -158,34 +194,36 @@ export class PublicMenuService {
       name: item.name,
       description: item.description,
       price: item.price,
-      category: item.category ? {
-        id: item.category.id,
-        name: item.category.name,
-      } : null,
-      photos: item.photos.map(photo => ({
+      category: item.category
+        ? {
+            id: item.category.id,
+            name: item.category.name,
+          }
+        : null,
+      photos: item.photos.map((photo) => ({
         id: photo.id,
         url: photo.url,
         isPrimary: photo.is_primary,
       })),
-      modifierGroups: item.modifier_groups.map(mig => ({
+      modifierGroups: item.modifier_groups.map((mig) => ({
         id: mig.modifier_group.id,
         name: mig.modifier_group.name,
         isRequired: mig.modifier_group.is_required,
         minSelection: mig.modifier_group.min_selections,
         maxSelection: mig.modifier_group.max_selections,
-        options: mig.modifier_group.options.map(option => ({
+        options: mig.modifier_group.options.map((option) => ({
           id: option.id,
           name: option.name,
           priceAdjustment: option.price_adjustment,
         })),
       })),
-      isAvailable: item.status === 'active',
+      isAvailable: item.status === 'available',
       preparationTime: item.prep_time_minutes,
     };
   }
 
   async getCategories(restaurantId?: string) {
-    const where: any = { status: 'active' };
+    const where: any = { status: 'available' };
     if (restaurantId) {
       where.restaurant_id = restaurantId;
     }
@@ -202,7 +240,7 @@ export class PublicMenuService {
           select: {
             menu_items: {
               where: {
-                status: 'active',
+                status: 'available',
                 is_deleted: false,
               },
             },
@@ -211,7 +249,7 @@ export class PublicMenuService {
       },
     });
 
-    return categories.map(cat => ({
+    return categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
       description: cat.description,
@@ -223,7 +261,7 @@ export class PublicMenuService {
   async getRestaurants() {
     const restaurants = await this.prisma.restaurant.findMany({
       where: {
-        status: 'active',
+        status: 'available',
       },
       select: {
         id: true,
@@ -257,7 +295,7 @@ export class PublicMenuService {
       where: {
         category_id: currentItem.category_id,
         restaurant_id: currentItem.restaurant_id,
-        status: 'active',
+        status: 'available',
         is_deleted: false,
         id: { not: itemId }, // Exclude current item
       },
@@ -278,13 +316,13 @@ export class PublicMenuService {
     });
 
     // Format response
-    return relatedItems.map(item => ({
+    return relatedItems.map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description,
       price: item.price,
       image: item.photos[0]?.url || null,
-      isAvailable: item.status === 'active',
+      isAvailable: item.status === 'available',
       isChefRecommended: item.is_chef_recommended,
     }));
   }

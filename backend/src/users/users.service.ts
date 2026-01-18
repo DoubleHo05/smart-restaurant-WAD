@@ -14,7 +14,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private restaurantStaffService: RestaurantStaffService,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto, restaurantId?: string) {
     const existingUser = await this.prisma.user.findUnique({
@@ -49,6 +49,8 @@ export class UsersService {
         password_hash: hashedPassword,
         full_name: createUserDto.full_name,
         phone: createUserDto.phone,
+        email_verified: true, // Admin-created users are pre-verified
+        status: 'active', // Set active status for immediate use
         user_roles: {
           create: roles.map((role) => ({ role_id: role.id })),
         },

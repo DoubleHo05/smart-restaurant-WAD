@@ -48,7 +48,7 @@ export default function UnifiedDashboard() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null);
   const [allRestaurants, setAllRestaurants] = useState<RestaurantWithStats[]>(
-    []
+    [],
   );
 
   // State for advanced reports
@@ -142,29 +142,29 @@ export default function UnifiedDashboard() {
           reportsApi.getRevenueByCategory(
             selectedRestaurant.id,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
           ),
           reportsApi
             .getWaiterPerformance(
               selectedRestaurant.id,
               dateRange.start,
-              dateRange.end
+              dateRange.end,
             )
             .catch(() => null), // Waiter performance might fail if migration not run
           reportsApi.getKitchenEfficiency(
             selectedRestaurant.id,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
           ),
           reportsApi.getCustomerRetention(
             selectedRestaurant.id,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
           ),
           reportsApi.getPeakHours(
             selectedRestaurant.id,
             dateRange.start,
-            dateRange.end
+            dateRange.end,
           ),
         ]);
 
@@ -180,7 +180,7 @@ export default function UnifiedDashboard() {
         console.error("Failed to load dashboard data:", error);
         if (mounted) {
           setError(
-            error?.response?.data?.message || "Failed to load dashboard data"
+            error?.response?.data?.message || "Failed to load dashboard data",
           );
         }
       } finally {
@@ -240,8 +240,8 @@ export default function UnifiedDashboard() {
             {selectedRestaurant
               ? `${selectedRestaurant.name} - Analytics & Reports`
               : restaurantLoading
-              ? "Loading restaurant..."
-              : "Select a restaurant to view analytics"}
+                ? "Loading restaurant..."
+                : "Select a restaurant to view analytics"}
           </p>
         </div>
 
@@ -548,7 +548,7 @@ export default function UnifiedDashboard() {
                                   key={`cell-${index}`}
                                   fill={COLORS[index % COLORS.length]}
                                 />
-                              )
+                              ),
                             )}
                           </Pie>
                           <Tooltip />
@@ -694,7 +694,7 @@ export default function UnifiedDashboard() {
                           "string"
                             ? customerRetention.summary.retention_rate
                             : `${customerRetention.summary.retention_rate.toFixed(
-                                1
+                                1,
                               )}%`}
                         </div>
                         <div className="retention-label">Retention Rate</div>
@@ -705,7 +705,7 @@ export default function UnifiedDashboard() {
                           "string"
                             ? customerRetention.average_orders_per_customer
                             : customerRetention.average_orders_per_customer.toFixed(
-                                1
+                                1,
                               )}
                         </div>
                         <div className="retention-label">
