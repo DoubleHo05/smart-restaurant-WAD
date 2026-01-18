@@ -32,7 +32,7 @@ export class NotificationsGateway
   private readonly logger = new Logger(NotificationsGateway.name);
   private connectedClients = new Map<
     string,
-    { userId: string; roles: string[] }
+    { userId: string | null; roles: string[] }
   >();
 
   constructor(private readonly jwtService: JwtService) {}

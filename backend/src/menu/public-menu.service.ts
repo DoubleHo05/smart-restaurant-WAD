@@ -15,7 +15,7 @@ export class PublicMenuService {
   ) {
     // Build where clause
     const where: any = {
-      status: 'available', // Only show active items
+      status: 'available', // Only show available items
       is_deleted: false,
     };
 
@@ -170,14 +170,28 @@ export class PublicMenuService {
           include: {
             modifier_group: {
               include: {
-                options: {
-                  where: { status: 'available' },
-                },
+                options: true, // Get all options to debug
               },
             },
           },
         },
       },
+    });
+
+    console.log('📦 [Menu] Item fetched:', {
+      id: itemId,
+      name: item?.name,
+      modifier_groups_count: item?.modifier_groups?.length,
+      modifier_groups: item?.modifier_groups?.map((mg) => ({
+        id: mg.modifier_group.id,
+        name: mg.modifier_group.name,
+        options_count: mg.modifier_group.options.length,
+        options: mg.modifier_group.options.map((opt) => ({
+          id: opt.id,
+          name: opt.name,
+          status: opt.status,
+        })),
+      })),
     });
 
     if (!item) {
