@@ -15,7 +15,7 @@ export class PublicMenuService {
   ) {
     // Build where clause
     const where: any = {
-      status: 'active', // Only show active items
+      status: 'available', // Only show available items
       is_deleted: false,
     };
 
@@ -125,7 +125,7 @@ export class PublicMenuService {
           id: item.category.id,
           name: item.category.name,
         } : null,
-        isAvailable: item.status === 'active',
+        isAvailable: item.status === 'available',
         isChefRecommended: item.is_chef_recommended,
         orderCount: sortBy === 'popularity' ? ((item as any).order_items?.length || 0) : undefined,
       })),
@@ -176,7 +176,7 @@ export class PublicMenuService {
       throw new NotFoundException(`Menu item with ID ${itemId} not found`);
     }
 
-    if (item.status !== 'active' || item.is_deleted) {
+    if (item.status !== 'available' || item.is_deleted) {
       throw new NotFoundException('This menu item is not available');
     }
 
@@ -207,7 +207,7 @@ export class PublicMenuService {
           priceAdjustment: option.price_adjustment,
         })),
       })),
-      isAvailable: item.status === 'active',
+      isAvailable: item.status === 'available',
       preparationTime: item.prep_time_minutes,
     };
   }
@@ -230,7 +230,7 @@ export class PublicMenuService {
           select: {
             menu_items: {
               where: {
-                status: 'active',
+                status: 'available',
                 is_deleted: false,
               },
             },
@@ -285,7 +285,7 @@ export class PublicMenuService {
       where: {
         category_id: currentItem.category_id,
         restaurant_id: currentItem.restaurant_id,
-        status: 'active',
+        status: 'available',
         is_deleted: false,
         id: { not: itemId }, // Exclude current item
       },
@@ -312,7 +312,7 @@ export class PublicMenuService {
       description: item.description,
       price: item.price,
       image: item.photos[0]?.url || null,
-      isAvailable: item.status === 'active',
+      isAvailable: item.status === 'available',
       isChefRecommended: item.is_chef_recommended,
     }));
   }
