@@ -100,7 +100,9 @@ const CustomerLogin: React.FC = () => {
           </div>
 
           <div className="forgot-password">
-            <a href="#">Forgot Password?</a>
+            <Link to="/forgot-password" className="auth-link">
+              Forgot Password?
+            </Link>
           </div>
 
           <button

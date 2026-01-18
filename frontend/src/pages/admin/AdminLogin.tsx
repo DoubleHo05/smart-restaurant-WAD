@@ -41,7 +41,7 @@ export default function AdminLogin() {
     } catch (err: any) {
       setError(
         err.response?.data?.message ||
-          "Login failed. Please check your credentials."
+          "Login failed. Please check your credentials.",
       );
     } finally {
       setIsLoading(false);
@@ -96,7 +96,7 @@ export default function AdminLogin() {
               />
               Remember me
             </label>
-            <a href="#" className="forgot-password">
+            <a href="/forgot-password" className="forgot-password">
               Forgot Password?
             </a>
           </div>

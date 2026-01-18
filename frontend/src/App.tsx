@@ -27,6 +27,7 @@ import PaymentStatus from "./pages/customer/PaymentStatus";
 // Auth pages
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import GoogleCallback from "./pages/auth/GoogleCallback";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -76,6 +77,7 @@ function App() {
                     path="/auth/google/callback"
                     element={<GoogleCallback />}
                   />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
 
                   {/* Public customer routes */}
                   <Route path="/qr/:token" element={<QrLanding />} />

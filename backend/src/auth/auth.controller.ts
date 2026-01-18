@@ -11,6 +11,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
@@ -54,6 +55,11 @@ export class AuthController {
   @Post('resend-verification')
   async resendVerification(@Body('email') email: string) {
     return this.authService.resendVerificationEmail(email);
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(forgotPasswordDto.email);
   }
 
   @Get('google')

@@ -11,7 +11,7 @@ export const authApi = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await axiosInstance.post<AuthResponse>(
       "/auth/login",
-      data
+      data,
     );
     return response.data;
   },
@@ -20,7 +20,7 @@ export const authApi = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await axiosInstance.post<AuthResponse>(
       "/auth/register",
-      data
+      data,
     );
     return response.data;
   },
@@ -35,4 +35,16 @@ export const authApi = {
   logout: async (): Promise<void> => {
     await axiosInstance.post("/auth/logout");
   },
+
+  // POST /auth/forgot-password
+  forgotPassword: async (
+    email: string,
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await axiosInstance.post("/auth/forgot-password", {
+      email,
+    });
+    return response.data;
+  },
 };
+
+export default authApi;
