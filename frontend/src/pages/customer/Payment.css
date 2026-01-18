@@ -126,7 +126,7 @@
 
 .bill-item-mods {
   font-size: 13px;
-  color: #7f8c8d;
+  color: #6b7280;
 }
 
 .bill-item-price {
@@ -339,7 +339,7 @@
 }
 
 .request-bill-btn:disabled {
-  background: #95a5a6;
+  background: #9ca3af;
   cursor: not-allowed;
   transform: none;
 }

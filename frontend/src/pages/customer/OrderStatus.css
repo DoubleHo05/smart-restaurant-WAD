@@ -6,7 +6,7 @@
   --success: #27ae60;
   --warning: #f39c12;
   --white: #ffffff;
-  --gray: #95a5a6;
+  --gray: #6b7280;
   --light: #ecf0f1;
   --border-radius: 12px;
   --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -131,7 +131,7 @@
 }
 
 .no-orders p {
-  color: #7f8c8d;
+  color: #6b7280;
   margin-bottom: 25px;
 }
 
@@ -178,7 +178,7 @@
 
 .order-time {
   font-size: 13px;
-  color: #95a5a6;
+  color: #6b7280;
 }
 
 .order-status {
@@ -219,7 +219,7 @@
   height: 35px;
   border-radius: 50%;
   background: #e0e0e0;
-  color: #999;
+  color: #6b7280;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -272,7 +272,7 @@
 
 .progress-step span {
   font-size: 12px;
-  color: #666;
+  color: #4b5563;
   text-align: center;
 }
 
@@ -432,7 +432,7 @@
 
 .item-mods {
   font-size: 12px;
-  color: #7f8c8d;
+  color: #6b7280;
   display: block;
 }
 
@@ -513,7 +513,7 @@
 
 .order-item .item-mods {
   font-size: 12px;
-  color: #7f8c8d;
+  color: #6b7280;
 }
 
 /* Order Total */
@@ -580,7 +580,7 @@
 }
 
 .add-more-section p {
-  color: #7f8c8d;
+  color: #6b7280;
   margin-bottom: 15px;
   font-size: 14px;
 }

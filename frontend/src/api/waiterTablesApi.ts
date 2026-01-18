@@ -39,7 +39,10 @@ export const updateTableOccupancyStatus = async (
 ): Promise<Table> => {
   const response = await axiosInstance.patch(
     `/tables/${tableId}/occupancy-status`,
-    data,
+    { status: data.status },
+    {
+      params: { restaurant_id: data.restaurant_id },
+    },
   );
   return response.data;
 };

@@ -4,7 +4,7 @@
   --background: #f5f5f5;
   --card-bg: #ffffff;
   --text-primary: #2c3e50;
-  --text-secondary: #7f8c8d;
+  --text-secondary: #6b7280;
   --border-color: #e0e0e0;
 }
 
@@ -18,7 +18,11 @@
 .ordering-header {
   position: sticky;
   top: 0;
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    var(--primary-dark) 100%
+  );
   color: white;
   padding: 15px 20px;
   display: grid;
@@ -188,7 +192,6 @@
   color: #1a1a1a;
 }
 
-
 /* Menu Items Grid */
 .menu-items-grid {
   padding: 20px;
@@ -329,7 +332,6 @@
   color: #721c24;
 }
 
-
 .btn-add-to-cart {
   background: var(--primary);
   color: white;
@@ -348,7 +350,7 @@
 }
 
 .btn-add-to-cart:disabled {
-  background: #ccc;
+  background: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -378,7 +380,7 @@
 .empty-cart-icon {
   font-size: 80px;
   margin-bottom: 20px;
-  opacity: 0.3;
+  opacity: 0.5;
 }
 
 .empty-cart h3 {

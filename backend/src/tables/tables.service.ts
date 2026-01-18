@@ -276,17 +276,19 @@ export class TablesService {
       throw new ConflictException('Table does not belong to this restaurant');
     }
 
-    // Note: We're storing occupancy info in description or using a separate field
-    // For now, we'll track it via orders. This method is for manual override.
-    // In production, you might add a separate 'occupancy_status' column to the table
+    // Update table occupancy status in database
+    const updatedTable = await this.prisma.table.update({
+      where: { id: tableId },
+      data: { occupancy_status: occupancyStatus },
+    });
 
     return {
       success: true,
       message: `Table ${table.table_number} status updated to ${occupancyStatus}`,
       data: {
-        id: table.id,
-        table_number: table.table_number,
-        occupancy_status: occupancyStatus,
+        id: updatedTable.id,
+        table_number: updatedTable.table_number,
+        occupancy_status: updatedTable.occupancy_status,
       },
     };
   }
