@@ -106,7 +106,7 @@
 .no-items {
   text-align: center;
   padding: 40px;
-  color: #999;
+  color: #6b7280;
   font-size: 16px;
 }
 
@@ -203,14 +203,14 @@
 
 .menu-item-description {
   margin: 8px 0;
-  color: #666;
+  color: #4b5563;
   font-size: 14px;
   line-height: 1.4;
 }
 
 .prep-time {
   margin: 8px 0;
-  color: #999;
+  color: #6b7280;
   font-size: 13px;
 }
 
@@ -229,7 +229,7 @@
 
 .modifiers-label {
   font-size: 12px;
-  color: #999;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -254,7 +254,7 @@
 .menu-footer {
   text-align: center;
   padding: 30px 20px;
-  color: #666;
+  color: #4b5563;
   border-top: 1px solid #e0e0e0;
 }
 
@@ -264,7 +264,7 @@
 
 .item-count {
   font-size: 14px;
-  color: #999;
+  color: #6b7280;
 }
 
 /* Loading & Error States */
@@ -288,12 +288,12 @@
 }
 
 .error-message p {
-  color: #666;
+  color: #4b5563;
   margin: 10px 0;
 }
 
 .error-hint {
   font-size: 14px;
-  color: #999;
+  color: #6b7280;
   margin-top: 20px;
 }

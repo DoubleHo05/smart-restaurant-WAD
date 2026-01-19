@@ -71,7 +71,16 @@ export class PaymentsService {
       );
     }
 
-    const totalAmount = amount + tips_amount;
+    const totalAmount = Number(amount) + Number(tips_amount);
+
+    console.log('💰 [Payment] Creating payment record:', {
+      bill_request_id,
+      payment_method_id: paymentMethod.id,
+      amount: totalAmount,
+      tips_amount: Number(tips_amount),
+      amount_type: typeof totalAmount,
+      tips_type: typeof Number(tips_amount),
+    });
 
     // 3. Tạo payment record (dùng đúng column names từ schema)
     const payment = await this.prisma.payments.create({
@@ -79,7 +88,7 @@ export class PaymentsService {
         bill_request_id,
         payment_method_id: paymentMethod.id,
         amount: totalAmount,
-        tips_amount,
+        tips_amount: Number(tips_amount),
         merged_order_ids: order_ids,
         status: 'pending',
       },

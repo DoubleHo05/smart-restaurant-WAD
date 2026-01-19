@@ -35,6 +35,13 @@ export default function WaiterLayout({ children }: WaiterLayoutProps) {
             Orders
           </Link>
           <Link
+            to="/waiter/bill-requests"
+            className={`nav-link ${isActive("/waiter/bill-requests") ? "active" : ""}`}
+          >
+            <span className="nav-icon">💳</span>
+            Bill Requests
+          </Link>
+          <Link
             to="/waiter/tables"
             className={`nav-link ${isActive("/waiter/tables") ? "active" : ""}`}
           >

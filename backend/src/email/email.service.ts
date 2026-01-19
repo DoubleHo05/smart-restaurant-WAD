@@ -106,13 +106,17 @@ export class EmailService {
     }
   }
 
-  async sendPasswordResetEmail(email: string, token: string) {
-    const resetUrl = `${this.configService.get('FRONTEND_URL')}/reset-password?token=${token}`;
+  async sendPasswordResetEmail(
+    email: string,
+    fullName: string,
+    newPassword: string,
+  ) {
+    const loginUrl = `${this.configService.get('FRONTEND_URL')}/login`;
 
     const mailOptions = {
       from: `"Smart Restaurant" <${this.configService.get('SMTP_USER')}>`,
       to: email,
-      subject: 'Đặt lại mật khẩu - Smart Restaurant',
+      subject: 'Mật khẩu mới của bạn - Smart Restaurant',
       html: `
         <!DOCTYPE html>
         <html>
@@ -136,10 +140,21 @@ export class EmailService {
               border-radius: 10px;
               box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
+            .password-box {
+              background-color: #f0f0f0;
+              padding: 15px;
+              border-radius: 5px;
+              text-align: center;
+              font-size: 24px;
+              font-weight: bold;
+              letter-spacing: 2px;
+              margin: 20px 0;
+              color: #e74c3c;
+            }
             .button {
               display: inline-block;
               padding: 12px 30px;
-              background-color: #ff5722;
+              background-color: #e74c3c;
               color: white !important;
               text-decoration: none;
               border-radius: 5px;
@@ -154,25 +169,38 @@ export class EmailService {
             h1 {
               color: #2c3e50;
             }
+            .warning {
+              background-color: #fff3cd;
+              border-left: 4px solid #ffc107;
+              padding: 10px;
+              margin: 15px 0;
+            }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="content">
-              <h1>🔒 Đặt lại mật khẩu</h1>
-              <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.</p>
-              <p>Nhấn vào nút bên dưới để đặt lại mật khẩu:</p>
+              <h1>🔐 Mật khẩu mới của bạn</h1>
+              <p>Xin chào ${fullName},</p>
+              <p>Chúng tôi đã tạo mật khẩu mới cho tài khoản của bạn như bạn yêu cầu.</p>
               
-              <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Đặt lại mật khẩu</a>
+              <p><strong>Mật khẩu mới của bạn là:</strong></p>
+              <div class="password-box">${newPassword}</div>
+              
+              <div class="warning">
+                <strong>⚠️ Lưu ý bảo mật:</strong>
+                <ul style="margin: 5px 0;">
+                  <li>Vui lòng đổi mật khẩu ngay sau khi đăng nhập</li>
+                  <li>Không chia sẻ mật khẩu này với bất kỳ ai</li>
+                  <li>Email này nên được xóa sau khi bạn đã lưu mật khẩu</li>
+                </ul>
               </div>
               
-              <p>Hoặc copy đường link sau vào trình duyệt:</p>
-              <p style="word-break: break-all; color: #666; font-size: 14px;">${resetUrl}</p>
+              <div style="text-align: center;">
+                <a href="${loginUrl}" class="button">Đăng nhập ngay</a>
+              </div>
               
-              <p><strong>Lưu ý:</strong> Link này có hiệu lực trong vòng 1 giờ.</p>
-              
-              <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+              <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng liên hệ với chúng tôi ngay lập tức.</p>
               
               <div class="footer">
                 <p>Email này được gửi tự động, vui lòng không trả lời.</p>

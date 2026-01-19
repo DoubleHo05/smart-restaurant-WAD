@@ -8,6 +8,8 @@ export interface OrderDetailItem {
   quantity: number;
   unit_price: number;
   notes?: string;
+  status?: "QUEUED" | "COOKING" | "READY" | "REJECTED";
+  rejection_reason?: string;
   modifiers?: Array<{
     id: string;
     name: string;
@@ -143,8 +145,9 @@ export default function OrderDetailModal({
 
   const calculateItemTotal = (item: OrderDetailItem) => {
     const modifiersTotal =
-      item.modifiers?.reduce((sum, mod) => sum + mod.price, 0) || 0;
-    return (item.unit_price + modifiersTotal) * item.quantity;
+      item.modifiers?.reduce((sum, mod) => sum + Number(mod.price || 0), 0) ||
+      0;
+    return (Number(item.unit_price || 0) + modifiersTotal) * item.quantity;
   };
 
   const getStatusColor = (status: string) => {
@@ -260,44 +263,54 @@ export default function OrderDetailModal({
             <div className="items-section">
               <h3 className="section-title">Order Items</h3>
               <div className="items-list">
-                {order.items.map((item) => (
-                  <div key={item.id} className="order-item-card">
-                    <div className="item-header">
-                      <div className="item-name-section">
-                        <span className="item-quantity">{item.quantity}x</span>
-                        <span className="item-name">{item.name}</span>
+                {order.items
+                  .filter((item) => {
+                    // Hide rejected items for waiter and kitchen, but show for customer
+                    if (role === "waiter" || role === "kitchen") {
+                      return item.status !== "REJECTED";
+                    }
+                    return true; // Show all items for other roles (customer, admin)
+                  })
+                  .map((item) => (
+                    <div key={item.id} className="order-item-card">
+                      <div className="item-header">
+                        <div className="item-name-section">
+                          <span className="item-quantity">
+                            {item.quantity}x
+                          </span>
+                          <span className="item-name">{item.name}</span>
+                        </div>
+                        <span className="item-total">
+                          {calculateItemTotal(item).toLocaleString("vi-VN")}đ
+                        </span>
                       </div>
-                      <span className="item-total">
-                        {calculateItemTotal(item).toLocaleString("vi-VN")}đ
-                      </span>
+
+                      {item.modifiers && item.modifiers.length > 0 && (
+                        <div className="item-modifiers">
+                          <span className="modifiers-label">Modifiers:</span>
+                          <ul className="modifiers-list">
+                            {item.modifiers.map((modifier) => (
+                              <li key={modifier.id} className="modifier-item">
+                                {modifier.name}
+                                {modifier.price > 0 && (
+                                  <span className="modifier-price">
+                                    +{modifier.price.toLocaleString("vi-VN")}đ
+                                  </span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {item.notes && (
+                        <div className="item-notes">
+                          <span className="notes-icon">📝</span>
+                          <span className="notes-text">{item.notes}</span>
+                        </div>
+                      )}
                     </div>
-
-                    {item.modifiers && item.modifiers.length > 0 && (
-                      <div className="item-modifiers">
-                        <span className="modifiers-label">Modifiers:</span>
-                        <ul className="modifiers-list">
-                          {item.modifiers.map((modifier) => (
-                            <li key={modifier.id} className="modifier-item">
-                              {modifier.name}
-                              {modifier.price > 0 && (
-                                <span className="modifier-price">
-                                  +{modifier.price.toLocaleString("vi-VN")}đ
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {item.notes && (
-                      <div className="item-notes">
-                        <span className="notes-icon">📝</span>
-                        <span className="notes-text">{item.notes}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
               </div>
             </div>
 

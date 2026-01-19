@@ -52,28 +52,40 @@ export class RestaurantsService {
       '🔍 [RestaurantsService.findAll] userRoles:',
       JSON.stringify(userRoles),
     );
-    console.log(
-      '🔍 [RestaurantsService.findAll] userRoles type:',
-      typeof userRoles,
-    );
-    console.log(
-      '🔍 [RestaurantsService.findAll] userRoles is array:',
-      Array.isArray(userRoles),
-    );
 
     const isSuperAdmin = userRoles && userRoles.includes('super_admin');
+    const isStaff =
+      userRoles &&
+      (userRoles.includes('waiter') || userRoles.includes('kitchen'));
+
     console.log('🔍 [RestaurantsService.findAll] isSuperAdmin:', isSuperAdmin);
+    console.log('🔍 [RestaurantsService.findAll] isStaff:', isStaff);
 
     const where: any = {};
-    if (!isSuperAdmin) {
-      where.owner_id = userId;
+
+    if (isSuperAdmin) {
+      // Super admin sees all restaurants
       console.log(
-        '🔍 [RestaurantsService.findAll] where filter:',
+        '🔍 [RestaurantsService.findAll] Super admin - returning all restaurants',
+      );
+    } else if (isStaff) {
+      // Staff (waiter/kitchen) sees restaurants they're assigned to via restaurant_staff
+      where.restaurant_staff = {
+        some: {
+          user_id: userId,
+          status: 'active',
+        },
+      };
+      console.log(
+        '🔍 [RestaurantsService.findAll] Staff filter:',
         JSON.stringify(where),
       );
     } else {
+      // Admin/owner sees their own restaurants
+      where.owner_id = userId;
       console.log(
-        '🔍 [RestaurantsService.findAll] Super admin - returning all restaurants',
+        '🔍 [RestaurantsService.findAll] Owner filter:',
+        JSON.stringify(where),
       );
     }
 

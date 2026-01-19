@@ -8,6 +8,7 @@ import {
   KitchenOrder,
   batchStartPreparing,
   getDelayedOrders,
+  updateItemStatus,
 } from "../../api/kitchenApi";
 import OrderDetailModal, {
   OrderDetail,
@@ -50,7 +51,7 @@ export default function KitchenDisplay() {
   const [readyOrders, setReadyOrders] = useState<KitchenOrder[]>([]);
   const [delayedOrders, setDelayedOrders] = useState<KitchenOrder[]>([]);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
   const [showDelayedAlert, setShowDelayedAlert] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -71,8 +72,9 @@ export default function KitchenDisplay() {
 
     // Initialize audio context for sound
     try {
-      const ctx = new (window.AudioContext ||
-        (window as any).webkitAudioContext)();
+      const ctx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
       setAudioContext(ctx);
     } catch (e) {
       console.warn("Web Audio API not supported");
@@ -151,7 +153,7 @@ export default function KitchenDisplay() {
   const loadDelayedOrders = async () => {
     if (!restaurantId) {
       console.warn(
-        "[KitchenDisplay] No restaurant ID available for delayed orders"
+        "[KitchenDisplay] No restaurant ID available for delayed orders",
       );
       return;
     }
@@ -174,6 +176,8 @@ export default function KitchenDisplay() {
 
     try {
       await startPreparing(orderId, restaurantId);
+      setShowDetailModal(false);
+      setSelectedOrder(null);
       await loadOrders();
     } catch (error) {
       console.error("Error starting preparation:", error);
@@ -186,6 +190,8 @@ export default function KitchenDisplay() {
 
     try {
       await markReady(orderId, restaurantId);
+      setShowDetailModal(false);
+      setSelectedOrder(null);
       await loadOrders();
     } catch (error) {
       console.error("Error marking order ready:", error);
@@ -229,27 +235,42 @@ export default function KitchenDisplay() {
   };
 
   const convertToOrderDetail = (order: KitchenOrder): OrderDetail => {
+    const items = order.items.map((item) => {
+      const unitPrice = Number((item as any).unit_price || 0);
+      const modifiers =
+        item.modifiers?.map((m) => ({
+          id: m.name,
+          name: m.name,
+          price: Number((m as any).price || 0),
+        })) || [];
+
+      return {
+        id: item.id,
+        menu_item_id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        unit_price: unitPrice,
+        notes: item.special_requests,
+        modifiers,
+      };
+    });
+
+    // Calculate total price from items
+    const totalPrice = items.reduce((sum, item) => {
+      const modifiersTotal =
+        item.modifiers?.reduce((mSum, m) => mSum + m.price, 0) || 0;
+      return sum + (item.unit_price + modifiersTotal) * item.quantity;
+    }, 0);
+
     return {
       id: order.id,
       order_number: order.order_number,
       table_id: order.table_id,
       table_number: order.table.table_number,
       status: order.status,
-      total_price: 0, // Kitchen doesn't track price
+      total_price: totalPrice,
       special_instructions: order.special_instructions,
-      items: order.order_items.map((item) => ({
-        id: item.id,
-        menu_item_id: item.menu_item_id,
-        name: item.menu_item.name,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        notes: item.notes,
-        modifiers: item.modifiers?.map((m) => ({
-          id: m.id,
-          name: m.modifier_option.name,
-          price: m.modifier_option.price_adjustment,
-        })),
-      })),
+      items,
       created_at: order.created_at,
       updated_at: order.created_at,
       accepted_at: order.accepted_at,
@@ -269,13 +290,13 @@ export default function KitchenDisplay() {
 
   const getTimeElapsed = (order: KitchenOrder): string => {
     const startTime = new Date(
-      order.preparing_started_at || order.accepted_at || order.created_at
+      order.preparing_started_at || order.accepted_at || order.created_at,
     );
     const elapsed = Math.floor(
-      (currentTime.getTime() - startTime.getTime()) / 1000 / 60
+      (currentTime.getTime() - startTime.getTime()) / 1000 / 60,
     );
     return `${elapsed}:${String(
-      Math.floor(((currentTime.getTime() - startTime.getTime()) / 1000) % 60)
+      Math.floor(((currentTime.getTime() - startTime.getTime()) / 1000) % 60),
     ).padStart(2, "0")}`;
   };
 
@@ -377,28 +398,129 @@ export default function KitchenDisplay() {
         )}
 
         <div className="order-items-list">
-          {order.order_items.map((item, idx) => (
-            <div key={idx} className="order-item">
-              <div className="item-quantity">{item.quantity}</div>
-              <div className="item-details">
-                <div className="item-name">{item.menu_item.name}</div>
-                {item.modifiers && item.modifiers.length > 0 && (
-                  <div className="item-modifiers">
-                    +{" "}
-                    {item.modifiers
-                      .map((m) => m.modifier_option.name)
-                      .join(", ")}
+          {order.items
+            .filter((item) => item.status !== "REJECTED") // Hide rejected items from kitchen
+            .map((item, idx) => (
+              <div key={idx} className="order-item">
+                <div className="item-quantity">{item.quantity}</div>
+                <div className="item-details">
+                  <div className="item-name">
+                    {item.name}
+                    {item.status && (
+                      <span
+                        className={`item-status-badge ${item.status.toLowerCase()}`}
+                        style={{
+                          display: "inline-block",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.7rem",
+                          marginLeft: "6px",
+                          background:
+                            item.status === "READY"
+                              ? "#dcfce7"
+                              : item.status === "COOKING"
+                                ? "#fef3c7"
+                                : "#e5e7eb",
+                          color:
+                            item.status === "READY"
+                              ? "#16a34a"
+                              : item.status === "COOKING"
+                                ? "#d97706"
+                                : "#6b7280",
+                        }}
+                      >
+                        {item.status}
+                      </span>
+                    )}
                   </div>
-                )}
-                {item.notes && (
-                  <div className="item-notes">📝 {item.notes}</div>
+                  {item.modifiers && item.modifiers.length > 0 && (
+                    <div className="item-modifiers">
+                      + {item.modifiers.map((m) => m.name).join(", ")}
+                    </div>
+                  )}
+                  {item.special_requests && (
+                    <div className="item-notes">📝 {item.special_requests}</div>
+                  )}
+                  {(column === "preparing" || column === "received") && (
+                    <div
+                      className="item-status-buttons"
+                      style={{
+                        display: "flex",
+                        gap: "4px",
+                        marginTop: "4px",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.status !== "COOKING" && (
+                        <button
+                          style={{
+                            padding: "2px 6px",
+                            fontSize: "0.65rem",
+                            background: "#fef3c7",
+                            color: "#d97706",
+                            border: "1px solid #fde047",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await updateItemStatus(
+                                order.id,
+                                item.id,
+                                "COOKING",
+                              );
+                              await loadOrders();
+                            } catch (error) {
+                              console.error(
+                                "Error updating item status:",
+                                error,
+                              );
+                            }
+                          }}
+                        >
+                          🔥 Cooking
+                        </button>
+                      )}
+                      {item.status !== "READY" && (
+                        <button
+                          style={{
+                            padding: "2px 6px",
+                            fontSize: "0.65rem",
+                            background: "#dcfce7",
+                            color: "#16a34a",
+                            border: "1px solid #bbf7d0",
+                            borderRadius: "4px",
+                            cursor: "pointer",
+                          }}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await updateItemStatus(
+                                order.id,
+                                item.id,
+                                "READY",
+                              );
+                              await loadOrders();
+                            } catch (error) {
+                              console.error(
+                                "Error updating item status:",
+                                error,
+                              );
+                            }
+                          }}
+                        >
+                          ✓ Ready
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {item.special_requests?.toLowerCase().includes("hot") && (
+                  <span className="hot-indicator">🔥</span>
                 )}
               </div>
-              {item.notes?.toLowerCase().includes("hot") && (
-                <span className="hot-indicator">🔥</span>
-              )}
-            </div>
-          ))}
+            ))}
         </div>
 
         {column === "received" && (
@@ -433,7 +555,7 @@ export default function KitchenDisplay() {
     const cooking = preparingOrders.length;
     const ready = readyOrders.length;
     const overdue = [...receivedOrders, ...preparingOrders].filter(
-      (o) => o.urgency === "critical"
+      (o) => o.urgency === "critical",
     ).length;
 
     return { pending, cooking, ready, overdue };
@@ -458,11 +580,11 @@ export default function KitchenDisplay() {
       gainNode.gain.setValueAtTime(0, audioContext.currentTime);
       gainNode.gain.linearRampToValueAtTime(
         0.3,
-        audioContext.currentTime + 0.01
+        audioContext.currentTime + 0.01,
       );
       gainNode.gain.exponentialRampToValueAtTime(
         0.01,
-        audioContext.currentTime + 0.3
+        audioContext.currentTime + 0.3,
       );
 
       oscillator.start(audioContext.currentTime);
@@ -479,11 +601,11 @@ export default function KitchenDisplay() {
         gain2.gain.setValueAtTime(0, audioContext.currentTime);
         gain2.gain.linearRampToValueAtTime(
           0.3,
-          audioContext.currentTime + 0.01
+          audioContext.currentTime + 0.01,
         );
         gain2.gain.exponentialRampToValueAtTime(
           0.01,
-          audioContext.currentTime + 0.3
+          audioContext.currentTime + 0.3,
         );
         osc2.start(audioContext.currentTime);
         osc2.stop(audioContext.currentTime + 0.3);
@@ -590,7 +712,7 @@ export default function KitchenDisplay() {
           <div class="order-number">ORDER #${order.order_number}</div>
           <div class="table-info">🍽️ ${order.table.table_number}</div>
           <div class="timestamp">${new Date(
-            order.created_at
+            order.created_at,
           ).toLocaleString()}</div>
           ${
             order.priority_score && order.priority_score > 30
@@ -600,36 +722,34 @@ export default function KitchenDisplay() {
         </div>
 
         <div class="items-section">
-          ${order.order_items
+          ${order.items
             .map(
               (item) => `
             <div class="item">
               <div class="item-header">
                 <span class="item-qty">${item.quantity}x</span>
-                <span class="item-name">${item.menu_item.name}</span>
+                <span class="item-name">${item.name}</span>
               </div>
               ${
                 item.modifiers && item.modifiers.length > 0
                   ? `
                 <div class="modifiers">
-                  + ${item.modifiers
-                    .map((m) => m.modifier_option.name)
-                    .join(", ")}
+                  + ${item.modifiers.map((m) => m.name).join(", ")}
                 </div>
               `
                   : ""
               }
               ${
-                item.notes
+                item.special_requests
                   ? `
                 <div class="notes">
-                  📝 ${item.notes}
+                  📝 ${item.special_requests}
                 </div>
               `
                   : ""
               }
             </div>
-          `
+          `,
             )
             .join("")}
         </div>
@@ -672,8 +792,8 @@ export default function KitchenDisplay() {
         tableName,
         orders,
         totalItems: orders.reduce(
-          (sum, o) => sum + o.order_items.reduce((s, i) => s + i.quantity, 0),
-          0
+          (sum, o) => sum + o.items.reduce((s, i) => s + i.quantity, 0),
+          0,
         ),
       }));
     };
@@ -857,7 +977,7 @@ export default function KitchenDisplay() {
               </div>
               <div className="column-content">
                 {receivedOrders.map((order) =>
-                  renderOrderCard(order, "received")
+                  renderOrderCard(order, "received"),
                 )}
               </div>
             </div>
@@ -870,7 +990,7 @@ export default function KitchenDisplay() {
               </div>
               <div className="column-content">
                 {preparingOrders.map((order) =>
-                  renderOrderCard(order, "preparing")
+                  renderOrderCard(order, "preparing"),
                 )}
               </div>
             </div>
@@ -895,20 +1015,20 @@ export default function KitchenDisplay() {
                 status === "received"
                   ? groupedData.received
                   : status === "preparing"
-                  ? groupedData.preparing
-                  : groupedData.ready;
+                    ? groupedData.preparing
+                    : groupedData.ready;
               const columnName =
                 status === "received"
                   ? "RECEIVED"
                   : status === "preparing"
-                  ? "PREPARING"
-                  : "READY";
+                    ? "PREPARING"
+                    : "READY";
               const columnIcon =
                 status === "received"
                   ? "⚠"
                   : status === "preparing"
-                  ? "🔥"
-                  : "✓";
+                    ? "🔥"
+                    : "✓";
               const headerClass = `${status}-header`;
               const columnClass = `${status}-column`;
 
@@ -936,7 +1056,7 @@ export default function KitchenDisplay() {
                         </div>
                         <div className="table-group-orders">
                           {group.orders.map((order) =>
-                            renderOrderCard(order, status)
+                            renderOrderCard(order, status),
                           )}
                         </div>
                       </div>

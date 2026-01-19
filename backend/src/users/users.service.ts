@@ -14,7 +14,7 @@ export class UsersService {
   constructor(
     private prisma: PrismaService,
     private restaurantStaffService: RestaurantStaffService,
-  ) { }
+  ) {}
 
   async create(createUserDto: CreateUserDto, restaurantId?: string) {
     const existingUser = await this.prisma.user.findUnique({
@@ -98,7 +98,11 @@ export class UsersService {
     return this.formatUser(user);
   }
 
-  async findAll(roleFilter?: string, isSuperAdmin: boolean = false) {
+  async findAll(
+    roleFilter?: string,
+    isSuperAdmin: boolean = false,
+    restaurantId?: string,
+  ) {
     // Build where clause based on user type
     const whereClause: any = {
       is_deleted: false,
@@ -127,9 +131,19 @@ export class UsersService {
     }
     // SuperAdmin without filter sees all users (no additional where clause)
 
+    // If admin (not super_admin) and has restaurantId, filter by restaurant_staff
+    if (!isSuperAdmin && restaurantId) {
+      whereClause.restaurant_staff = {
+        some: {
+          restaurant_id: restaurantId,
+        },
+      };
+    }
+
     console.log('🔍 [UsersService.findAll]', {
       isSuperAdmin,
       roleFilter,
+      restaurantId,
       whereClause: JSON.stringify(whereClause),
     });
 
@@ -139,6 +153,17 @@ export class UsersService {
         user_roles: {
           include: {
             role: true,
+          },
+        },
+        restaurant_staff: {
+          where: restaurantId ? { restaurant_id: restaurantId } : undefined,
+          include: {
+            restaurant: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
@@ -245,7 +270,6 @@ export class UsersService {
     const restaurant = await this.prisma.restaurant.findFirst({
       where: {
         owner_id: userId,
-        is_deleted: false,
       },
     });
     return restaurant;

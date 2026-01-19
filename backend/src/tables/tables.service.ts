@@ -57,10 +57,27 @@ export class TablesService {
     },
   ): Promise<Table[]> {
     const isSuperAdmin = userRoles.includes('super_admin');
+    const isStaff =
+      userRoles.includes('waiter') || userRoles.includes('kitchen');
     const where: any = {};
 
     // Filter by user's restaurants
-    if (!isSuperAdmin) {
+    if (isSuperAdmin) {
+      // Super admin sees all tables
+    } else if (isStaff) {
+      // Staff sees tables from restaurants they're assigned to
+      const staffRestaurants = await this.prisma.restaurantStaff.findMany({
+        where: {
+          user_id: userId,
+          status: 'active',
+        },
+        select: { restaurant_id: true },
+      });
+      where.restaurant_id = {
+        in: staffRestaurants.map((sr) => sr.restaurant_id),
+      };
+    } else {
+      // Admin/owner sees tables from their own restaurants
       const userRestaurants = await this.prisma.restaurant.findMany({
         where: { owner_id: userId },
         select: { id: true },
@@ -210,7 +227,14 @@ export class TablesService {
         location: table.location,
         capacity: table.capacity,
         status: occupancyStatus,
-        current_order: table.orders[0] || null,
+        current_orders: table.orders.map((order) => ({
+          id: order.id,
+          order_number: order.order_number,
+          status: order.status,
+          total_price: order.total,
+          items_count: 0, // TODO: Calculate from order_items
+        })),
+        last_order_time: table.orders[0]?.created_at?.toISOString() || null,
       };
     });
 
@@ -252,17 +276,19 @@ export class TablesService {
       throw new ConflictException('Table does not belong to this restaurant');
     }
 
-    // Note: We're storing occupancy info in description or using a separate field
-    // For now, we'll track it via orders. This method is for manual override.
-    // In production, you might add a separate 'occupancy_status' column to the table
+    // Update table occupancy status in database
+    const updatedTable = await this.prisma.table.update({
+      where: { id: tableId },
+      data: { occupancy_status: occupancyStatus },
+    });
 
     return {
       success: true,
       message: `Table ${table.table_number} status updated to ${occupancyStatus}`,
       data: {
-        id: table.id,
-        table_number: table.table_number,
-        occupancy_status: occupancyStatus,
+        id: updatedTable.id,
+        table_number: updatedTable.table_number,
+        occupancy_status: updatedTable.occupancy_status,
       },
     };
   }

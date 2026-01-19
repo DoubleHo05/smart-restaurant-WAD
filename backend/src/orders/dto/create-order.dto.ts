@@ -26,6 +26,10 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  guest_name?: string;
+
+  @IsOptional()
+  @IsString()
   special_requests?: string;
 
   @IsArray()

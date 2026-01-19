@@ -1,13 +1,4 @@
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
+import api from "./axiosConfig";
 
 // Add auth token interceptor
 api.interceptors.request.use((config) => {
@@ -37,6 +28,8 @@ export interface OrderItem {
   unit_price: number;
   subtotal: number;
   special_requests?: string;
+  status?: "QUEUED" | "COOKING" | "READY" | "REJECTED";
+  rejection_reason?: string;
   menu_item?: {
     id: string;
     name: string;
@@ -67,6 +60,7 @@ export interface Order {
   restaurant_id: string;
   table_id: string;
   customer_id?: string;
+  guest_name?: string;
   order_number: string;
   status: string;
   subtotal: number;
@@ -130,6 +124,7 @@ export const ordersApi = {
     restaurant_id: string;
     table_id: string;
     customer_id?: string;
+    guest_name?: string;
     session_id?: string;
     items: CreateOrderItemDto[];
     special_requests?: string;
@@ -193,6 +188,27 @@ export const ordersApi = {
       return response.data;
     } catch (error) {
       console.error("Error fetching orders by customer:", error);
+      throw error;
+    }
+  },
+
+  // Get my orders (for logged-in customer)
+  async getMyOrders(params?: {
+    status?: string;
+    limit?: number;
+    date?: string;
+  }): Promise<{ data: Order[]; total: number }> {
+    try {
+      const response = await api.get('/api/orders/my-orders', {
+        params: {
+          status: params?.status,
+          limit: params?.limit,
+          date: params?.date,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching my orders:", error);
       throw error;
     }
   },

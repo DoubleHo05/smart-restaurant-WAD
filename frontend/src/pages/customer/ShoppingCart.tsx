@@ -3,12 +3,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import cartApi, { Cart as CartData, CartItem } from '../../api/cartApi';
 import { ordersApi } from '../../api/ordersApi';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import './ShoppingCart.css';
 
 function ShoppingCart() {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateCartCount } = useCart();
+  const { user } = useAuth();
   const [cart, setCart] = useState<CartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,6 +128,9 @@ function ShoppingCart() {
   };
 
 
+  const [guestName, setGuestName] = useState('');
+  const [specialInstructions, setSpecialInstructions] = useState('');
+
   const handlePlaceOrder = async () => {
     if (!cart || cart.items.length === 0) {
       alert('Your cart is empty!');
@@ -157,11 +162,14 @@ function ShoppingCart() {
       const orderData = {
         restaurant_id: tableInfo.restaurantId,
         table_id: tableInfo.tableId,
+        customer_id: user?.id, // Add customer_id if user is logged in
+        guest_name: guestName || undefined,
         items: orderItems,
-        special_requests: undefined
+        special_requests: specialInstructions || undefined
       };
 
       console.log('Sending order data:', JSON.stringify(orderData, null, 2));
+      console.log('User info:', { userId: user?.id, email: user?.email, isLoggedIn: !!user });
 
       // Create order
       const order = await ordersApi.create(orderData);
@@ -318,6 +326,52 @@ function ShoppingCart() {
               <div className="summary-row total">
                 <span>Total</span>
                 <span>{Number(cart!.total).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}₫</span>
+              </div>
+            </div>
+
+            {/* Order Details Inputs */}
+            <div className="order-details-inputs" style={{ padding: '0 16px', marginBottom: '20px', marginTop: '20px' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '14px' }}>
+                  Guest Name <span style={{ fontWeight: 400, color: '#9ca3af' }}>(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: Anh Bao"
+                  value={guestName}
+                  onChange={(e) => setGuestName(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '15px',
+                    backgroundColor: '#f9fafb',
+                    color: '#1f2937'
+                  }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151', fontSize: '14px' }}>
+                  Special Instructions
+                </label>
+                <textarea
+                  placeholder="Ex: No onions, less spicy, separate sauce..."
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: '10px',
+                    border: '1px solid #e5e7eb',
+                    fontSize: '15px',
+                    minHeight: '100px',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#f9fafb',
+                    color: '#1f2937',
+                    resize: 'none'
+                  }}
+                />
               </div>
             </div>
 

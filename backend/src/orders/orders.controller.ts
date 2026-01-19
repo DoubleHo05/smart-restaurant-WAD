@@ -9,15 +9,18 @@ import {
   ValidationPipe,
   Res,
   Header,
+  UseGuards,
+  Req,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('api/orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(private readonly ordersService: OrdersService) { }
 
   /**
    * POST /api/orders
@@ -100,6 +103,95 @@ export class OrdersController {
 
     // Otherwise return JSON
     return this.ordersService.getOrderHistory(filters);
+  }
+
+  /**
+   * GET /api/orders/my-orders
+   * Get order history for logged-in customer (requires authentication)
+   */
+  @Get('my-orders')
+  @UseGuards(JwtAuthGuard)
+  async getMyOrders(
+    @Req() req: Request,
+    @Query('status') status?: string,
+    @Query('limit') limit?: string,
+    @Query('date') date?: string,
+  ) {
+    console.log('📋 [OrdersController] /my-orders endpoint hit');
+    console.log('🔑 [OrdersController] Request user:', (req as any).user);
+    console.log('📊 [OrdersController] Query params:', { status, limit, date });
+
+    const userId = (req as any).user?.userId;
+
+    console.log('👤 [OrdersController] Extracted userId:', userId);
+
+    if (!userId) {
+      console.error('❌ [OrdersController] No userId found in request');
+      throw new Error('User not authenticated');
+    }
+
+    console.log('🔍 [OrdersController] Fetching orders for customer:', userId);
+
+    const result = await this.ordersService.findByCustomerId(userId);
+    let orders = result.data || [];
+
+    // Ensure orders is an array
+    if (!Array.isArray(orders)) {
+      orders = [];
+    }
+
+    console.log('📦 [OrdersController] Found orders:', {
+      total: orders.length,
+      statuses: orders.map((o: any) => o.status),
+    });
+
+    // Apply status filter if specified
+    if (status) {
+      orders = orders.filter((order: any) => order.status === status);
+      console.log('🔽 [OrdersController] After status filter:', {
+        status,
+        filtered: orders.length,
+      });
+    }
+
+    // Apply date filter if specified
+    if (date) {
+      // date is "YYYY-MM-DD"
+      const filterDate = date;
+
+      orders = orders.filter((order: any) => {
+        if (!order.created_at) return false;
+
+        // Convert UTC created_at to Vietnam Time (UTC+7)
+        const orderUtcDate = new Date(order.created_at);
+        const vnTime = new Date(orderUtcDate.getTime() + 7 * 60 * 60 * 1000);
+        const vnDateString = vnTime.toISOString().split('T')[0];
+
+        return vnDateString === filterDate;
+      });
+
+      console.log('📅 [OrdersController] After date filter (Vietnam Time):', {
+        date: filterDate,
+        filtered: orders.length,
+      });
+    }
+
+    // Apply limit if specified
+    if (limit) {
+      const limitNum = parseInt(limit, 10);
+      orders = orders.slice(0, limitNum);
+      console.log('🔢 [OrdersController] After limit:', {
+        limit: limitNum,
+        remaining: orders.length,
+      });
+    }
+
+    console.log('✅ [OrdersController] Returning orders:', orders.length);
+
+    return {
+      data: orders,
+      total: orders.length,
+    };
   }
 
   /**
@@ -187,5 +279,33 @@ export class OrdersController {
         completed_at: order.completed_at,
       },
     };
+  }
+
+  /**
+   * PATCH /api/orders/:orderId/items/:itemId/status
+   * Update individual order item status (Kitchen)
+   * Auto-updates order status based on all items
+   */
+  @Patch(':orderId/items/:itemId/status')
+  async updateItemStatus(
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string,
+    @Body() body: { status: 'QUEUED' | 'COOKING' | 'READY' },
+  ) {
+    return this.ordersService.updateItemStatus(orderId, itemId, body.status);
+  }
+
+  /**
+   * POST /api/orders/:orderId/items/:itemId/reject
+   * Reject an individual order item (Waiter)
+   * Updates order total and notifies customer
+   */
+  @Post(':orderId/items/:itemId/reject')
+  async rejectItem(
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.ordersService.rejectOrderItem(orderId, itemId, body.reason);
   }
 }

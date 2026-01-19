@@ -26,6 +26,7 @@ import { ReportsModule } from './reports/reports.module';
 import { PaymentsModule } from './payments/payments.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
 import { RestaurantStaffModule } from './restaurant-staff/restaurant-staff.module';
+import { PaymentMethodsModule } from './payment-methods/payment-methods.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { RestaurantStaffModule } from './restaurant-staff/restaurant-staff.modul
     PaymentsModule,
     SuperAdminModule,
     RestaurantStaffModule,
+    PaymentMethodsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

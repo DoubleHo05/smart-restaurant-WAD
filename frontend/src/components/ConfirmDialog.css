@@ -59,7 +59,7 @@
 
 .confirm-body p {
   margin: 0;
-  color: #666;
+  color: #4b5563;
   line-height: 1.6;
   white-space: pre-line;
 }
@@ -93,10 +93,10 @@
 }
 
 .confirm-footer .btn-primary {
-  background: #2196F3;
+  background: #2196f3;
   color: white;
 }
 
 .confirm-footer .btn-primary:hover {
-  background: #1976D2;
+  background: #1976d2;
 }

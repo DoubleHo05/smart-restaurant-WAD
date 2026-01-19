@@ -32,7 +32,7 @@ export class NotificationsGateway
   private readonly logger = new Logger(NotificationsGateway.name);
   private connectedClients = new Map<
     string,
-    { userId: string; roles: string[] }
+    { userId: string | null; roles: string[] }
   >();
 
   constructor(private readonly jwtService: JwtService) {}
@@ -45,8 +45,12 @@ export class NotificationsGateway
         client.handshake.headers.authorization?.split(' ')[1];
 
       if (!token) {
-        this.logger.warn(`Client ${client.id} connected without token`);
-        client.disconnect();
+        // Allow anonymous connections (guest customers)
+        this.logger.log(`Anonymous client connected: ${client.id}`);
+        this.connectedClients.set(client.id, {
+          userId: null,
+          roles: ['guest'],
+        });
         return;
       }
 
@@ -305,6 +309,22 @@ export class NotificationsGateway
         timestamp: new Date().toISOString(),
       });
     }
+    
+    // Also broadcast to all (for anonymous customers)
+    this.emitToAll('payment_completed', {
+      bill_request_id: billRequest.id,
+      payment_id: payment.id,
+      type: 'payment_success',
+      title: 'Payment Successful',
+      message: 'Your payment has been completed successfully',
+      data: {
+        payment_id: payment.id,
+        amount: payment.amount,
+        payment_method: billRequest.payment_method_code,
+        change: payment.change_amount || 0,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
     this.logger.log(`Notified: Payment ${payment.id} completed`);
   }

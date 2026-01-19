@@ -199,7 +199,7 @@
 
 .stat-label {
   font-size: 13px;
-  color: #7f8c8d;
+  color: #6b7280;
   margin-top: 4px;
   font-weight: 500;
   text-transform: uppercase;
@@ -267,7 +267,7 @@
 .bar-label {
   font-size: 13px;
   font-weight: 600;
-  color: #7f8c8d;
+  color: #6b7280;
   text-transform: uppercase;
 }
 
@@ -303,7 +303,7 @@
 
 .avg-time-label {
   font-size: 13px;
-  color: #7f8c8d;
+  color: #6b7280;
   margin-top: 4px;
   font-weight: 500;
 }
@@ -404,7 +404,7 @@
 
 .leaderboard-stats {
   font-size: 13px;
-  color: #7f8c8d;
+  color: #6b7280;
   margin-top: 4px;
 }
 

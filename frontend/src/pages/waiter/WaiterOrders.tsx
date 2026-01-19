@@ -6,54 +6,88 @@ import {
   getRestaurantOrders,
   acceptOrder,
   rejectOrder,
+  rejectOrderItem,
   serveOrder,
+  completeOrder,
   WaiterOrder,
 } from "../../api/waiterApi";
 import OrderDetailModal, {
   OrderDetail,
 } from "../../components/OrderDetailModal";
+import { useRestaurant } from "../../contexts/RestaurantContext";
+import { useAuth } from "../../contexts/AuthContext";
 
-type TabType = "pending" | "accepted" | "ready";
+type TabType = "pending" | "accepted" | "ready" | "completed";
 
 export default function WaiterOrders() {
   const navigate = useNavigate();
+  const { restaurants } = useRestaurant();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("pending");
   const [pendingOrders, setPendingOrders] = useState<WaiterOrder[]>([]);
   const [acceptedOrders, setAcceptedOrders] = useState<WaiterOrder[]>([]);
   const [readyOrders, setReadyOrders] = useState<WaiterOrder[]>([]);
+  const [completedOrders, setCompletedOrders] = useState<WaiterOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<WaiterOrder | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  // TODO: Replace with actual restaurant ID from auth context
-  const restaurantId = "temp-restaurant-id";
+  // Get restaurant ID from user's first restaurant or context
+  const restaurantId = restaurants.length > 0 ? restaurants[0].id : null;
 
   useEffect(() => {
-    loadOrders();
+    if (restaurantId) {
+      loadOrders();
+    }
     // TODO: Setup Socket.IO for real-time updates
     // const socket = io(API_URL);
     // socket.on('new_order', () => loadOrders());
     // return () => socket.disconnect();
-  }, [activeTab]);
+  }, [activeTab, restaurantId]);
 
   const loadOrders = async () => {
+    if (!restaurantId) {
+      console.warn("No restaurant ID available");
+      return;
+    }
+
     setLoading(true);
     try {
       const pending = await getPendingOrders({ restaurant_id: restaurantId });
-      setPendingOrders(pending);
+      console.log("Pending orders response:", pending);
+      // Backend returns {success, data, total} format
+      const pendingData = pending?.data || pending;
+      setPendingOrders(Array.isArray(pendingData) ? pendingData : []);
 
       const accepted = await getRestaurantOrders(
         restaurantId,
-        "accepted,preparing"
+        "accepted,preparing",
       );
-      setAcceptedOrders(accepted);
+      console.log("Accepted orders response:", accepted);
+      const acceptedData = accepted?.data || accepted;
+      setAcceptedOrders(Array.isArray(acceptedData) ? acceptedData : []);
 
       const ready = await getRestaurantOrders(restaurantId, "ready");
-      setReadyOrders(ready);
+      console.log("Ready orders response:", ready);
+      const readyData = ready?.data || ready;
+      setReadyOrders(Array.isArray(readyData) ? readyData : []);
+
+      // Only load orders with status "completed" (already paid)
+      const completed = await getRestaurantOrders(
+        restaurantId,
+        "completed",
+      );
+      console.log("Completed orders response:", completed);
+      const completedData = completed?.data || completed;
+      setCompletedOrders(Array.isArray(completedData) ? completedData : []);
     } catch (error) {
       console.error("Error loading orders:", error);
+      setPendingOrders([]);
+      setAcceptedOrders([]);
+      setReadyOrders([]);
+      setCompletedOrders([]);
     } finally {
       setLoading(false);
     }
@@ -124,6 +158,8 @@ export default function WaiterOrders() {
         quantity: item.quantity,
         unit_price: item.unit_price,
         notes: item.notes,
+        status: item.status,
+        rejection_reason: item.rejection_reason,
         modifiers: item.modifiers,
       })),
       created_at: order.created_at,
@@ -153,7 +189,7 @@ export default function WaiterOrders() {
   const renderOrderCard = (order: WaiterOrder) => {
     const totalItems = order.items.reduce(
       (sum, item) => sum + item.quantity,
-      0
+      0,
     );
     const timeAgo = getTimeAgo(order.created_at);
 
@@ -166,7 +202,8 @@ export default function WaiterOrders() {
       >
         <div className="order-header">
           <div className="order-table-badge">
-            {order.table_number || `Table ${order.table_id.slice(-2)}`}
+            {order.table_number ||
+              (order.table_id ? `Table ${order.table_id.slice(-2)}` : "N/A")}
           </div>
           <div className="order-meta">
             <h3 className="order-number">{order.order_number}</h3>
@@ -182,27 +219,119 @@ export default function WaiterOrders() {
         </div>
 
         <div className="order-items-list">
-          {order.items.map((item, idx) => (
-            <div key={idx} className="order-item">
-              <div className="item-details">
-                <span className="item-quantity">{item.quantity}x</span>
-                <div className="item-info">
-                  <span className="item-name">{item.name}</span>
-                  {item.modifiers && item.modifiers.length > 0 && (
-                    <span className="item-modifiers">
-                      {item.modifiers.map((m) => m.name).join(", ")}
-                    </span>
-                  )}
-                  {item.notes && (
-                    <span className="item-notes">Note: {item.notes}</span>
-                  )}
+          {order.items
+            .filter((item) => item.status !== "REJECTED") // Hide rejected items
+            .map((item, idx) => (
+              <div key={idx} className="order-item">
+                <div className="item-details">
+                  <span className="item-quantity">{item.quantity}x</span>
+                  <div className="item-info">
+                    <span className="item-name">{item.name}</span>
+                    {item.status && (
+                      <span
+                        className={`item-status-badge ${item.status.toLowerCase()}`}
+                        style={{
+                          display: "inline-block",
+                          padding: "2px 6px",
+                          borderRadius: "4px",
+                          fontSize: "0.75rem",
+                          marginLeft: "8px",
+                          background:
+                            item.status === "REJECTED"
+                              ? "#fee2e2"
+                              : item.status === "READY"
+                                ? "#dcfce7"
+                                : item.status === "COOKING"
+                                  ? "#fef3c7"
+                                  : "#e5e7eb",
+                          color:
+                            item.status === "REJECTED"
+                              ? "#dc2626"
+                              : item.status === "READY"
+                                ? "#16a34a"
+                                : item.status === "COOKING"
+                                  ? "#d97706"
+                                  : "#6b7280",
+                        }}
+                      >
+                        {item.status === "REJECTED"
+                          ? "❌ REJECTED"
+                          : item.status}
+                      </span>
+                    )}
+                    {item.modifiers && item.modifiers.length > 0 && (
+                      <span className="item-modifiers">
+                        {item.modifiers.map((m) => m.name).join(", ")}
+                      </span>
+                    )}
+                    {item.notes && (
+                      <span className="item-notes">Note: {item.notes}</span>
+                    )}
+                    {item.status === "REJECTED" && item.rejection_reason && (
+                      <span
+                        className="item-rejection-reason"
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "#dc2626",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Reason: {item.rejection_reason}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  <span className="item-price">
+                    {formatPrice(item.unit_price * item.quantity)}
+                  </span>
+                  {(activeTab === "pending" || activeTab === "accepted") &&
+                    item.status !== "REJECTED" && (
+                      <button
+                        className="btn-reject-item"
+                        style={{
+                          padding: "4px 8px",
+                          fontSize: "0.75rem",
+                          background: "#fee2e2",
+                          color: "#dc2626",
+                          border: "1px solid #fecaca",
+                          borderRadius: "4px",
+                          cursor: "pointer",
+                        }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const reason = prompt(
+                            `Reject "${item.name}"? Enter reason:`,
+                          );
+                          if (reason) {
+                            try {
+                              await rejectOrderItem(order.id, item.id, reason);
+
+                              // Close modal if open to force refresh
+                              if (
+                                showDetailModal &&
+                                selectedOrder?.id === order.id
+                              ) {
+                                setShowDetailModal(false);
+                                setSelectedOrder(null);
+                              }
+
+                              await loadOrders();
+                            } catch (error) {
+                              console.error("Error rejecting item:", error);
+                              alert("Failed to reject item");
+                            }
+                          }
+                        }}
+                      >
+                        ✕
+                      </button>
+                    )}
                 </div>
               </div>
-              <span className="item-price">
-                {formatPrice(item.unit_price * item.quantity)}
-              </span>
-            </div>
-          ))}
+            ))}
         </div>
 
         {activeTab === "pending" && (
@@ -221,6 +350,27 @@ export default function WaiterOrders() {
             </button>
           </div>
         )}
+
+        {activeTab === "ready" && (
+          <div className="order-actions" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="btn-accept"
+              onClick={async () => {
+                try {
+                  await serveOrder(order.id, restaurantId);
+                  await loadOrders();
+                } catch (error) {
+                  console.error("Error serving order:", error);
+                  alert("Failed to mark order as served. Please try again.");
+                }
+              }}
+            >
+              Mark as Served
+            </button>
+          </div>
+        )}
+
+        {/* Completed orders don't need any actions - they are already paid */}
       </div>
     );
   };
@@ -228,11 +378,13 @@ export default function WaiterOrders() {
   const getCurrentOrders = (): WaiterOrder[] => {
     switch (activeTab) {
       case "pending":
-        return pendingOrders;
+        return pendingOrders || [];
       case "accepted":
-        return acceptedOrders;
+        return acceptedOrders || [];
       case "ready":
-        return readyOrders;
+        return readyOrders || [];
+      case "completed":
+        return completedOrders || [];
       default:
         return [];
     }
@@ -244,6 +396,50 @@ export default function WaiterOrders() {
         <h1>Order Management</h1>
         <p className="page-subtitle">Review and manage incoming orders</p>
       </div>
+
+      {/* Show error if no restaurant */}
+      {!restaurantId && (
+        <div
+          className="empty-state"
+          style={{
+            background: "#fee2e2",
+            color: "#991b1b",
+            padding: "2rem",
+            borderRadius: "8px",
+            marginBottom: "1.5rem",
+            border: "1px solid #fecaca",
+          }}
+        >
+          <h3 style={{ marginTop: 0 }}>No Restaurant Assigned</h3>
+          <p>You need to be assigned to a restaurant to view orders.</p>
+          <p style={{ marginTop: "1rem", fontSize: "0.9em" }}>
+            <strong>Debug Info:</strong>
+            <br />• User ID: {user?.id}
+            <br />• Roles: {user?.roles?.join(", ")}
+            <br />• Restaurants in context: {restaurants.length}
+            <br />• User has restaurants: {user?.restaurants ? "Yes" : "No"}
+            <br />
+            {user?.restaurants && `• Count: ${user.restaurants.length}`}
+          </p>
+          <button
+            onClick={() => {
+              localStorage.clear();
+              window.location.href = "/admin/login";
+            }}
+            style={{
+              marginTop: "1rem",
+              padding: "0.5rem 1rem",
+              background: "#dc2626",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Logout & Re-login
+          </button>
+        </div>
+      )}
 
       <div className="tabs-container">
         <button
@@ -266,6 +462,12 @@ export default function WaiterOrders() {
           onClick={() => setActiveTab("ready")}
         >
           Ready to Serve
+        </button>
+        <button
+          className={`tab ${activeTab === "completed" ? "active" : ""}`}
+          onClick={() => setActiveTab("completed")}
+        >
+          Completed
         </button>
       </div>
 

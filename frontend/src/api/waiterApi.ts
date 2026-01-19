@@ -14,6 +14,8 @@ export interface OrderItem {
   unit_price: number;
   notes?: string;
   modifiers?: OrderModifier[];
+  status?: "QUEUED" | "COOKING" | "READY" | "REJECTED";
+  rejection_reason?: string;
 }
 
 export interface WaiterOrder {
@@ -47,9 +49,9 @@ export interface AcceptOrderDto {
 
 // Get pending orders for waiter
 export const getPendingOrders = async (
-  params: PendingOrdersParams
+  params: PendingOrdersParams,
 ): Promise<WaiterOrder[]> => {
-  const response = await axiosInstance.get("/waiter/pending-orders", {
+  const response = await axiosInstance.get("/api/waiter/pending-orders", {
     params,
   });
   return response.data;
@@ -58,11 +60,10 @@ export const getPendingOrders = async (
 // Accept an order
 export const acceptOrder = async (
   orderId: string,
-  data: AcceptOrderDto
+  data: AcceptOrderDto,
 ): Promise<WaiterOrder> => {
   const response = await axiosInstance.post(
-    `/waiter/orders/${orderId}/accept`,
-    data
+    `/api/waiter/${orderId}/accept?restaurant_id=${data.restaurant_id}`,
   );
   return response.data;
 };
@@ -70,34 +71,45 @@ export const acceptOrder = async (
 // Reject an order
 export const rejectOrder = async (
   orderId: string,
-  data: RejectOrderDto
+  data: RejectOrderDto,
 ): Promise<WaiterOrder> => {
   const response = await axiosInstance.post(
-    `/waiter/orders/${orderId}/reject`,
-    data
+    `/api/waiter/${orderId}/reject?restaurant_id=${data.restaurant_id}`,
+    { reason: data.rejection_reason },
   );
-  return response.data;
+  return response.data.data || response.data;
 };
 
 // Mark order as served
 export const serveOrder = async (
   orderId: string,
-  restaurantId: string
+  restaurantId: string,
 ): Promise<WaiterOrder> => {
-  const response = await axiosInstance.post(`/waiter/orders/${orderId}/serve`, {
-    restaurant_id: restaurantId,
-  });
-  return response.data;
+  const response = await axiosInstance.post(
+    `/api/waiter/${orderId}/serve?restaurant_id=${restaurantId}`,
+  );
+  return response.data.data || response.data;
+};
+
+// Complete an order (paid at counter)
+export const completeOrder = async (
+  orderId: string,
+  restaurantId: string,
+): Promise<WaiterOrder> => {
+  const response = await axiosInstance.post(
+    `/api/waiter/${orderId}/complete?restaurant_id=${restaurantId}`,
+  );
+  return response.data.data || response.data;
 };
 
 // Get all restaurant orders (for waiter)
 export const getRestaurantOrders = async (
   restaurantId: string,
-  status?: string
+  status?: string,
 ): Promise<WaiterOrder[]> => {
   const params: any = { restaurant_id: restaurantId };
   if (status) params.status = status;
-  const response = await axiosInstance.get("/waiter/orders", { params });
+  const response = await axiosInstance.get("/api/waiter/orders", { params });
   return response.data;
 };
 
@@ -135,20 +147,36 @@ export interface LeaderboardEntry {
 // Get waiter performance stats
 export const getWaiterPerformance = async (
   waiterId: string,
-  restaurantId: string
+  restaurantId: string,
 ): Promise<WaiterPerformance> => {
-  const response = await axiosInstance.get(`/waiter/performance/${waiterId}`, {
-    params: { restaurant_id: restaurantId },
-  });
-  return response.data;
+  const response = await axiosInstance.get(
+    `/api/waiter/performance/${waiterId}`,
+    {
+      params: { restaurant_id: restaurantId },
+    },
+  );
+  return response.data.data;
 };
 
 // Get leaderboard (all waiters performance)
 export const getWaiterLeaderboard = async (
-  restaurantId: string
+  restaurantId: string,
 ): Promise<LeaderboardEntry[]> => {
-  const response = await axiosInstance.get("/waiter/leaderboard", {
+  const response = await axiosInstance.get("/api/waiter/leaderboard", {
     params: { restaurant_id: restaurantId },
   });
+  return response.data.data;
+};
+
+// Reject individual order item
+export const rejectOrderItem = async (
+  orderId: string,
+  itemId: string,
+  reason?: string,
+): Promise<WaiterOrder> => {
+  const response = await axiosInstance.post(
+    `/api/orders/${orderId}/items/${itemId}/reject`,
+    { reason },
+  );
   return response.data;
 };

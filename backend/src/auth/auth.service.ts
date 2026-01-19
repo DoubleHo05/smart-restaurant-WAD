@@ -31,6 +31,17 @@ export class AuthService {
             role: true,
           },
         },
+        restaurant_staff: {
+          include: {
+            restaurant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -55,8 +66,12 @@ export class AuthService {
       throw new UnauthorizedException('Account is not active');
     }
 
-    // Check if email is verified
-    if (!user.email_verified) {
+    // Check if email is verified (skip for staff roles: admin, super_admin, waiter, kitchen)
+    const userRoles = user.user_roles.map((ur) => ur.role.name);
+    const staffRoles = ['admin', 'super_admin', 'waiter', 'kitchen'];
+    const isStaff = userRoles.some((role) => staffRoles.includes(role));
+
+    if (!isStaff && !user.email_verified) {
       throw new UnauthorizedException(
         'Please verify your email before logging in',
       );
@@ -74,6 +89,9 @@ export class AuthService {
       roles: user.user_roles.map((ur) => ur.role.name),
     };
 
+    // Include restaurants for waiter/kitchen staff
+    const restaurants = user.restaurant_staff.map((rs) => rs.restaurant);
+
     return {
       access_token: this.jwtService.sign(payload),
       user: {
@@ -82,6 +100,7 @@ export class AuthService {
         full_name: user.full_name,
         roles: user.user_roles.map((ur) => ur.role.name),
         email_verified: user.email_verified,
+        restaurants: restaurants.length > 0 ? restaurants : undefined,
       },
     };
   }
@@ -174,6 +193,17 @@ export class AuthService {
         user_roles: {
           include: {
             role: true,
+          },
+        },
+        restaurant_staff: {
+          include: {
+            restaurant: {
+              select: {
+                id: true,
+                name: true,
+                status: true,
+              },
+            },
           },
         },
       },
@@ -380,5 +410,62 @@ export class AuthService {
         auth_provider: user.auth_provider,
       },
     };
+  }
+
+  async forgotPassword(email: string) {
+    console.log('🔐 [Auth] Forgot password request for:', email);
+
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user || user.is_deleted) {
+      throw new BadRequestException('No account found with this email address');
+    }
+
+    // Generate random password (10 characters: letters + numbers)
+    const newPassword = this.generateRandomPassword(10);
+    console.log('🔑 [Auth] Generated new password:', newPassword);
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { password_hash: hashedPassword },
+    });
+
+    console.log('✅ [Auth] Password updated for user:', user.id);
+
+    // Send email with new password
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        user.email,
+        user.full_name,
+        newPassword,
+      );
+      console.log('📧 [Auth] Password reset email sent to:', user.email);
+    } catch (error) {
+      console.error('❌ [Auth] Failed to send email:', error);
+      throw new BadRequestException('Failed to send password reset email');
+    }
+
+    return {
+      success: true,
+      message: 'A new password has been sent to your email address',
+    };
+  }
+
+  private generateRandomPassword(length: number): string {
+    const charset =
+      'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let password = '';
+    for (let i = 0; i < length; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    return password;
   }
 }

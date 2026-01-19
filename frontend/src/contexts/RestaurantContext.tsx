@@ -44,6 +44,25 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // DEBUG: Log user object to see if restaurants exists
+    console.log("🔍 [RestaurantContext] DEBUG - Full user object:", JSON.stringify(user, null, 2));
+    console.log("🔍 [RestaurantContext] DEBUG - user.restaurants:", user.restaurants);
+    console.log("🔍 [RestaurantContext] DEBUG - Has restaurants?", user?.restaurants && user.restaurants.length > 0);
+
+    // For waiter/kitchen staff - use restaurants from user object (from restaurant_staff table)
+    if (user?.restaurants && user.restaurants.length > 0) {
+      console.log("✅ [RestaurantContext] Using restaurants from user.restaurants:", user.restaurants);
+      setRestaurants(user.restaurants as any);
+      setLoading(false);
+      
+      // Auto-select first restaurant for staff
+      if (!selectedRestaurant) {
+        setSelectedRestaurant(user.restaurants[0] as any);
+        console.log("✅ [RestaurantContext] Auto-selected restaurant for staff:", user.restaurants[0]);
+      }
+      return;
+    }
+
     // Skip loading for customer/guest users (they don't need restaurant list)
     // We use the user object from context, which is more reliable than localStorage for current state.
     if (user?.roles?.includes("customer") || user?.roles?.includes("guest")) {
@@ -58,7 +77,7 @@ export function RestaurantProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      console.log("🔍 [RestaurantContext] Loading restaurants...", {
+      console.log("🔍 [RestaurantContext] Loading restaurants from API...", {
         userId: user?.id,
         roles: user?.roles,
       });

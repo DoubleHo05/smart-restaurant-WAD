@@ -68,16 +68,19 @@ export class PublicMenuService {
           },
         },
         // Include order items for popularity calculation
-        order_items: sortBy === 'popularity' ? {
-          select: {
-            id: true,
-          },
-        } : false,
+        order_items:
+          sortBy === 'popularity'
+            ? {
+              select: {
+                id: true,
+              },
+            }
+            : false,
       },
-      orderBy: sortBy === 'chef' ? [
-        { is_chef_recommended: 'desc' },
-        { name: 'asc' },
-      ] : orderBy,
+      orderBy:
+        sortBy === 'chef'
+          ? [{ is_chef_recommended: 'desc' }, { name: 'asc' }]
+          : orderBy,
     });
 
     // Sort by popularity if requested
@@ -115,19 +118,24 @@ export class PublicMenuService {
     // Format response
     return {
       categories,
-      items: sortedItems.map(item => ({
+      items: sortedItems.map((item) => ({
         id: item.id,
         name: item.name,
         description: item.description,
         price: item.price,
         image: item.photos[0]?.url || null,
-        category: item.category ? {
-          id: item.category.id,
-          name: item.category.name,
-        } : null,
+        category: item.category
+          ? {
+            id: item.category.id,
+            name: item.category.name,
+          }
+          : null,
         isAvailable: item.status === 'available',
         isChefRecommended: item.is_chef_recommended,
-        orderCount: sortBy === 'popularity' ? ((item as any).order_items?.length || 0) : undefined,
+        orderCount:
+          sortBy === 'popularity'
+            ? (item as any).order_items?.length || 0
+            : undefined,
       })),
       pagination: {
         page,
@@ -162,14 +170,28 @@ export class PublicMenuService {
           include: {
             modifier_group: {
               include: {
-                options: {
-                  where: { status: 'active' },
-                },
+                options: true, // Get all options to debug
               },
             },
           },
         },
       },
+    });
+
+    console.log('📦 [Menu] Item fetched:', {
+      id: itemId,
+      name: item?.name,
+      modifier_groups_count: item?.modifier_groups?.length,
+      modifier_groups: item?.modifier_groups?.map((mg) => ({
+        id: mg.modifier_group.id,
+        name: mg.modifier_group.name,
+        options_count: mg.modifier_group.options.length,
+        options: mg.modifier_group.options.map((opt) => ({
+          id: opt.id,
+          name: opt.name,
+          status: opt.status,
+        })),
+      })),
     });
 
     if (!item) {
@@ -186,22 +208,24 @@ export class PublicMenuService {
       name: item.name,
       description: item.description,
       price: item.price,
-      category: item.category ? {
-        id: item.category.id,
-        name: item.category.name,
-      } : null,
-      photos: item.photos.map(photo => ({
+      category: item.category
+        ? {
+          id: item.category.id,
+          name: item.category.name,
+        }
+        : null,
+      photos: item.photos.map((photo) => ({
         id: photo.id,
         url: photo.url,
         isPrimary: photo.is_primary,
       })),
-      modifierGroups: item.modifier_groups.map(mig => ({
+      modifierGroups: item.modifier_groups.map((mig) => ({
         id: mig.modifier_group.id,
         name: mig.modifier_group.name,
         isRequired: mig.modifier_group.is_required,
         minSelection: mig.modifier_group.min_selections,
         maxSelection: mig.modifier_group.max_selections,
-        options: mig.modifier_group.options.map(option => ({
+        options: mig.modifier_group.options.map((option) => ({
           id: option.id,
           name: option.name,
           priceAdjustment: option.price_adjustment,
@@ -239,7 +263,7 @@ export class PublicMenuService {
       },
     });
 
-    return categories.map(cat => ({
+    return categories.map((cat) => ({
       id: cat.id,
       name: cat.name,
       description: cat.description,
@@ -306,7 +330,7 @@ export class PublicMenuService {
     });
 
     // Format response
-    return relatedItems.map(item => ({
+    return relatedItems.map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description,

@@ -22,7 +22,7 @@ export class RestaurantsController {
   constructor(private readonly restaurantsService: RestaurantsService) {}
 
   @Post()
-  @Roles('super_admin')
+  @Roles('super_admin', 'admin', 'waiter')
   async create(
     @CurrentUser() user: any,
     @Body() createDto: CreateRestaurantDto,
@@ -32,7 +32,7 @@ export class RestaurantsController {
   }
 
   @Get()
-  @Roles('admin', 'super_admin')
+  @Roles('super_admin', 'admin', 'waiter')
   async findAll(@CurrentUser() user: any) {
     console.log(
       '🔑 [RestaurantsController.findAll] user:',
@@ -42,13 +42,13 @@ export class RestaurantsController {
   }
 
   @Get(':id')
-  @Roles('admin', 'super_admin')
+  @Roles('super_admin', 'admin', 'waiter')
   async findOne(@CurrentUser() user: any, @Param('id') id: string) {
     return this.restaurantsService.findOne(id, user.userId, user.roles);
   }
 
   @Put(':id')
-  @Roles('super_admin')
+  @Roles('super_admin', 'admin', 'waiter')
   async update(
     @CurrentUser() user: any,
     @Param('id') id: string,
@@ -63,7 +63,7 @@ export class RestaurantsController {
   }
 
   @Delete(':id')
-  @Roles('super_admin')
+  @Roles('super_admin', 'admin', 'waiter')
   async remove(@CurrentUser() user: any, @Param('id') id: string) {
     return this.restaurantsService.remove(id, user.userId, user.roles);
   }

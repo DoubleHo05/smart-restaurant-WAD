@@ -87,13 +87,13 @@
 
 .profile-email {
   font-size: 14px;
-  color: #7f8c8d;
+  color: #6b7280;
   margin: 0 0 8px 0;
 }
 
 .profile-member-since {
   font-size: 13px;
-  color: #95a5a6;
+  color: #6b7280;
   margin: 0;
 }
 
@@ -110,7 +110,7 @@
   background: white;
   border: none;
   border-bottom: 3px solid transparent;
-  color: #7f8c8d;
+  color: #6b7280;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -223,7 +223,7 @@
 }
 
 .form-input::placeholder {
-  color: #bdc3c7;
+  color: #9ca3af;
 }
 
 .submit-btn {
@@ -309,7 +309,7 @@
 }
 
 .action-btn-logout .action-icon {
-  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
 }
 
 .action-text {
@@ -326,13 +326,13 @@
 
 .action-text p {
   font-size: 13px;
-  color: #7f8c8d;
+  color: #6b7280;
   margin: 0;
 }
 
 .action-arrow {
   font-size: 20px;
-  color: #bdc3c7;
+  color: #9ca3af;
   transition: transform 0.3s;
 }
 
@@ -342,7 +342,7 @@
 }
 
 .action-btn-logout:hover .action-arrow {
-  color: #7f8c8d;
+  color: #6b7280;
 }
 
 /* Loading State */

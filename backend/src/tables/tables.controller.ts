@@ -35,6 +35,7 @@ export class TablesController {
   }
 
   @Get()
+  @Roles('admin', 'waiter', 'kitchen', 'super_admin')
   findAll(
     @CurrentUser() user: any,
     @Query('status') status?: string,
@@ -51,11 +52,30 @@ export class TablesController {
   }
 
   @Get('locations')
+  @Roles('admin', 'waiter', 'kitchen', 'super_admin')
   getLocations() {
     return this.tablesService.getLocations();
   }
 
+  /**
+   * GET /tables/status/overview?restaurant_id={uuid}
+   * Get table status overview for a restaurant
+   * Returns all tables with their occupancy status and counts
+   */
+  @Get('status/overview')
+  @Roles('admin', 'waiter', 'super_admin')
+  getTableStatusOverview(@Query('restaurant_id') restaurantId: string) {
+    if (!restaurantId) {
+      return {
+        success: false,
+        error: 'restaurant_id is required',
+      };
+    }
+    return this.tablesService.getTableStatusOverview(restaurantId);
+  }
+
   @Get(':id')
+  @Roles('admin', 'waiter', 'kitchen', 'super_admin')
   findOne(@Param('id') id: string) {
     return this.tablesService.findOne(id);
   }
@@ -80,22 +100,6 @@ export class TablesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id') id: string) {
     return this.tablesService.remove(id);
-  }
-
-  /**
-   * GET /api/tables/status?restaurant_id={uuid}
-   * Get table status overview for a restaurant
-   * Returns all tables with their occupancy status and counts
-   */
-  @Get('status/overview')
-  getTableStatusOverview(@Query('restaurant_id') restaurantId: string) {
-    if (!restaurantId) {
-      return {
-        success: false,
-        error: 'restaurant_id is required',
-      };
-    }
-    return this.tablesService.getTableStatusOverview(restaurantId);
   }
 
   /**

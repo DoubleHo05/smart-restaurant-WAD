@@ -1,234 +1,237 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { getCustomerOrderHistory } from "../../api/customersApi";
-import "./OrderHistory.css";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ordersApi, Order } from '../../api/ordersApi';
+import { useAuth } from '../../contexts/AuthContext';
+import {
+  FiArrowLeft,
+  FiCalendar,
+  FiMapPin,
+  FiShoppingBag,
+  FiChevronRight,
+  FiAlertCircle,
+  FiPackage,
+  FiLock,
+  FiRefreshCw
+} from 'react-icons/fi';
+import './OrderHistory.css';
 
-interface Order {
-  id: string;
-  order_number: string;
-  status: string;
-  total: number;
-  created_at: string;
-  restaurant: {
-    id: string;
-    name: string;
-  };
-  table: {
-    table_number: string;
-  };
-  order_items: Array<{
-    id: string;
-    quantity: number;
-    unit_price: number;
-    subtotal: number;
-    menu_item: {
-      id: string;
-      name: string;
-      price: number;
-    };
-    modifiers: Array<{
-      modifier_option: {
-        name: string;
-        price_adjustment: number;
-      };
-    }>;
-  }>;
-}
+type FilterStatus = 'all' | 'pending' | 'accepted' | 'preparing' | 'ready' | 'served' | 'completed';
 
-const OrderHistory: React.FC = () => {
+function OrderHistory() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>('');
 
   useEffect(() => {
-    loadOrders();
-  }, [statusFilter]);
+    if (user) {
+      loadOrders();
+    }
+  }, [user, selectedDate]);
 
   const loadOrders = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError(null);
 
-      const authUser = localStorage.getItem("auth_user");
-      if (!authUser) {
-        navigate("/");
-        return;
-      }
+      // Debug: Check token
+      const token = localStorage.getItem('auth_token');
+      console.log('🔐 [OrderHistory] Loading orders:', {
+        hasUser: !!user,
+        userId: user?.id,
+        hasToken: !!token,
+        tokenPreview: token?.substring(0, 20) + '...',
+        date: selectedDate
+      });
 
-      const user = JSON.parse(authUser);
-      const filters =
-        statusFilter !== "all" ? { status: statusFilter } : undefined;
+      // User requested ONLY completed orders, plus date filter if selected
+      const response = await ordersApi.getMyOrders({
+        status: 'completed',
+        date: selectedDate || undefined
+      });
 
-      const response = await getCustomerOrderHistory(user.id, filters);
+      console.log('✅ [OrderHistory] Orders loaded:', response.data.length);
       setOrders(response.data);
     } catch (err: any) {
-      console.error("Error loading orders:", err);
-      setError(err.response?.data?.message || "Failed to load order history");
+      console.error('Error loading orders:', err);
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      setError(err.response?.data?.message || 'Failed to load order history');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadgeClass = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      pending: "status-pending",
-      accepted: "status-accepted",
-      preparing: "status-preparing",
-      ready: "status-ready",
-      served: "status-served",
-      cancelled: "status-cancelled",
-      rejected: "status-rejected",
+  const toggleDetails = (orderId: string) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+    } else {
+      setExpandedOrderId(orderId);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    const colors: Record<string, string> = {
+      pending: '#f59e0b',
+      accepted: '#3b82f6',
+      preparing: '#8b5cf6',
+      ready: '#10b981',
+      served: '#06b6d4',
+      completed: '#22c55e',
+      cancelled: '#ef4444',
     };
-    return statusMap[status] || "status-pending";
+    return colors[status] || '#6b7280';
   };
 
   const getStatusLabel = (status: string) => {
-    const statusLabels: { [key: string]: string } = {
-      pending: "Pending",
-      accepted: "Accepted",
-      preparing: "Preparing",
-      ready: "Ready",
-      served: "Served",
-      cancelled: "Cancelled",
-      rejected: "Rejected",
+    const labels: Record<string, string> = {
+      pending: 'Pending',
+      accepted: 'Accepted',
+      preparing: 'Preparing',
+      ready: 'Ready',
+      served: 'Served',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
     };
-    return statusLabels[status] || status;
-  };
-
-  const getStatusEmoji = (status: string) => {
-    const emojiMap: { [key: string]: string } = {
-      pending: "⏳",
-      accepted: "✅",
-      preparing: "👨‍🍳",
-      ready: "🔔",
-      served: "✨",
-      cancelled: "❌",
-      rejected: "⛔",
-    };
-    return emojiMap[status] || "📦";
+    return labels[status] || status;
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 60) {
-      return `${diffMins} mins ago`;
-    } else if (diffHours < 24) {
-      return `${diffHours} hours ago`;
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-    }
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
-  const handleReorder = (order: Order) => {
-    // Store order items in localStorage for re-ordering
-    const cartItems = order.order_items.map((item) => ({
-      id: item.menu_item.id,
-      name: item.menu_item.name,
-      price: item.menu_item.price,
-      quantity: item.quantity,
-      modifiers: item.modifiers.map((mod) => ({
-        name: mod.modifier_option.name,
-        price_adjustment: mod.modifier_option.price_adjustment,
-      })),
-    }));
-
-    localStorage.setItem("reorder_items", JSON.stringify(cartItems));
-    localStorage.setItem("reorder_restaurant_id", order.restaurant.id);
-
-    // Navigate to ordering menu
-    navigate(`/customer/order?restaurant=${order.restaurant.id}`);
+  const formatCurrency = (amount: number) => {
+    return Math.round(amount).toLocaleString('vi-VN') + '₫';
   };
 
-  const filteredOrders = orders.filter((order) => {
-    if (searchQuery.trim() === "") return true;
-    const query = searchQuery.toLowerCase();
+  const handleViewDetails = (orderId: string) => {
+    navigate(`/customer/order-status/${orderId}`);
+  };
+
+  if (!user) {
     return (
-      order.order_number.toLowerCase().includes(query) ||
-      order.restaurant.name.toLowerCase().includes(query)
+      <div className="mobile-container">
+        <div className="order-history-page">
+          <div className="empty-state">
+            <div className="empty-icon">🔐</div>
+            <h3>Login Required</h3>
+            <p>Please login to view your order history</p>
+            <button
+              className="btn-primary"
+              onClick={() => navigate('/customer/login', {
+                state: { from: { pathname: '/customer/order-history' } }
+              })}
+            >
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
     );
-  });
+  }
 
-  const user = JSON.parse(localStorage.getItem("auth_user") || "{}");
+  // Additional check: ensure token exists
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    console.warn('⚠️ [OrderHistory] User exists but no auth token found');
+    return (
+      <div className="mobile-container">
+        <div className="order-history-page">
+          <div className="empty-state">
+            <div className="empty-icon">🔑</div>
+            <h3>Authentication Required</h3>
+            <p>Please login again to view your order history</p>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                localStorage.removeItem('auth_user');
+                navigate('/customer/login', {
+                  state: { from: { pathname: '/customer/order-history' } }
+                });
+              }}
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="order-history-container">
-      {/* Header */}
-      <div className="order-history-header">
-        <button className="back-btn" onClick={() => navigate(-1)}>
-          <span>←</span>
-        </button>
-        <div className="header-content">
-          <h1 className="header-title">Order History</h1>
-          <p className="header-subtitle">View your past orders</p>
-        </div>
-        <div className="user-avatar">
-          {user.full_name?.charAt(0).toUpperCase() || "U"}
-        </div>
-      </div>
+    <div className="mobile-container">
+      <div className="order-history-page">
+        <div className="page-header">
+          {/* Fixed duplicated header div */}
+          <button className="btn-back" onClick={() => navigate('/customer/menu')}>
+            <FiArrowLeft size={20} /> Back
+          </button>
+          <h1>Order History</h1>
+          <div className="header-info">
+            <span className="orders-count">
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <FiShoppingBag size={14} /> {orders.length} orders
+              </span>
+            </span>
+          </div>
 
-      {/* Search & Filter */}
-      <div className="filter-section">
-        <div className="search-bar">
-          <span className="search-icon">🔍</span>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by order number or restaurant..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button className="search-clear" onClick={() => setSearchQuery("")}>
-              ✕
-            </button>
-          )}
+          <div className="date-filter-section" style={{ marginTop: '16px' }}>
+            <div className="date-input-wrapper" style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              background: 'white',
+              borderRadius: '12px',
+              padding: '8px 16px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <FiCalendar className="date-icon" style={{ color: '#6b7280', marginRight: '10px' }} />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                style={{
+                  border: 'none',
+                  outline: 'none',
+                  fontSize: '14px',
+                  color: '#2d3436',
+                  width: '100%',
+                  fontWeight: 500
+                }}
+              />
+              {selectedDate && (
+                <button
+                  onClick={() => setSelectedDate('')}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#9ca3af',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    marginLeft: '8px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>×</span>
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
-        <div className="status-filters">
-          <button
-            className={`filter-btn ${statusFilter === "all" ? "active" : ""}`}
-            onClick={() => setStatusFilter("all")}
-          >
-            All
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === "served" ? "active" : ""}`}
-            onClick={() => setStatusFilter("served")}
-          >
-            Completed
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === "preparing" ? "active" : ""}`}
-            onClick={() => setStatusFilter("preparing")}
-          >
-            In Progress
-          </button>
-          <button
-            className={`filter-btn ${statusFilter === "cancelled" ? "active" : ""}`}
-            onClick={() => setStatusFilter("cancelled")}
-          >
-            Cancelled
-          </button>
-        </div>
-      </div>
+        {/* Filter tabs removed */}
 
-      {/* Content */}
-      <div className="order-history-content">
         {loading ? (
           <div className="loading-state">
             <div className="loading-spinner"></div>
@@ -236,91 +239,110 @@ const OrderHistory: React.FC = () => {
           </div>
         ) : error ? (
           <div className="error-state">
-            <span className="error-icon">⚠️</span>
+            <div className="error-icon"><FiAlertCircle /></div>
             <p>{error}</p>
-            <button className="retry-btn" onClick={loadOrders}>
-              Try Again
+            <button className="btn-retry" onClick={loadOrders}>
+              <FiRefreshCw style={{ marginRight: '8px' }} /> Try Again
             </button>
           </div>
-        ) : filteredOrders.length === 0 ? (
+        ) : orders.length === 0 ? (
           <div className="empty-state">
-            <span className="empty-icon">📦</span>
-            <h3>No orders found</h3>
-            <p>
-              {searchQuery
-                ? "Try adjusting your search"
-                : statusFilter !== "all"
-                  ? "No orders with this status"
-                  : "You haven't placed any orders yet"}
-            </p>
+            <div className="empty-icon"><FiPackage /></div>
+            <h3>No Orders Found</h3>
+            <p>You haven't placed any orders yet</p>
             <button
-              className="browse-btn"
-              onClick={() => navigate("/customer/order")}
+              className="btn-primary"
+              onClick={() => navigate('/customer/menu')}
             >
               Browse Menu
             </button>
           </div>
         ) : (
           <div className="orders-list">
-            {filteredOrders.map((order) => (
-              <div key={order.id} className="order-card">
-                <div className="order-card-header">
-                  <div className="order-info">
-                    <h3 className="order-number">{order.order_number}</h3>
-                    <p className="order-restaurant">
-                      📍 {order.restaurant.name}
-                    </p>
-                    <p className="order-time">
-                      🕐 {formatDate(order.created_at)}
-                    </p>
-                  </div>
-                  <span
-                    className={`order-status-badge ${getStatusBadgeClass(order.status)}`}
-                  >
-                    <span className="status-emoji">
-                      {getStatusEmoji(order.status)}
-                    </span>
-                    {getStatusLabel(order.status)}
-                  </span>
-                </div>
+            {orders.map((order) => {
+              const isExpanded = expandedOrderId === order.id;
+              const itemsToShow = isExpanded ? order.order_items : order.order_items?.slice(0, 3);
+              const remainingCount = (order.order_items?.length || 0) - 3;
 
-                <div className="order-items-preview">
-                  <h4 className="items-title">
-                    Items ({order.order_items.length})
-                  </h4>
-                  {order.order_items.map((item) => (
-                    <div key={item.id} className="order-item-row">
-                      <span className="item-qty">{item.quantity}x</span>
-                      <span className="item-name">{item.menu_item.name}</span>
-                      <span className="item-price">
-                        {Math.round(item.subtotal).toLocaleString("vi-VN")}₫
+              return (
+                <div key={order.id} className="order-card">
+                  <div className="order-header">
+                    <div className="order-number">
+                      Order #{order.order_number}
+                    </div>
+                    <div
+                      className="order-status"
+                      style={{ backgroundColor: getStatusColor(order.status) }}
+                    >
+                      {getStatusLabel(order.status)}
+                    </div>
+                  </div>
+
+                  <div className="order-info">
+                    <div className="info-row">
+                      <span className="info-label"><FiCalendar style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Date:</span>
+                      <span className="info-value">
+                        {formatDate(order.created_at)}
                       </span>
                     </div>
-                  ))}
-                </div>
-
-                <div className="order-card-footer">
-                  <div className="order-total">
-                    <span className="total-label">Total</span>
-                    <span className="total-amount">
-                      {Math.round(order.total).toLocaleString("vi-VN")}₫
-                    </span>
+                    <div className="info-row">
+                      <span className="info-label"><FiMapPin style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Table:</span>
+                      <span className="info-value">
+                        {order.table?.table_number || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="info-row">
+                      <span className="info-label"><FiShoppingBag style={{ marginRight: '6px', verticalAlign: 'text-bottom' }} /> Items:</span>
+                      <span className="info-value">
+                        {order.order_items?.length || 0} items
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    className="reorder-btn"
-                    onClick={() => handleReorder(order)}
-                  >
-                    <span className="reorder-icon">🔄</span>
-                    Re-order
-                  </button>
+
+                  {order.order_items && order.order_items.length > 0 && (
+                    <div className="order-items-preview">
+                      {itemsToShow?.map((item, index) => (
+                        <div key={index} className="item-preview">
+                          <span className="item-quantity">{item.quantity}x</span>
+                          <span className="item-name">
+                            {item.menu_item?.name || 'Unknown Item'}
+                          </span>
+                        </div>
+                      ))}
+                      {!isExpanded && remainingCount > 0 && (
+                        <div className="item-preview more" onClick={() => toggleDetails(order.id)}>
+                          +{remainingCount} more items
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="order-footer">
+                    <div className="order-total">
+                      <span className="total-label">Total</span>
+                      <span className="total-amount">
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+                    <button
+                      className="btn-view-details"
+                      onClick={() => toggleDetails(order.id)}
+                    >
+                      {isExpanded ? (
+                        <>Collapse <FiChevronRight size={16} style={{ marginLeft: '4px', transform: 'rotate(270deg)' }} /></>
+                      ) : (
+                        <>Details <FiChevronRight size={16} style={{ marginLeft: '4px' }} /></>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
     </div>
   );
-};
+}
 
 export default OrderHistory;

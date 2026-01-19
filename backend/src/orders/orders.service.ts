@@ -44,9 +44,16 @@ export class OrdersService {
 
     // Validate all menu items exist and are available
     const menuItemIds = createDto.items.map((item) => item.menu_item_id);
+    const uniqueMenuItemIds = [...new Set(menuItemIds)]; // Get unique IDs
+
+    console.log('🔍 [Order Debug] Validating menu items...');
+    console.log('  - Restaurant ID:', createDto.restaurant_id);
+    console.log('  - Menu Item IDs requested:', menuItemIds);
+    console.log('  - Unique Menu Item IDs:', uniqueMenuItemIds);
+
     const menuItems = await this.prisma.menuItem.findMany({
       where: {
-        id: { in: menuItemIds },
+        id: { in: uniqueMenuItemIds }, // Use unique IDs for query
         restaurant_id: createDto.restaurant_id,
         is_deleted: false,
       },
@@ -55,11 +62,27 @@ export class OrdersService {
         name: true,
         price: true,
         status: true,
+        restaurant_id: true,
       },
     });
 
-    if (menuItems.length !== menuItemIds.length) {
-      throw new BadRequestException('One or more menu items not found');
+    console.log('  - Menu Items found:', menuItems.length);
+    console.log(
+      '  - Found IDs:',
+      menuItems.map((item) => item.id),
+    );
+
+    // Check if all unique menu items were found
+    if (menuItems.length !== uniqueMenuItemIds.length) {
+      const foundIds = menuItems.map((item) => item.id);
+      const missingIds = uniqueMenuItemIds.filter(
+        (id) => !foundIds.includes(id),
+      );
+      console.log('❌ Missing menu item IDs:', missingIds);
+
+      throw new BadRequestException(
+        `One or more menu items not found. Missing IDs: ${missingIds.join(', ')}`,
+      );
     }
 
     // Check if any items are unavailable
@@ -84,16 +107,37 @@ export class OrdersService {
 
     let modifierOptionsMap = new Map();
     if (allModifierOptionIds.length > 0) {
+      // Remove duplicates for validation
+      const uniqueModifierOptionIds = [...new Set(allModifierOptionIds)];
+
       const modifierOptions = await this.prisma.modifierOption.findMany({
         where: {
-          id: { in: allModifierOptionIds },
+          id: { in: uniqueModifierOptionIds },
           status: 'active',
         },
       });
 
-      if (modifierOptions.length !== allModifierOptionIds.length) {
+      if (modifierOptions.length !== uniqueModifierOptionIds.length) {
+        console.error('Modifier validation failed:');
+        console.error('Requested IDs:', uniqueModifierOptionIds);
+        console.error(
+          'Found options:',
+          modifierOptions.map((o) => ({
+            id: o.id,
+            name: o.name,
+            status: o.status,
+          })),
+        );
+
+        // Find missing IDs
+        const foundIds = new Set(modifierOptions.map((o) => o.id));
+        const missingIds = uniqueModifierOptionIds.filter(
+          (id) => !foundIds.has(id),
+        );
+        console.error('Missing IDs:', missingIds);
+
         throw new BadRequestException(
-          'One or more modifier options not found or inactive',
+          `One or more modifier options not found or inactive. Missing IDs: ${missingIds.join(', ')}`,
         );
       }
 
@@ -156,6 +200,7 @@ export class OrdersService {
           restaurant_id: createDto.restaurant_id,
           table_id: createDto.table_id,
           customer_id: createDto.customer_id,
+          guest_name: createDto.guest_name,
           order_number: orderNumber,
           status: 'pending',
           subtotal,
@@ -520,30 +565,54 @@ export class OrdersService {
         break;
     }
 
-    // Update order in database
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: {
-        table: {
-          select: {
-            id: true,
-            table_number: true,
-            location: true,
+    // Update order status AND all item statuses in transaction
+    const updatedOrder = await this.prisma.$transaction(async (tx: any) => {
+      // Update all order items based on new order status
+      if (updateDto.status === OrderStatus.PREPARING) {
+        // When order → PREPARING, only QUEUED items → COOKING
+        await tx.orderItem.updateMany({
+          where: {
+            order_id: orderId,
+            status: 'QUEUED',
           },
-        },
-        order_items: {
-          include: {
-            menu_item: {
-              select: {
-                id: true,
-                name: true,
-                price: true,
+          data: { status: 'COOKING' },
+        });
+      } else if (updateDto.status === OrderStatus.READY) {
+        // When order → READY, all non-rejected items → READY
+        await tx.orderItem.updateMany({
+          where: {
+            order_id: orderId,
+            status: { not: 'REJECTED' },
+          },
+          data: { status: 'READY' },
+        });
+      }
+
+      // Update order
+      return tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+        include: {
+          table: {
+            select: {
+              id: true,
+              table_number: true,
+              location: true,
+            },
+          },
+          order_items: {
+            include: {
+              menu_item: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                },
               },
             },
           },
         },
-      },
+      });
     });
 
     // 🔔 EMIT REAL-TIME NOTIFICATIONS based on new status
@@ -1289,6 +1358,240 @@ export class OrdersService {
 
       return updated;
     });
+
+    return this.getOrderDetails(orderId);
+  }
+
+  /**
+   * Update individual order item status
+   * Auto-updates order status based on all items
+   */
+  async updateItemStatus(
+    orderId: string,
+    itemId: string,
+    status: 'QUEUED' | 'COOKING' | 'READY',
+  ) {
+    // Validate order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validate item belongs to this order
+    const orderItem = order.order_items.find((item) => item.id === itemId);
+    if (!orderItem) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    // Update item status
+    await this.prisma.orderItem.update({
+      where: { id: itemId },
+      data: { status },
+    });
+
+    // Auto-update order status based on all items
+    await this.autoUpdateOrderStatus(orderId);
+
+    // Emit socket event for real-time update
+    const updatedOrder = await this.getOrderDetails(orderId);
+    this.notificationsGateway.emitToRole('kitchen', 'order_item_updated', {
+      order_id: orderId,
+      item_id: itemId,
+      status,
+      order: updatedOrder,
+    });
+    this.notificationsGateway.emitToRole('waiter', 'order_item_updated', {
+      order_id: orderId,
+      item_id: itemId,
+      status,
+      order: updatedOrder,
+    });
+
+    return updatedOrder;
+  }
+
+  /**
+   * Auto-update order status based on all order items
+   * Rules:
+   * - All active items READY → Order READY
+   * - No active items QUEUED (all COOKING or READY) → Order PREPARING
+   * Note: REJECTED items are excluded from calculations
+   */
+  private async autoUpdateOrderStatus(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: true,
+      },
+    });
+
+    if (!order) return;
+
+    // Filter out rejected items
+    const activeItems = order.order_items.filter(
+      (item) => item.status !== 'REJECTED',
+    );
+
+    // If no active items, don't auto-update
+    if (activeItems.length === 0) return;
+
+    const allReady = activeItems.every((item) => item.status === 'READY');
+    const noQueued = activeItems.every((item) => item.status !== 'QUEUED');
+
+    let newStatus = order.status;
+
+    if (allReady && order.status !== OrderStatus.READY) {
+      newStatus = OrderStatus.READY;
+    } else if (
+      noQueued &&
+      !allReady &&
+      order.status !== OrderStatus.PREPARING
+    ) {
+      newStatus = OrderStatus.PREPARING;
+    }
+
+    // Update if status changed
+    if (newStatus !== order.status) {
+      const now = new Date();
+      const updateData: any = {
+        status: newStatus,
+        updated_at: now,
+      };
+
+      if (newStatus === OrderStatus.PREPARING) {
+        updateData.preparing_at = now;
+      } else if (newStatus === OrderStatus.READY) {
+        updateData.ready_at = now;
+      }
+
+      await this.prisma.order.update({
+        where: { id: orderId },
+        data: updateData,
+      });
+
+      console.log(
+        `✅ Auto-updated order ${orderId} status: ${order.status} → ${newStatus}`,
+      );
+    }
+  }
+
+  /**
+   * Reject an individual order item
+   * Removes item from order and updates totals
+   */
+  async rejectOrderItem(orderId: string, itemId: string, reason?: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        order_items: {
+          include: {
+            menu_item: true,
+            modifiers: true,
+          },
+        },
+        table: true,
+      },
+    });
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validate item belongs to this order
+    const orderItem = order.order_items.find((item) => item.id === itemId);
+    if (!orderItem) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    // Cannot reject if order is already completed or cancelled
+    if (
+      [
+        OrderStatus.COMPLETED,
+        OrderStatus.CANCELLED,
+        OrderStatus.REJECTED,
+      ].includes(order.status as OrderStatus)
+    ) {
+      throw new BadRequestException(
+        `Cannot reject item from ${order.status} order`,
+      );
+    }
+
+    // Cannot reject if item is already rejected
+    if (orderItem.status === 'REJECTED') {
+      throw new BadRequestException('Item is already rejected');
+    }
+
+    // Calculate new totals after removing item
+    const itemSubtotal = Number(orderItem.subtotal);
+    const newSubtotal = Number(order.subtotal) - itemSubtotal;
+    const newTax = Math.round(newSubtotal * 0.1);
+    const newTotal = newSubtotal + newTax;
+
+    // Count non-rejected items
+    const activeItems = order.order_items.filter(
+      (item) => item.status !== 'REJECTED',
+    );
+
+    // If this is the last active item, reject the entire order
+    if (activeItems.length === 1 && activeItems[0].id === itemId) {
+      return this.updateStatus(orderId, {
+        status: OrderStatus.REJECTED,
+        reason: reason || 'All items rejected',
+      });
+    }
+
+    // Mark item as rejected and update order totals in transaction
+    await this.prisma.$transaction(async (tx: any) => {
+      // Mark item as rejected
+      await tx.orderItem.update({
+        where: { id: itemId },
+        data: {
+          status: 'REJECTED',
+          rejection_reason: reason || 'Item not available',
+        },
+      });
+
+      // Update order totals
+      await tx.order.update({
+        where: { id: orderId },
+        data: {
+          subtotal: newSubtotal,
+          tax: newTax,
+          total: newTotal,
+        },
+      });
+    });
+
+    // Emit notification
+    this.notificationsGateway.emitToRole('waiter', 'order_item_rejected', {
+      order_id: orderId,
+      item_id: itemId,
+      item_name: orderItem.menu_item.name,
+      reason: reason || 'Item not available',
+    });
+    // Also notify customer if they're connected
+    if (order.customer_id) {
+      this.notificationsGateway.emitToUser(
+        order.customer_id,
+        'order_item_rejected',
+        {
+          order_id: orderId,
+          item_id: itemId,
+          item_name: orderItem.menu_item.name,
+          reason: reason || 'Item not available',
+        },
+      );
+    }
 
     return this.getOrderDetails(orderId);
   }

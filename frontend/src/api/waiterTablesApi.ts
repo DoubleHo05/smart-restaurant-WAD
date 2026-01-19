@@ -24,22 +24,25 @@ export interface UpdateTableOccupancyDto {
 
 // Get table status overview for waiter
 export const getTableStatusOverview = async (
-  restaurantId: string
+  restaurantId: string,
 ): Promise<TableStatusOverview[]> => {
-  const response = await axiosInstance.get("/tables/status-overview", {
+  const response = await axiosInstance.get("/tables/status/overview", {
     params: { restaurant_id: restaurantId },
   });
-  return response.data;
+  return response.data.data.tables;
 };
 
 // Update table occupancy status manually
 export const updateTableOccupancyStatus = async (
   tableId: string,
-  data: UpdateTableOccupancyDto
+  data: UpdateTableOccupancyDto,
 ): Promise<Table> => {
   const response = await axiosInstance.patch(
     `/tables/${tableId}/occupancy-status`,
-    data
+    { status: data.status },
+    {
+      params: { restaurant_id: data.restaurant_id },
+    },
   );
   return response.data;
 };
@@ -47,7 +50,7 @@ export const updateTableOccupancyStatus = async (
 // Get table details with current orders
 export const getTableWithOrders = async (
   tableId: string,
-  restaurantId: string
+  restaurantId: string,
 ) => {
   const response = await axiosInstance.get(`/tables/${tableId}`, {
     params: { restaurant_id: restaurantId, include_orders: true },

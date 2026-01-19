@@ -19,23 +19,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const { user, token } = useAuth();
 
   useEffect(() => {
-    if (!token) return;
-
-    // Initialize Socket.IO connection
+    // Initialize Socket.IO connection (allow anonymous users)
     const socketInstance = io(
       import.meta.env.VITE_SOCKET_URL || "http://localhost:3000/notifications",
       {
-        auth: { token },
+        auth: token ? { token } : {}, // Optional token for authenticated users
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
-      }
+      },
     );
 
     socketInstance.on("connect", () => {
       console.log("✅ Socket connected:", socketInstance.id);
       setIsConnected(true);
-      toast.success("Connected to real-time updates");
+      if (user) {
+        toast.success("Connected to real-time updates");
+      }
     });
 
     socketInstance.on("disconnect", () => {
@@ -53,7 +53,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       socketInstance.disconnect();
     };
-  }, [token]);
+  }, [token, user]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

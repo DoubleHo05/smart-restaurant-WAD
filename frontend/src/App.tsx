@@ -23,10 +23,12 @@ import ShoppingCart from "./pages/customer/ShoppingCart";
 import OrderStatus from "./pages/customer/OrderStatus";
 import Payment from "./pages/customer/Payment";
 import PaymentStatus from "./pages/customer/PaymentStatus";
+import PaymentResult from "./pages/customer/PaymentResult";
 
 // Auth pages
 import VerifyEmail from "./pages/auth/VerifyEmail";
 import GoogleCallback from "./pages/auth/GoogleCallback";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 
 // Admin pages
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -44,6 +46,7 @@ import OrderManagement from "./pages/OrderManagement";
 
 // Waiter pages
 import WaiterOrders from "./pages/waiter/WaiterOrders";
+import WaiterBillRequests from "./pages/waiter/WaiterBillRequests";
 import WaiterTables from "./pages/waiter/WaiterTables";
 import WaiterDashboard from "./pages/waiter/WaiterDashboard";
 
@@ -75,6 +78,10 @@ function App() {
                     path="/auth/google/callback"
                     element={<GoogleCallback />}
                   />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+
+                  {/* VNPay payment result redirect */}
+                  <Route path="/payment/result" element={<PaymentResult />} />
 
                   {/* Public customer routes */}
                   <Route path="/qr/:token" element={<QrLanding />} />
@@ -83,6 +90,7 @@ function App() {
                     element={<RestaurantList />}
                   />
                   <Route path="/customer/menu" element={<CustomerMenu />} />
+                  <Route path="/customer/order-history" element={<OrderHistory />} />
                   <Route path="/customer/login" element={<CustomerLogin />} />
                   <Route
                     path="/customer/register"
@@ -264,6 +272,14 @@ function App() {
                     element={
                       <WaiterLayout>
                         <WaiterOrders />
+                      </WaiterLayout>
+                    }
+                  />
+                  <Route
+                    path="/waiter/bill-requests"
+                    element={
+                      <WaiterLayout>
+                        <WaiterBillRequests />
                       </WaiterLayout>
                     }
                   />

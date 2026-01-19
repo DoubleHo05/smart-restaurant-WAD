@@ -28,7 +28,7 @@ export class KitchenService {
     const whereClause: any = {
       restaurant_id: restaurantId,
       status: {
-        in: ['accepted', 'preparing'], // Orders that kitchen needs to handle
+        in: ['accepted', 'preparing', 'ready'], // Orders that kitchen needs to handle
       },
     };
 
@@ -142,16 +142,21 @@ export class KitchenService {
           priority_score: priorityScore,
           delay_minutes: delayMinutes,
           is_delayed: delayMinutes > 0,
-          items: order.order_items.map((item) => ({
-            id: item.id,
-            name: item.menu_item.name,
-            quantity: item.quantity,
-            prep_time_minutes: item.menu_item.prep_time_minutes,
-            modifiers: item.modifiers.map((mod) => ({
-              name: mod.modifier_option.name,
+          items: order.order_items
+            .filter((item) => item.status !== 'REJECTED')
+            .map((item) => ({
+              id: item.id,
+              name: item.menu_item.name,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              prep_time_minutes: item.menu_item.prep_time_minutes,
+              status: item.status,
+              modifiers: item.modifiers.map((mod) => ({
+                name: mod.modifier_option.name,
+                price: mod.price_adjustment,
+              })),
+              special_requests: item.special_requests,
             })),
-            special_requests: item.special_requests,
-          })),
         };
       }),
       total: orders.length,
@@ -241,11 +246,15 @@ export class KitchenService {
         estimated_ready_at: new Date(
           updatedOrder.preparing_at!.getTime() + estimatedPrepTime * 60000,
         ),
-        items: order.order_items.map((item) => ({
-          name: item.menu_item.name,
-          quantity: item.quantity,
-          prep_time: item.menu_item.prep_time_minutes,
-        })),
+        items: order.order_items
+          .filter((item) => item.status !== 'REJECTED')
+          .map((item) => ({
+            name: item.menu_item.name,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            prep_time: item.menu_item.prep_time_minutes,
+            status: item.status,
+          })),
       },
     };
   }
@@ -549,16 +558,21 @@ export class KitchenService {
           delay_minutes: delayMinutes,
           priority_score: priorityScore,
           urgency: 'critical' as const,
-          items: order.order_items.map((item) => ({
-            id: item.id,
-            name: item.menu_item.name,
-            quantity: item.quantity,
-            prep_time_minutes: item.menu_item.prep_time_minutes,
-            modifiers: item.modifiers.map((mod) => ({
-              name: mod.modifier_option.name,
+          items: order.order_items
+            .filter((item) => item.status !== 'REJECTED')
+            .map((item) => ({
+              id: item.id,
+              name: item.menu_item.name,
+              quantity: item.quantity,
+              unit_price: item.unit_price,
+              prep_time_minutes: item.menu_item.prep_time_minutes,
+              status: item.status,
+              modifiers: item.modifiers.map((mod) => ({
+                name: mod.modifier_option.name,
+                price: mod.price_adjustment,
+              })),
+              special_requests: item.special_requests,
             })),
-            special_requests: item.special_requests,
-          })),
           special_requests: order.special_requests,
         }),
       ),

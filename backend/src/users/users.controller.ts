@@ -80,9 +80,19 @@ export class UsersController {
 
   @Get()
   @Roles('super_admin', 'admin')
-  findAll(@CurrentUser() user: any, @Query('role') role?: string) {
+  async findAll(@CurrentUser() user: any, @Query('role') role?: string) {
     const isSuperAdmin = user.roles.includes('super_admin');
-    return this.usersService.findAll(role, isSuperAdmin);
+    const isAdmin = user.roles.includes('admin') && !isSuperAdmin;
+
+    let restaurantId: string | undefined;
+
+    // If admin (not super_admin), get their restaurant to filter staff
+    if (isAdmin) {
+      const restaurant = await this.usersService.findAdminRestaurant(user.id);
+      restaurantId = restaurant?.id;
+    }
+
+    return this.usersService.findAll(role, isSuperAdmin, restaurantId);
   }
 
   @Get(':id')

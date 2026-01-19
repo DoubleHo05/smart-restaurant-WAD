@@ -7,11 +7,15 @@ import {
   WaiterPerformance,
   LeaderboardEntry,
 } from "../../api/waiterApi";
+import { useRestaurant } from "../../contexts/RestaurantContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export default function WaiterDashboard() {
   const navigate = useNavigate();
+  const { restaurants } = useRestaurant();
+  const { user } = useAuth();
   const [performance, setPerformance] = useState<WaiterPerformance | null>(
-    null
+    null,
   );
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,16 +23,19 @@ export default function WaiterDashboard() {
     "today" | "week" | "all"
   >("today");
 
-  // TODO: Replace with actual user ID and restaurant ID from auth context
-  const waiterId = "temp-waiter-id";
-  const restaurantId = "temp-restaurant-id";
-  const waiterName = "John Doe"; // TODO: Get from auth context
+  const waiterId = user?.id || "";
+  const restaurantId = restaurants.length > 0 ? restaurants[0].id : null;
+  const waiterName = user?.full_name || "Waiter";
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (restaurantId && waiterId) {
+      loadData();
+    }
+  }, [restaurantId, waiterId]);
 
   const loadData = async () => {
+    if (!restaurantId || !waiterId) return;
+
     setLoading(true);
     try {
       const [perfData, leaderData] = await Promise.all([
@@ -95,8 +102,6 @@ export default function WaiterDashboard() {
     return myEntry?.rank || "-";
   };
 
-  const stats = getCurrentStats();
-
   if (loading) {
     return (
       <div className="waiter-dashboard loading">
@@ -104,6 +109,8 @@ export default function WaiterDashboard() {
       </div>
     );
   }
+
+  const stats = getCurrentStats();
 
   return (
     <div className="waiter-dashboard">
@@ -205,7 +212,7 @@ export default function WaiterDashboard() {
                       ((stats.orders - stats.rejected) /
                         Math.max(stats.orders, 1)) *
                         100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>
@@ -218,7 +225,7 @@ export default function WaiterDashboard() {
                   style={{
                     height: `${Math.min(
                       (stats.rejected / Math.max(stats.orders, 1)) * 100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>
@@ -231,7 +238,7 @@ export default function WaiterDashboard() {
                   style={{
                     height: `${Math.min(
                       (stats.served / Math.max(stats.orders, 1)) * 100,
-                      100
+                      100,
                     )}%`,
                   }}
                 ></div>
