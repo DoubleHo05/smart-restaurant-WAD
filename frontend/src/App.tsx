@@ -23,6 +23,7 @@ import ShoppingCart from "./pages/customer/ShoppingCart";
 import OrderStatus from "./pages/customer/OrderStatus";
 import Payment from "./pages/customer/Payment";
 import PaymentStatus from "./pages/customer/PaymentStatus";
+import PaymentResult from "./pages/customer/PaymentResult";
 
 // Auth pages
 import VerifyEmail from "./pages/auth/VerifyEmail";
@@ -78,6 +79,9 @@ function App() {
                     element={<GoogleCallback />}
                   />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
+
+                  {/* VNPay payment result redirect */}
+                  <Route path="/payment/result" element={<PaymentResult />} />
 
                   {/* Public customer routes */}
                   <Route path="/qr/:token" element={<QrLanding />} />
