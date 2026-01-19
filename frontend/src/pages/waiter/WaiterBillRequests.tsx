@@ -48,7 +48,7 @@ export default function WaiterBillRequests() {
       setError("");
 
       const response = await billRequestsApi.getByRestaurant(restaurantId);
-      const data = Array.isArray(response) ? response : (response as any)?.data || [];
+      const data: BillRequest[] = Array.isArray(response) ? response : (response as any)?.data || [];
 
       console.log("📋 [WaiterBillRequests] Loaded bills:", data);
 
@@ -133,7 +133,7 @@ export default function WaiterBillRequests() {
         billRequestId,
         billRequest.total_amount
       );
-      
+
       alert("Payment completed successfully!");
 
       // Reload list
@@ -262,116 +262,8 @@ export default function WaiterBillRequests() {
             </div>
           ) : (
             <div className="bill-requests-grid">
-            {billRequests.map((billRequest) => (
-              <div key={billRequest.id} className="bill-request-card">
-                <div className="bill-request-header">
-                  <div className="table-info">
-                    <div className="table-number">
-                      Table {billRequest.tables?.table_number || "N/A"}
-                    </div>
-                    <div className="bill-time">
-                      {new Date(billRequest.created_at).toLocaleTimeString(
-                        "en-US",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
-                    </div>
-                  </div>
-                  <div
-                    className={`payment-method-badge ${billRequest.payment_method_code}`}
-                  >
-                    <span className="payment-icon">
-                      {getPaymentMethodIcon(billRequest.payment_method_code)}
-                    </span>
-                    <span className="payment-name">
-                      {getPaymentMethodName(billRequest.payment_method_code)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bill-amounts">
-                  <div className="amount-row">
-                    <span>Subtotal:</span>
-                    <span>{formatCurrency(billRequest.subtotal)}</span>
-                  </div>
-                  {billRequest.tips_amount > 0 && (
-                    <div className="amount-row tips">
-                      <span>Tips:</span>
-                      <span>+{formatCurrency(billRequest.tips_amount)}</span>
-                    </div>
-                  )}
-                  <div className="amount-row total">
-                    <span>Total:</span>
-                    <span className="total-amount">
-                      {formatCurrency(billRequest.total_amount)}
-                    </span>
-                  </div>
-                </div>
-
-                {billRequest.customer_note && (
-                  <div className="customer-note">
-                    <div className="note-label">📝 Customer Note:</div>
-                    <div className="note-text">{billRequest.customer_note}</div>
-                  </div>
-                )}
-
-                <div className="bill-meta">
-                  <span className="orders-count">
-                    {billRequest.order_ids.length} order(s)
-                  </span>
-                </div>
-
-                <div className="bill-actions">
-                  <button
-                    className="btn-reject"
-                    onClick={() => handleReject(billRequest.id)}
-                    disabled={processing === billRequest.id}
-                  >
-                    Reject
-                  </button>
-                  <button
-                    className="btn-accept"
-                    onClick={() => handleAccept(billRequest.id)}
-                    disabled={processing === billRequest.id}
-                  >
-                    {processing === billRequest.id
-                      ? "Processing..."
-                      : "Accept & Process"}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        </div>
-      )}
-
-      {/* Accepted Tab */}
-      {activeTab === "accepted" && (
-        <div className="bill-requests-container">
-          {loading && acceptedBills.length === 0 ? (
-            <div className="loading-state">
-              <div className="loading-spinner"></div>
-              <p>Loading accepted bills...</p>
-            </div>
-          ) : acceptedBills.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">✅</div>
-              <h3>No Accepted Bills</h3>
-              <p>Accepted bills waiting for payment completion will appear here</p>
-            </div>
-          ) : (
-            <div className="bill-requests-grid">
-              {acceptedBills.map((billRequest) => {
-                console.log("💳 [WaiterBillRequests] Rendering accepted bill:", {
-                  id: billRequest.id,
-                  payment_method_code: billRequest.payment_method_code,
-                  is_cash: billRequest.payment_method_code?.toLowerCase() === "cash",
-                });
-                return (
-                <div key={billRequest.id} className="bill-request-card accepted-card">
+              {billRequests.map((billRequest) => (
+                <div key={billRequest.id} className="bill-request-card">
                   <div className="bill-request-header">
                     <div className="table-info">
                       <div className="table-number">
@@ -429,39 +321,147 @@ export default function WaiterBillRequests() {
                     <span className="orders-count">
                       {billRequest.order_ids.length} order(s)
                     </span>
-                    <span className="status-badge accepted">✅ Accepted</span>
                   </div>
 
-                  {/* Only show Complete button for CASH payments */}
-                  {billRequest.payment_method_code?.toLowerCase() === "cash" && (
-                    <div className="bill-actions">
-                      <button
-                        className="btn-complete-payment"
-                        onClick={() => handleCompleteCashPayment(billRequest.id)}
-                        disabled={processing === billRequest.id}
-                      >
-                        {processing === billRequest.id
-                          ? "Processing..."
-                          : "💵 Complete Cash Payment"}
-                      </button>
-                    </div>
-                  )}
-
-                  {/* For VNPay, show waiting message */}
-                  {billRequest.payment_method_code?.toLowerCase() === "vnpay" && (
-                    <div className="bill-info">
-                      <p className="info-text">
-                        ⏳ Waiting for customer to complete VNPay payment...
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Debug: show payment method code */}
-                  <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.5rem' }}>
-                    Payment method: {billRequest.payment_method_code}
+                  <div className="bill-actions">
+                    <button
+                      className="btn-reject"
+                      onClick={() => handleReject(billRequest.id)}
+                      disabled={processing === billRequest.id}
+                    >
+                      Reject
+                    </button>
+                    <button
+                      className="btn-accept"
+                      onClick={() => handleAccept(billRequest.id)}
+                      disabled={processing === billRequest.id}
+                    >
+                      {processing === billRequest.id
+                        ? "Processing..."
+                        : "Accept & Process"}
+                    </button>
                   </div>
                 </div>
-              );
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Accepted Tab */}
+      {activeTab === "accepted" && (
+        <div className="bill-requests-container">
+          {loading && acceptedBills.length === 0 ? (
+            <div className="loading-state">
+              <div className="loading-spinner"></div>
+              <p>Loading accepted bills...</p>
+            </div>
+          ) : acceptedBills.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">✅</div>
+              <h3>No Accepted Bills</h3>
+              <p>Accepted bills waiting for payment completion will appear here</p>
+            </div>
+          ) : (
+            <div className="bill-requests-grid">
+              {acceptedBills.map((billRequest) => {
+                console.log("💳 [WaiterBillRequests] Rendering accepted bill:", {
+                  id: billRequest.id,
+                  payment_method_code: billRequest.payment_method_code,
+                  is_cash: billRequest.payment_method_code?.toLowerCase() === "cash",
+                });
+                return (
+                  <div key={billRequest.id} className="bill-request-card accepted-card">
+                    <div className="bill-request-header">
+                      <div className="table-info">
+                        <div className="table-number">
+                          Table {billRequest.tables?.table_number || "N/A"}
+                        </div>
+                        <div className="bill-time">
+                          {new Date(billRequest.created_at).toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </div>
+                      </div>
+                      <div
+                        className={`payment-method-badge ${billRequest.payment_method_code}`}
+                      >
+                        <span className="payment-icon">
+                          {getPaymentMethodIcon(billRequest.payment_method_code)}
+                        </span>
+                        <span className="payment-name">
+                          {getPaymentMethodName(billRequest.payment_method_code)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bill-amounts">
+                      <div className="amount-row">
+                        <span>Subtotal:</span>
+                        <span>{formatCurrency(billRequest.subtotal)}</span>
+                      </div>
+                      {billRequest.tips_amount > 0 && (
+                        <div className="amount-row tips">
+                          <span>Tips:</span>
+                          <span>+{formatCurrency(billRequest.tips_amount)}</span>
+                        </div>
+                      )}
+                      <div className="amount-row total">
+                        <span>Total:</span>
+                        <span className="total-amount">
+                          {formatCurrency(billRequest.total_amount)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {billRequest.customer_note && (
+                      <div className="customer-note">
+                        <div className="note-label">📝 Customer Note:</div>
+                        <div className="note-text">{billRequest.customer_note}</div>
+                      </div>
+                    )}
+
+                    <div className="bill-meta">
+                      <span className="orders-count">
+                        {billRequest.order_ids.length} order(s)
+                      </span>
+                      <span className="status-badge accepted">✅ Accepted</span>
+                    </div>
+
+                    {/* Only show Complete button for CASH payments */}
+                    {billRequest.payment_method_code?.toLowerCase() === "cash" && (
+                      <div className="bill-actions">
+                        <button
+                          className="btn-complete-payment"
+                          onClick={() => handleCompleteCashPayment(billRequest.id)}
+                          disabled={processing === billRequest.id}
+                        >
+                          {processing === billRequest.id
+                            ? "Processing..."
+                            : "💵 Complete Cash Payment"}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* For VNPay, show waiting message */}
+                    {billRequest.payment_method_code?.toLowerCase() === "vnpay" && (
+                      <div className="bill-info">
+                        <p className="info-text">
+                          ⏳ Waiting for customer to complete VNPay payment...
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Debug: show payment method code */}
+                    <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '0.5rem' }}>
+                      Payment method: {billRequest.payment_method_code}
+                    </div>
+                  </div>
+                );
               })}
             </div>
           )}

@@ -57,22 +57,18 @@ export default function WaiterOrders() {
     try {
       const pending = await getPendingOrders({ restaurant_id: restaurantId });
       console.log("Pending orders response:", pending);
-      // Backend returns {success, data, total} format
-      const pendingData = pending?.data || pending;
-      setPendingOrders(Array.isArray(pendingData) ? pendingData : []);
+      setPendingOrders(Array.isArray(pending) ? pending : []);
 
       const accepted = await getRestaurantOrders(
         restaurantId,
         "accepted,preparing",
       );
       console.log("Accepted orders response:", accepted);
-      const acceptedData = accepted?.data || accepted;
-      setAcceptedOrders(Array.isArray(acceptedData) ? acceptedData : []);
+      setAcceptedOrders(Array.isArray(accepted) ? accepted : []);
 
       const ready = await getRestaurantOrders(restaurantId, "ready");
       console.log("Ready orders response:", ready);
-      const readyData = ready?.data || ready;
-      setReadyOrders(Array.isArray(readyData) ? readyData : []);
+      setReadyOrders(Array.isArray(ready) ? ready : []);
 
       // Only load orders with status "completed" (already paid)
       const completed = await getRestaurantOrders(
@@ -80,8 +76,7 @@ export default function WaiterOrders() {
         "completed",
       );
       console.log("Completed orders response:", completed);
-      const completedData = completed?.data || completed;
-      setCompletedOrders(Array.isArray(completedData) ? completedData : []);
+      setCompletedOrders(Array.isArray(completed) ? completed : []);
     } catch (error) {
       console.error("Error loading orders:", error);
       setPendingOrders([]);
@@ -94,6 +89,7 @@ export default function WaiterOrders() {
   };
 
   const handleAcceptOrder = async (order: WaiterOrder) => {
+    if (!restaurantId) return;
     try {
       await acceptOrder(order.id, { restaurant_id: restaurantId });
       await loadOrders();
@@ -115,6 +111,7 @@ export default function WaiterOrders() {
     }
 
     try {
+      if (!restaurantId) return;
       await rejectOrder(selectedOrder.id, {
         restaurant_id: restaurantId,
         rejection_reason: rejectionReason,
@@ -135,7 +132,7 @@ export default function WaiterOrders() {
   };
 
   const handleServeOrder = async () => {
-    if (!selectedOrder) return;
+    if (!selectedOrder || !restaurantId) return;
     await serveOrder(selectedOrder.id, restaurantId);
     await loadOrders();
   };
@@ -357,6 +354,7 @@ export default function WaiterOrders() {
               className="btn-accept"
               onClick={async () => {
                 try {
+                  if (!restaurantId) return;
                   await serveOrder(order.id, restaurantId);
                   await loadOrders();
                 } catch (error) {
@@ -533,6 +531,7 @@ export default function WaiterOrders() {
             await handleAcceptOrder(selectedOrder);
           }}
           onReject={async (reason: string) => {
+            if (!restaurantId) return;
             await rejectOrder(selectedOrder.id, {
               restaurant_id: restaurantId,
               rejection_reason: reason,

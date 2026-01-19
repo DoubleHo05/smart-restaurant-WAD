@@ -34,7 +34,7 @@ export default function WaiterTables() {
 
   const loadTables = async () => {
     if (!restaurantId) return;
-    
+
     setLoading(true);
     try {
       const data = await getTableStatusOverview(restaurantId);
@@ -56,6 +56,7 @@ export default function WaiterTables() {
     newStatus: "available" | "occupied" | "reserved"
   ) => {
     try {
+      if (!restaurantId) return;
       await updateTableOccupancyStatus(tableId, {
         restaurant_id: restaurantId,
         status: newStatus,
@@ -324,9 +325,8 @@ export default function WaiterTables() {
                 <h3>Update Status</h3>
                 <div className="status-buttons">
                   <button
-                    className={`status-btn ${
-                      selectedTable.status === "available" ? "active" : ""
-                    }`}
+                    className={`status-btn ${selectedTable.status === "available" ? "active" : ""
+                      }`}
                     style={{ borderColor: "#10b981" }}
                     onClick={() =>
                       handleStatusChange(selectedTable.id, "available")
@@ -335,9 +335,8 @@ export default function WaiterTables() {
                     <span style={{ color: "#10b981" }}>✓</span> Available
                   </button>
                   <button
-                    className={`status-btn ${
-                      selectedTable.status === "occupied" ? "active" : ""
-                    }`}
+                    className={`status-btn ${selectedTable.status === "occupied" ? "active" : ""
+                      }`}
                     style={{ borderColor: "#ef4444" }}
                     onClick={() =>
                       handleStatusChange(selectedTable.id, "occupied")
@@ -346,9 +345,8 @@ export default function WaiterTables() {
                     <span style={{ color: "#ef4444" }}>👥</span> Occupied
                   </button>
                   <button
-                    className={`status-btn ${
-                      selectedTable.status === "reserved" ? "active" : ""
-                    }`}
+                    className={`status-btn ${selectedTable.status === "reserved" ? "active" : ""
+                      }`}
                     style={{ borderColor: "#f59e0b" }}
                     onClick={() =>
                       handleStatusChange(selectedTable.id, "reserved")
