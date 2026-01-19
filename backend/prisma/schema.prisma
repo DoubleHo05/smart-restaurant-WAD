@@ -473,9 +473,3 @@ enum OccupancyStatus {
   occupied
   reserved
 }
-
-enum OccupancyStatus {
-  available
-  occupied
-  reserved
-}
