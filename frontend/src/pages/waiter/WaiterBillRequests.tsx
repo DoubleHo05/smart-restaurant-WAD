@@ -109,20 +109,38 @@ export default function WaiterBillRequests() {
 
     try {
       setError("");
+      
+      // Debug: Log user info
+      const authUser = localStorage.getItem('auth_user');
+      const authToken = localStorage.getItem('auth_token');
+      console.log('🔐 Auth Debug:', {
+        user: authUser ? JSON.parse(authUser) : null,
+        hasToken: !!authToken,
+        tokenPreview: authToken ? authToken.substring(0, 50) + '...' : null
+      });
+
       const result = await billRequestsApi.applyDiscount(selectedBillForDiscount.id, {
         discount_type: discountType,
         discount_value: discountValue,
         tax_rate: taxRate > 0 ? taxRate : undefined,
       });
 
-      console.log("Discount applied:", result);
+      console.log("✅ Discount applied:", result);
       closeDiscountModal();
       await loadBillRequests();
       
-      alert(`Discount applied successfully!\nFinal Amount: ${result.final_amount?.toLocaleString()}₫`);
+      alert(`Discount applied successfully!\nFinal Amount: ${Math.round(result.data?.final_amount || 0).toLocaleString()}₫`);
     } catch (err: any) {
-      console.error("Error applying discount:", err);
-      setError(err.response?.data?.message || "Failed to apply discount");
+      console.error("❌ Error applying discount:", err);
+      console.error("Response data:", err.response?.data);
+      console.error("Status:", err.response?.status);
+      
+      if (err.response?.status === 403) {
+        setError("You don't have permission. Please login as Waiter/Admin.");
+        alert("⚠️ Permission Denied\n\nYou need to login as Waiter or Admin to apply discounts.\n\nPlease go to /waiter/login");
+      } else {
+        setError(err.response?.data?.message || "Failed to apply discount");
+      }
     }
   };
 
@@ -625,22 +643,22 @@ export default function WaiterBillRequests() {
                   <h4>Preview:</h4>
                   <div className="preview-row">
                     <span>Subtotal:</span>
-                    <span>{formatCurrency(selectedBillForDiscount.subtotal)}</span>
+                    <span>{formatCurrency(Number(selectedBillForDiscount.subtotal) || 0)}</span>
                   </div>
                   <div className="preview-row discount">
                     <span>Discount:</span>
                     <span>
                       -{formatCurrency(
                         discountType === "percentage"
-                          ? (selectedBillForDiscount.subtotal * discountValue) / 100
-                          : discountValue
+                          ? (Number(selectedBillForDiscount.subtotal) * Number(discountValue)) / 100
+                          : Number(discountValue)
                       )}
                     </span>
                   </div>
                   {selectedBillForDiscount.tips_amount > 0 && (
                     <div className="preview-row">
                       <span>Tips:</span>
-                      <span>+{formatCurrency(selectedBillForDiscount.tips_amount)}</span>
+                      <span>+{formatCurrency(Number(selectedBillForDiscount.tips_amount) || 0)}</span>
                     </div>
                   )}
                   {taxRate > 0 && (
@@ -648,12 +666,12 @@ export default function WaiterBillRequests() {
                       <span>Tax ({taxRate}%):</span>
                       <span>
                         +{formatCurrency(
-                          ((selectedBillForDiscount.subtotal -
+                          ((Number(selectedBillForDiscount.subtotal) -
                             (discountType === "percentage"
-                              ? (selectedBillForDiscount.subtotal * discountValue) / 100
-                              : discountValue) +
-                            selectedBillForDiscount.tips_amount) *
-                            taxRate) /
+                              ? (Number(selectedBillForDiscount.subtotal) * Number(discountValue)) / 100
+                              : Number(discountValue)) +
+                            Number(selectedBillForDiscount.tips_amount)) *
+                            Number(taxRate)) /
                             100
                         )}
                       </span>
@@ -662,18 +680,21 @@ export default function WaiterBillRequests() {
                   <div className="preview-row total">
                     <span>Final Amount:</span>
                     <span className="final-amount">
-                      {formatCurrency(
-                        (() => {
-                          const discount =
-                            discountType === "percentage"
-                              ? (selectedBillForDiscount.subtotal * discountValue) / 100
-                              : discountValue;
-                          const afterDiscount =
-                            selectedBillForDiscount.subtotal - discount + selectedBillForDiscount.tips_amount;
-                          const tax = taxRate > 0 ? (afterDiscount * taxRate) / 100 : 0;
-                          return afterDiscount + tax;
-                        })()
-                      )}
+                      {(() => {
+                        const subtotal = Number(selectedBillForDiscount.subtotal) || 0;
+                        const tips = Number(selectedBillForDiscount.tips_amount) || 0;
+                        const discountVal = Number(discountValue) || 0;
+                        const taxRateVal = Number(taxRate) || 0;
+                        
+                        const discount =
+                          discountType === "percentage"
+                            ? (subtotal * discountVal) / 100
+                            : discountVal;
+                        const afterDiscount = subtotal - discount + tips;
+                        const tax = taxRateVal > 0 ? (afterDiscount * taxRateVal) / 100 : 0;
+                        const finalAmount = afterDiscount + tax;
+                        return formatCurrency(finalAmount);
+                      })()}
                     </span>
                   </div>
                 </div>

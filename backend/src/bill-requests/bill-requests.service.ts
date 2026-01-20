@@ -398,11 +398,18 @@ export class BillRequestsService {
         throw new NotFoundException('Bill request not found');
       }
 
+      // Determine payment amount: use final_amount if discount applied, otherwise total_amount
+      const paymentAmount = billRequest.final_amount || billRequest.total_amount;
+
       console.log('✅ [Bill Request] Found:', {
         id: billRequest.id,
         status: billRequest.status,
         payment_method: billRequest.payment_method_code,
         total_amount: billRequest.total_amount,
+        final_amount: billRequest.final_amount,
+        discount_applied: !!billRequest.discount_amount,
+        discount_amount: billRequest.discount_amount,
+        payment_amount: paymentAmount,
         order_ids: billRequest.order_ids,
         restaurant_id: billRequest.tables.restaurant_id,
       });
@@ -423,15 +430,12 @@ export class BillRequestsService {
 
       console.log('🔄 [Bill Request] Creating payment with:', {
         bill_request_id: id,
-        amount: billRequest.final_amount || billRequest.total_amount, // Use final_amount if discount applied
+        amount: paymentAmount,
         payment_method: billRequest.payment_method_code,
         tips_amount: billRequest.tips_amount || 0,
         order_ids: billRequest.order_ids || [],
         restaurant_id: billRequest.tables.restaurant_id,
       });
-
-      // Create payment record - use final_amount if discount was applied, otherwise total_amount
-      const paymentAmount = billRequest.final_amount || billRequest.total_amount;
       
       const payment = await this.paymentsService.initiatePaymentFromBillRequest(
         {

@@ -4,6 +4,7 @@ import { useSocket } from "../../contexts/SocketContext";
 import billRequestsApi from "../../api/billRequestsApi";
 import paymentsApi from "../../api/paymentsApi";
 import "./PaymentStatus.css";
+import "./PaymentStatusExtra.css";
 
 type BillStatus = "pending" | "accepted" | "completed" | "rejected";
 
@@ -284,50 +285,79 @@ function PaymentStatus() {
           )}
         </div>
 
-        {/* Bill Details */}
-        <div className="bill-details-card">
-          <h3 className="bill-details-title">Bill Details</h3>
-          <div className="bill-detail-row">
-            <span className="bill-detail-label">Restaurant</span>
-            <span className="bill-detail-value">
-              {displayBill.restaurant?.name || "N/A"}
-            </span>
+        {/* Bill Details - Only show when accepted or completed */}
+        {(status === "accepted" || status === "completed") && (
+          <div className="bill-details-card">
+            <h3 className="bill-details-title">Bill Details</h3>
+            <div className="bill-detail-row">
+              <span className="bill-detail-label">Restaurant</span>
+              <span className="bill-detail-value">
+                {displayBill.restaurant?.name || "N/A"}
+              </span>
+            </div>
+            <div className="bill-detail-row">
+              <span className="bill-detail-label">Table</span>
+              <span className="bill-detail-value">
+                {displayBill.table?.table_number || "N/A"}
+              </span>
+            </div>
+            <div className="bill-detail-row">
+              <span className="bill-detail-label">Subtotal</span>
+              <span className="bill-detail-value">
+                {Math.round(displayBill.subtotal || 0).toLocaleString("vi-VN")}₫
+              </span>
+            </div>
+            {bill?.discount_amount && bill.discount_amount > 0 && (
+              <div className="bill-detail-row discount">
+                <span className="bill-detail-label">
+                  Discount ({bill.discount_type === 'percentage' ? `${bill.discount_value}%` : 'Fixed'})
+                </span>
+                <span className="bill-detail-value discount-value">
+                  -{Math.round(bill.discount_amount).toLocaleString("vi-VN")}₫
+                </span>
+              </div>
+            )}
+            <div className="bill-detail-row">
+              <span className="bill-detail-label">Tips</span>
+              <span className="bill-detail-value">
+                {Math.round(displayBill.tips_amount || 0).toLocaleString("vi-VN")}
+                ₫
+              </span>
+            </div>
+            {bill?.tax_amount && bill.tax_amount > 0 && (
+              <div className="bill-detail-row tax">
+                <span className="bill-detail-label">Tax ({bill.tax_rate}%)</span>
+                <span className="bill-detail-value">
+                  +{Math.round(bill.tax_amount).toLocaleString("vi-VN")}₫
+                </span>
+              </div>
+            )}
+            <div className="bill-detail-row total">
+              <span className="bill-detail-label">Total</span>
+              <span className="bill-detail-value">
+                {Math.round((bill?.final_amount || displayBill.total_amount) || 0).toLocaleString(
+                  "vi-VN",
+                )}
+                ₫
+              </span>
+            </div>
           </div>
-          <div className="bill-detail-row">
-            <span className="bill-detail-label">Table</span>
-            <span className="bill-detail-value">
-              {displayBill.table?.table_number || "N/A"}
-            </span>
+        )}
+
+        {/* Pending - Show info message instead */}
+        {status === "pending" && (
+          <div className="pending-info-card">
+            <div className="pending-info-icon">👨‍🍳</div>
+            <h3>Your request is being processed</h3>
+            <p>Our waiter will review your order and finalize the bill amount shortly.</p>
           </div>
-          <div className="bill-detail-row">
-            <span className="bill-detail-label">Subtotal</span>
-            <span className="bill-detail-value">
-              {Math.round(displayBill.subtotal || 0).toLocaleString("vi-VN")}₫
-            </span>
-          </div>
-          <div className="bill-detail-row">
-            <span className="bill-detail-label">Tips</span>
-            <span className="bill-detail-value">
-              {Math.round(displayBill.tips_amount || 0).toLocaleString("vi-VN")}
-              ₫
-            </span>
-          </div>
-          <div className="bill-detail-row total">
-            <span className="bill-detail-label">Total</span>
-            <span className="bill-detail-value">
-              {Math.round(displayBill.total_amount || 0).toLocaleString(
-                "vi-VN",
-              )}
-              ₫
-            </span>
-          </div>
-        </div>
+        )}
 
         {/* QR Code Section (only show when accepted) */}
         {status === "accepted" && bill?.payment_method_code === "CASH" && (
           <div className="qr-section">
             <h3 className="qr-title">Cash Payment</h3>
-            <div className="qr-code-placeholder">�</div>
+            <div className="qr-code-placeholder">💵</div>
             <p className="qr-instruction">
               Please prepare cash payment. Waiter will confirm receipt shortly.
             </p>

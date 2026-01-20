@@ -71,7 +71,9 @@ export class PaymentsService {
       );
     }
 
-    const totalAmount = Number(amount) + Number(tips_amount);
+    // NOTE: 'amount' is already the final amount (including tips, minus discount, plus tax)
+    // Do NOT add tips again here!
+    const totalAmount = Number(amount);
 
     console.log('💰 [Payment] Creating payment record:', {
       bill_request_id,

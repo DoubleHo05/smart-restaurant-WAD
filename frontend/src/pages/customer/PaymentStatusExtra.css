@@ -1,0 +1,56 @@
+/* Pending Info Card */
+.pending-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    margin-top: 20px;
+}
+
+.pending-info-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.pending-info-card h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+}
+
+.pending-info-card p {
+    font-size: 15px;
+    margin: 0;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+
+/* Discount and Tax rows */
+.bill-detail-row.discount .bill-detail-label {
+    color: #10b981;
+}
+
+.bill-detail-row.discount .bill-detail-value.discount-value {
+    color: #10b981;
+    font-weight: 600;
+}
+
+.bill-detail-row.tax .bill-detail-label {
+    color: #f59e0b;
+}
+
+.bill-detail-row.tax .bill-detail-value {
+    color: #f59e0b;
+}

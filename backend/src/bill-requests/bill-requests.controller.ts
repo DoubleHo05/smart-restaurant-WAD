@@ -81,7 +81,7 @@ export class BillRequestsController {
    */
   @Post(':id/apply-discount')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('waiter', 'admin', 'super_admin')
+  @Roles('waiter', 'admin', 'super_admin', 'kitchen')
   async applyDiscount(
     @Param('id') id: string,
     @Body(new ValidationPipe({ transform: true, whitelist: true }))

@@ -4,6 +4,7 @@ import ordersApi from "../../api/ordersApi";
 import billRequestsApi from "../../api/billRequestsApi";
 import paymentsApi, { PaymentMethod } from "../../api/paymentsApi";
 import "./Payment.css";
+import "./PaymentRequest.css";
 
 const TIP_PERCENTAGES = [10, 15, 20];
 
@@ -172,7 +173,7 @@ function Payment() {
           ←
         </button>
         <div className="payment-header-content">
-          <h1 className="payment-header-title">Your Bill</h1>
+          <h1 className="payment-header-title">Request Bill</h1>
           <p className="payment-header-subtitle">
             {restaurantInfo?.name} • Table {tableInfo?.tableNumber}
           </p>
@@ -180,66 +181,23 @@ function Payment() {
       </div>
 
       <div className="payment-content">
-        {/* Bill Header */}
-        <div className="bill-header">
-          <div className="bill-header-icon">🍽️</div>
-          <h2 className="bill-header-title">{restaurantInfo?.name}</h2>
-          <p className="bill-header-meta">
-            Table {tableInfo?.tableNumber} • {new Date().toLocaleDateString()}
-          </p>
+        {/* Info Message */}
+        <div className="request-info-box">
+          <div className="info-icon">ℹ️</div>
+          <div>
+            <h3>Request Your Bill</h3>
+            <p>Choose your payment method and add a tip (optional). Our waiter will review and finalize your bill.</p>
+          </div>
         </div>
 
-        {/* Orders */}
-        {orders.map((order, index) => (
-          <div key={order.id} className="bill-section">
-            <div className="bill-section-title">
-              Order #{index + 1} - {order.order_number}
+        {/* Order Summary - Just count */}
+        <div className="order-summary-compact">
+          <div className="summary-icon">📋</div>
+          <div>
+            <div className="summary-title">{orders.length} Order(s)</div>
+            <div className="summary-subtitle">
+              {orders.reduce((sum, order) => sum + (order.order_items?.filter((item: any) => item.status !== "REJECTED").length || 0), 0)} items total
             </div>
-            {order.order_items
-              ?.filter((item: any) => item.status !== "REJECTED") // Hide rejected items from bill
-              .map((item: any) => (
-                <div key={item.id} className="bill-item">
-                  <div className="bill-item-details">
-                    <span className="bill-item-qty">{item.quantity}x</span>
-                    <div>
-                      <div className="bill-item-name">
-                        {item.menu_item?.name}
-                      </div>
-                      {item.modifiers && item.modifiers.length > 0 && (
-                        <div className="bill-item-mods">
-                          +{" "}
-                          {item.modifiers
-                            .map((m: any) => m.modifier_option?.name)
-                            .join(", ")}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <span className="bill-item-price">
-                    {Math.round(item.subtotal).toLocaleString("vi-VN")}₫
-                  </span>
-                </div>
-              ))}
-          </div>
-        ))}
-
-        {/* Totals */}
-        <div className="bill-totals">
-          <div className="bill-total-row">
-            <span>Subtotal</span>
-            <span>{Math.round(subtotal).toLocaleString("vi-VN")}₫</span>
-          </div>
-          {tips > 0 && (
-            <div className="bill-total-row">
-              <span>
-                Tips ({tipPercentage > 0 ? `${tipPercentage}%` : "Custom"})
-              </span>
-              <span>{Math.round(tips).toLocaleString("vi-VN")}₫</span>
-            </div>
-          )}
-          <div className="bill-total-row grand-total">
-            <span>Total</span>
-            <span>{Math.round(total).toLocaleString("vi-VN")}₫</span>
           </div>
         </div>
 
@@ -326,9 +284,7 @@ function Payment() {
           onClick={handleRequestBill}
           disabled={submitting || orders.length === 0}
         >
-          {submitting
-            ? "Requesting..."
-            : `Request Bill • ${Math.round(total).toLocaleString("vi-VN")}₫`}
+          {submitting ? "Requesting..." : "Request Bill →"}
         </button>
       </div>
     </div>

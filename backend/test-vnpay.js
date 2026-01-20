@@ -92,7 +92,7 @@ async function testVNPayFlow() {
     console.log('   3. Chọn bank: NCB');
     console.log('   4. Nhập thông tin test card VNPay:');
     console.log('      - Số thẻ: 9704198526191432198');
-    console.log('      - Tên chủ thẻ: NGUYEN VAN A');
+    console.log('      - Tên chủ thẻ:   ');
     console.log('      - Ngày phát hành: 07/15');
     console.log('      - Mật khẩu OTP: 123456');
     console.log('   5. VNPay sẽ gọi IPN callback về ngrok URL');

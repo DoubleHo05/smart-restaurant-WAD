@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth</title>
+</head>
+<body>
+    <h1>Debug Authentication</h1>
+    <pre id="output"></pre>
+    <script>
+        const token = localStorage.getItem('auth_token');
+        const user = localStorage.getItem('auth_user');
+        
+        const output = document.getElementById('output');
+        output.textContent = JSON.stringify({
+            token: token ? token.substring(0, 50) + '...' : 'NOT FOUND',
+            user: user ? JSON.parse(user) : 'NOT FOUND',
+            allKeys: Object.keys(localStorage)
+        }, null, 2);
+
+        // Decode JWT
+        if (token) {
+            try {
+                const parts = token.split('.');
+                const payload = JSON.parse(atob(parts[1]));
+                output.textContent += '\n\nJWT Payload:\n' + JSON.stringify(payload, null, 2);
+            } catch (e) {
+                output.textContent += '\n\nError decoding JWT: ' + e.message;
+            }
+        }
+    </script>
+</body>
+</html>
