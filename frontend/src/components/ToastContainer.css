@@ -1,13 +1,32 @@
+/* ========================================
+   TOAST CONTAINER
+   Modern Toast Container
+   ======================================== */
+
 .toast-container {
   position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 9999;
+  top: var(--space-5);
+  right: var(--space-5);
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   pointer-events: none;
 }
+
 .toast-container > * {
   pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  .toast-container {
+    top: var(--space-4);
+    right: var(--space-4);
+    left: var(--space-4);
+  }
+
+  .toast-container .toast {
+    min-width: auto;
+    max-width: none;
+  }
 }

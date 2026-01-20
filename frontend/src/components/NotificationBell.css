@@ -1,3 +1,8 @@
+/* ========================================
+   NOTIFICATION BELL
+   Modern Notification Design
+   ======================================== */
+
 .notification-bell {
   position: relative;
   display: inline-block;
@@ -8,100 +13,132 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background-color 0.2s;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .bell-button:hover {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: var(--bg-tertiary);
 }
 
 .bell-button .badge {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  background-color: #ef4444;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
+  top: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, var(--error-500) 0%, var(--error-600) 100%);
+  color: var(--text-on-primary);
+  font-size: 10px;
+  font-weight: var(--font-bold);
   min-width: 18px;
   height: 18px;
-  border-radius: 9px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 4px;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
+/* ========================================
+   DROPDOWN
+   ======================================== */
 .dropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + var(--space-2));
   right: 0;
   width: 380px;
   max-height: 500px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  background: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  z-index: var(--z-dropdown);
   overflow: hidden;
+  border: 1px solid var(--border-light);
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-secondary);
 }
 
 .dropdown-header h3 {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
   margin: 0;
+  color: var(--text-primary);
 }
 
 .mark-all-btn {
   background: transparent;
   border: none;
-  color: #3b82f6;
-  font-size: 14px;
+  color: var(--primary-600);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
   cursor: pointer;
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
 }
 
 .mark-all-btn:hover {
-  text-decoration: underline;
+  background: var(--primary-50);
+  color: var(--primary-700);
 }
 
+/* ========================================
+   NOTIFICATIONS LIST
+   ======================================== */
 .notifications-list {
   max-height: 400px;
   overflow-y: auto;
 }
 
 .empty-state {
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
+/* ========================================
+   NOTIFICATION ITEM
+   ======================================== */
 .notification-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-light);
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-fast);
   position: relative;
 }
 
 .notification-item:hover {
-  background-color: #f9fafb;
+  background-color: var(--bg-secondary);
 }
 
 .notification-item.unread {
-  background-color: #eff6ff;
+  background-color: var(--primary-50);
 }
 
 .notification-item.unread::before {
@@ -111,12 +148,19 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background-color: #3b82f6;
+  background: linear-gradient(180deg, var(--primary-500) 0%, var(--primary-600) 100%);
 }
 
 .notification-icon {
   font-size: 24px;
   flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
 }
 
 .notification-content {
@@ -125,40 +169,54 @@
 }
 
 .notification-content h4 {
-  font-size: 14px;
-  font-weight: 600;
-  margin: 0 0 4px 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  margin: 0 0 var(--space-1) 0;
+  color: var(--text-primary);
 }
 
 .notification-content p {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0 0 4px 0;
-  line-height: 1.4;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin: 0 0 var(--space-1) 0;
+  line-height: 1.5;
 }
 
 .notification-content .time {
-  font-size: 12px;
-  color: #9ca3af;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 .delete-btn {
   background: transparent;
   border: none;
-  color: #9ca3af;
-  font-size: 24px;
+  color: var(--text-muted);
+  font-size: 18px;
   cursor: pointer;
   padding: 0;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   flex-shrink: 0;
+  transition: all var(--transition-fast);
 }
 
 .delete-btn:hover {
-  background-color: #fee2e2;
-  color: #ef4444;
+  background: var(--error-100);
+  color: var(--error-600);
+}
+
+@media (max-width: 480px) {
+  .dropdown {
+    position: fixed;
+    top: auto;
+    right: var(--space-4);
+    left: var(--space-4);
+    bottom: var(--space-4);
+    width: auto;
+    max-height: 60vh;
+  }
 }

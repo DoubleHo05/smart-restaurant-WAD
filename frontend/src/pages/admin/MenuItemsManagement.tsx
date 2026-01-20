@@ -10,6 +10,97 @@ import ImageUpload from "../../components/ImageUpload";
 import RestaurantSelector from "../../components/RestaurantSelector";
 import { useRestaurant } from "../../contexts/RestaurantContext";
 import "../../App.css";
+import "./MenuItemsManagement.css";
+
+// SVG Icon Components
+const MenuIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+    <path d="M7 2v20"/>
+    <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/>
+    <line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const SearchIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <path d="m21 21-4.35-4.35"/>
+  </svg>
+);
+
+const TagIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+    <line x1="7" y1="7" x2="7.01" y2="7"/>
+  </svg>
+);
+
+const ListIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="8" y1="6" x2="21" y2="6"/>
+    <line x1="8" y1="12" x2="21" y2="12"/>
+    <line x1="8" y1="18" x2="21" y2="18"/>
+    <line x1="3" y1="6" x2="3.01" y2="6"/>
+    <line x1="3" y1="12" x2="3.01" y2="12"/>
+    <line x1="3" y1="18" x2="3.01" y2="18"/>
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18"/>
+    <line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+
+const ClockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <polyline points="12 6 12 12 16 14"/>
+  </svg>
+);
+
+const StarIcon = ({ filled }: { filled?: boolean }) => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
+);
+
+const PencilIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+    <line x1="10" y1="11" x2="10" y2="17"/>
+    <line x1="14" y1="11" x2="14" y2="17"/>
+  </svg>
+);
+
+const InfoIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="16" x2="12" y2="12"/>
+    <line x1="12" y1="8" x2="12.01" y2="8"/>
+  </svg>
+);
 
 interface Category {
   id: string;
@@ -322,189 +413,65 @@ export default function MenuItemsManagement() {
   };
 
   return (
-    <div
-      className="container"
-      style={{ maxWidth: "1400px", margin: "0 auto", padding: "20px" }}
-    >
-      <div
-        className="header"
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "30px",
-          padding: "20px",
-          background: "#1e293b",
-          borderRadius: "12px",
-          borderBottom: "2px solid #6366f1",
-          boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3)",
-        }}
-      >
-        <div>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "2em",
-              fontWeight: "700",
-              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            🍽️ Menu Items
+    <div className="menu-items-container">
+      <div className="menu-items-header">
+        <div className="header-title-section">
+          <h1>
+            <MenuIcon /> Menu Items
           </h1>
-          <p style={{ margin: "5px 0 0 0", color: "#cbd5e1" }}>
-            Manage your restaurant menu items ({totalItems} items)
-          </p>
+          <p>Manage your restaurant menu items ({totalItems} items)</p>
         </div>
-        <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+        <div className="header-actions">
           <RestaurantSelector />
           <button
-            className="btn btn-primary"
+            className="btn-add-new"
             onClick={() => setShowCreateModal(true)}
             disabled={!selectedRestaurant}
-            style={{
-              background: selectedRestaurant ? "#6366f1" : "#64748b",
-              color: "white",
-              padding: "12px 24px",
-              fontSize: "16px",
-              fontWeight: "600",
-              border: "none",
-              borderRadius: "8px",
-              cursor: selectedRestaurant ? "pointer" : "not-allowed",
-              boxShadow: selectedRestaurant
-                ? "0 4px 6px rgba(99, 102, 241, 0.4)"
-                : "none",
-              transition: "all 0.3s ease",
-            }}
           >
-            ➕ Add New Item
+            <PlusIcon /> Add New Item
           </button>
         </div>
       </div>
 
       {!selectedRestaurant ? (
-        <div
-          style={{
-            background: "#1e293b",
-            borderRadius: "12px",
-            padding: "40px",
-            textAlign: "center",
-            border: "2px dashed #475569",
-          }}
-        >
-          <p style={{ fontSize: "1.2em", color: "#cbd5e1", margin: 0 }}>
-            🏪 Please select a restaurant to manage menu items
-          </p>
+        <div className="empty-state">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+            <path d="M7 2v20"/>
+            <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+          </svg>
+          <h3>Please select a restaurant</h3>
+          <p>Select a restaurant to manage menu items</p>
         </div>
       ) : (
         <>
           {/* Filters */}
-          <div
-            style={{
-              background: "#1e293b",
-              borderRadius: "12px",
-              padding: "25px",
-              marginBottom: "25px",
-              border: "1px solid #334155",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-            }}
-          >
+          <div className="filters-container">
             {/* Search Bar */}
-            <div style={{ marginBottom: "20px" }}>
-              <div style={{ position: "relative" }}>
-                <span
-                  style={{
-                    position: "absolute",
-                    left: "15px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    fontSize: "20px",
-                    color:
-                      searchQuery !== debouncedSearch ? "#fbbf24" : "#6366f1",
-                  }}
-                >
-                  {searchQuery !== debouncedSearch ? "⏳" : "🔍"}
-                </span>
-                <input
-                  type="text"
-                  placeholder="Search by name or description... (Vietnamese supported)"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "15px 15px 15px 50px",
-                    fontSize: "16px",
-                    border: `1px solid ${
-                      searchQuery !== debouncedSearch ? "#fbbf24" : "#334155"
-                    }`,
-                    borderRadius: "8px",
-                    outline: "none",
-                    transition: "all 0.3s ease",
-                    background: "#0f172a",
-                    color: "#f1f5f9",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                    e.currentTarget.style.boxShadow =
-                      "0 0 0 3px rgba(99, 102, 241, 0.1)";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#334155";
-                    e.currentTarget.style.boxShadow = "none";
-                  }}
-                />
-              </div>
+            <div className="search-bar">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search by name or description... (Vietnamese supported)"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
+              />
             </div>
 
             {/* Filter Controls */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "15px",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#cbd5e1",
-                    fontSize: "14px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  📂 Category
+            <div className="filters-grid">
+              <div className="filter-group">
+                <label className="filter-label">
+                  <TagIcon /> Category
                 </label>
                 <select
+                  className="filter-select"
                   value={categoryFilter}
                   onChange={(e) => {
                     setCategoryFilter(e.target.value);
                     setCurrentPage(1);
-                  }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    fontSize: "14px",
-                    border: "1px solid #334155",
-                    borderRadius: "8px",
-                    outline: "none",
-                    cursor: "pointer",
-                    background: "#0f172a",
-                    color: "#f1f5f9",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#334155";
                   }}
                 >
                   <option value="">All Categories</option>
@@ -516,171 +483,75 @@ export default function MenuItemsManagement() {
                 </select>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#cbd5e1",
-                    fontSize: "14px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  📊 Status
+              <div className="filter-group">
+                <label className="filter-label">
+                  <ListIcon /> Status
                 </label>
                 <select
+                  className="filter-select"
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    fontSize: "14px",
-                    border: "1px solid #334155",
-                    borderRadius: "8px",
-                    outline: "none",
-                    cursor: "pointer",
-                    background: "#0f172a",
-                    color: "#f1f5f9",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#334155";
-                  }}
                 >
                   <option value="">All Status</option>
-                  <option value="available">✅ Available</option>
-                  <option value="unavailable">⏸️ Unavailable</option>
-                  <option value="sold_out">🔴 Sold Out</option>
+                  <option value="available">Available</option>
+                  <option value="unavailable">Unavailable</option>
+                  <option value="sold_out">Sold Out</option>
                 </select>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#cbd5e1",
-                    fontSize: "14px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  ⭐ Recommendation
+              <div className="filter-group">
+                <label className="filter-label">
+                  <StarIcon /> Recommendation
                 </label>
                 <select
+                  className="filter-select"
                   value={chefRecommendedFilter}
                   onChange={(e) => {
                     setChefRecommendedFilter(e.target.value);
                     setCurrentPage(1);
                   }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    fontSize: "14px",
-                    border: "1px solid #334155",
-                    borderRadius: "8px",
-                    outline: "none",
-                    cursor: "pointer",
-                    background: "#0f172a",
-                    color: "#f1f5f9",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#334155";
-                  }}
                 >
                   <option value="">All Items</option>
-                  <option value="true">⭐ Chef Recommended</option>
+                  <option value="true">Chef Recommended</option>
                   <option value="false">Regular Items</option>
                 </select>
               </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "8px",
-                    fontWeight: "600",
-                    color: "#cbd5e1",
-                    fontSize: "14px",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.5px",
-                  }}
-                >
-                  🔄 Sort By
+              <div className="filter-group">
+                <label className="filter-label">
+                  <ListIcon /> Sort By
                 </label>
                 <select
+                  className="filter-select"
                   value={sortBy}
                   onChange={(e) => {
                     setSortBy(e.target.value);
                     setCurrentPage(1);
                   }}
-                  style={{
-                    width: "100%",
-                    padding: "12px 15px",
-                    fontSize: "14px",
-                    border: "1px solid #334155",
-                    borderRadius: "8px",
-                    outline: "none",
-                    cursor: "pointer",
-                    background: "#0f172a",
-                    color: "#f1f5f9",
-                    transition: "all 0.3s ease",
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.borderColor = "#334155";
-                  }}
                 >
-                  <option value="created_at_desc">📅 Newest First</option>
-                  <option value="created_at_asc">📅 Oldest First</option>
-                  <option value="name_asc">🔤 Name (A-Z)</option>
-                  <option value="name_desc">🔤 Name (Z-A)</option>
-                  <option value="price_asc">💰 Price (Low to High)</option>
-                  <option value="price_desc">💰 Price (High to Low)</option>
+                  <option value="created_at_desc">Newest First</option>
+                  <option value="created_at_asc">Oldest First</option>
+                  <option value="name_asc">Name (A-Z)</option>
+                  <option value="name_desc">Name (Z-A)</option>
+                  <option value="price_asc">Price (Low to High)</option>
+                  <option value="price_desc">Price (High to Low)</option>
                 </select>
               </div>
             </div>
           </div>
 
           {/* Results count */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "20px",
-              padding: "15px 20px",
-              background: "#1e293b",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              color: "#cbd5e1",
-              border: "1px solid #334155",
-            }}
-          >
+          <div className="results-bar">
             <span>
-              📊 Showing{" "}
-              <strong style={{ color: "#6366f1" }}>{items.length}</strong> of{" "}
-              <strong style={{ color: "#6366f1" }}>{totalItems}</strong> items
+              Showing <strong>{items.length}</strong> of{" "}
+              <strong>{totalItems}</strong> items
             </span>
             {searchQuery && (
-              <span style={{ color: "#a855f7" }}>
-                🔍 Search results for "{searchQuery}"
+              <span style={{ color: "var(--primary-500)" }}>
+                Search results for "{searchQuery}"
               </span>
             )}
           </div>
@@ -726,340 +597,120 @@ export default function MenuItemsManagement() {
 
           {/* Table */}
           {!loading && items.length > 0 && (
-            <div
-              style={{
-                background: "#1e293b",
-                borderRadius: "12px",
-                overflow: "hidden",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                border: "1px solid #334155",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "14px",
-                }}
-              >
+            <div className="table-container">
+              <table className="menu-table">
                 <thead>
-                  <tr
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                      color: "white",
-                    }}
-                  >
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Photo
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Name
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Category
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Price
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Prep Time
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "left",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Status
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "center",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Chef
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "center",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Mods
-                    </th>
-                    <th
-                      style={{
-                        padding: "16px",
-                        textAlign: "center",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Actions
-                    </th>
+                  <tr>
+                    <th>Photo</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Prep Time</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: "center" }}>Chef</th>
+                    <th style={{ textAlign: "center" }}>Mods</th>
+                    <th style={{ textAlign: "center" }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item, index) => (
-                    <tr
-                      key={item.id}
-                      style={{
-                        borderBottom: "1px solid #334155",
-                        background: index % 2 === 0 ? "#1e293b" : "#0f172a",
-                        transition: "all 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#1e40af30";
-                        e.currentTarget.style.transform = "scale(1.005)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background =
-                          index % 2 === 0 ? "#1e293b" : "#0f172a";
-                        e.currentTarget.style.transform = "scale(1)";
-                      }}
-                    >
-                      <td style={{ padding: "16px" }}>
+                  {items.map((item) => (
+                    <tr key={item.id}>
+                      <td>
                         {item.primaryPhoto ? (
                           <img
                             src={item.primaryPhoto}
                             alt={item.name}
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              objectFit: "cover",
-                              borderRadius: "10px",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            }}
+                            className="item-photo"
                             onError={(e) => {
                               (e.target as HTMLImageElement).src =
                                 "https://via.placeholder.com/60?text=No+Image";
                             }}
                           />
                         ) : (
-                          <div
-                            style={{
-                              width: "60px",
-                              height: "60px",
-                              background:
-                                "linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%)",
-                              borderRadius: "10px",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: "28px",
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                            }}
-                          >
-                            🍽️
-                          </div>
+                          <img
+                            src="https://via.placeholder.com/60?text=No+Image"
+                            alt="No image"
+                            className="item-photo"
+                          />
                         )}
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            color: "#f1f5f9",
-                            marginBottom: "4px",
-                          }}
-                        >
-                          {item.name}
+                      <td>
+                        <div className="item-name-cell">
+                          <div className="item-name">{item.name}</div>
+                          {item.description && (
+                            <div className="item-description">
+                              {item.description}
+                            </div>
+                          )}
                         </div>
-                        {item.description && (
-                          <div
-                            style={{
-                              fontSize: "13px",
-                              color: "#94a3b8",
-                              lineHeight: "1.4",
-                            }}
-                          >
-                            {item.description.substring(0, 60)}
-                            {item.description.length > 60 ? "..." : ""}
-                          </div>
-                        )}
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <span
-                          style={{
-                            background: "#312e81",
-                            color: "#a5b4fc",
-                            padding: "6px 12px",
-                            borderRadius: "20px",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                          }}
-                        >
+                      <td>
+                        <span className="category-badge">
                           {item.category.name}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          padding: "16px",
-                          fontWeight: "700",
-                          color: "#10b981",
-                          fontSize: "15px",
-                        }}
-                      >
-                        {formatPrice(item.price)}
+                      <td className="price-cell">{formatPrice(item.price)}</td>
+                      <td>
+                        <div className="prep-time-cell">
+                          <ClockIcon /> {item.prepTimeMinutes} min
+                        </div>
                       </td>
-                      <td style={{ padding: "16px", color: "#94a3b8" }}>
-                        ⏱️ {item.prepTimeMinutes} min
-                      </td>
-                      <td style={{ padding: "16px" }}>
-                        <select
-                          value={item.status}
-                          onChange={(e) =>
-                            handleStatusUpdate(item.id, e.target.value)
-                          }
-                          style={{
-                            border: "none",
-                            borderRadius: "20px",
-                            padding: "6px 12px",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                            cursor: "pointer",
-                            background:
-                              item.status === "available"
-                                ? "#064e3b"
-                                : item.status === "unavailable"
-                                ? "#78350f"
-                                : "#7f1d1d",
-                            color:
-                              item.status === "available"
-                                ? "#6ee7b7"
-                                : item.status === "unavailable"
-                                ? "#fcd34d"
-                                : "#fca5a5",
-                          }}
+                      <td>
+                        <span
+                          className={`status-badge ${
+                            item.status === "available"
+                              ? "available"
+                              : "unavailable"
+                          }`}
                         >
-                          <option value="available">✅ Available</option>
-                          <option value="unavailable">⏸️ Unavailable</option>
-                          <option value="sold_out">🔴 Sold Out</option>
-                        </select>
+                          {item.status === "available" ? (
+                            <CheckIcon />
+                          ) : (
+                            <XIcon />
+                          )}
+                          {item.status === "available"
+                            ? "Available"
+                            : item.status === "unavailable"
+                            ? "Unavailable"
+                            : "Sold Out"}
+                        </span>
                       </td>
-                      <td
-                        style={{
-                          padding: "16px",
-                          textAlign: "center",
-                          fontSize: "20px",
-                        }}
-                      >
-                        {item.isChefRecommended ? "⭐" : "-"}
+                      <td style={{ textAlign: "center" }}>
+                        <div
+                          className={`chef-icon ${item.isChefRecommended ? "active" : ""}`}
+                          title={item.isChefRecommended ? "Chef Recommended" : "Regular Item"}
+                        >
+                          <StarIcon filled={item.isChefRecommended} />
+                        </div>
                       </td>
-                      <td style={{ padding: "16px", textAlign: "center" }}>
+                      <td style={{ textAlign: "center" }}>
                         <span
                           style={{
-                            background: "#334155",
+                            background: "var(--bg-secondary)",
                             padding: "6px 10px",
-                            borderRadius: "8px",
+                            borderRadius: "var(--radius-lg)",
                             fontWeight: "600",
-                            color: "#cbd5e1",
-                            fontSize: "13px",
+                            fontSize: "var(--text-sm)",
                           }}
                         >
                           {item.modifierGroupsCount || 0}
                         </span>
                       </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "8px",
-                            justifyContent: "center",
-                          }}
-                        >
+                      <td>
+                        <div className="actions-cell">
                           <button
                             onClick={() => openEditModal(item)}
+                            className="btn-icon btn-edit"
                             title="Edit"
-                            style={{
-                              background: "#3b82f6",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "8px",
-                              padding: "8px 12px",
-                              cursor: "pointer",
-                              fontSize: "16px",
-                              transition: "all 0.2s ease",
-                              boxShadow: "0 2px 4px rgba(59, 130, 246, 0.3)",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#2563eb";
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 4px 8px rgba(59, 130, 246, 0.4)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#3b82f6";
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow =
-                                "0 2px 4px rgba(59, 130, 246, 0.3)";
-                            }}
                           >
-                            ✏️
+                            <PencilIcon />
                           </button>
                           <button
                             onClick={() => handleDelete(item.id, item.name)}
+                            className="btn-icon btn-delete"
                             title="Delete"
-                            style={{
-                              background: "#ef4444",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "8px",
-                              padding: "8px 12px",
-                              cursor: "pointer",
-                              fontSize: "16px",
-                              transition: "all 0.2s ease",
-                              boxShadow: "0 2px 4px rgba(239, 68, 68, 0.3)",
-                            }}
-                            onMouseOver={(e) => {
-                              e.currentTarget.style.background = "#dc2626";
-                              e.currentTarget.style.transform =
-                                "translateY(-2px)";
-                              e.currentTarget.style.boxShadow =
-                                "0 4px 8px rgba(239, 68, 68, 0.4)";
-                            }}
-                            onMouseOut={(e) => {
-                              e.currentTarget.style.background = "#ef4444";
-                              e.currentTarget.style.transform = "translateY(0)";
-                              e.currentTarget.style.boxShadow =
-                                "0 2px 4px rgba(239, 68, 68, 0.3)";
-                            }}
                           >
-                            🗑️
+                            <TrashIcon />
                           </button>
                         </div>
                       </td>
@@ -1072,27 +723,14 @@ export default function MenuItemsManagement() {
 
           {/* No results */}
           {!loading && items.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "60px 40px",
-                background: "#1e293b",
-                borderRadius: "12px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                border: "1px solid #334155",
-              }}
-            >
-              <div style={{ fontSize: "80px", marginBottom: "20px" }}>🍽️</div>
-              <h3
-                style={{
-                  color: "#cbd5e1",
-                  marginBottom: "10px",
-                  fontSize: "20px",
-                }}
-              >
-                No menu items found
-              </h3>
-              <p style={{ color: "#64748b", marginBottom: "20px" }}>
+            <div className="empty-state">
+              <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/>
+                <path d="M7 2v20"/>
+                <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>
+              </svg>
+              <h3>No menu items found</h3>
+              <p>
                 {searchQuery || categoryFilter || statusFilter
                   ? "Try adjusting your filters or search terms"
                   : "Get started by creating your first menu item!"}
@@ -1100,30 +738,10 @@ export default function MenuItemsManagement() {
               {!searchQuery && !categoryFilter && !statusFilter && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  style={{
-                    background: "#6366f1",
-                    color: "white",
-                    padding: "12px 30px",
-                    border: "none",
-                    borderRadius: "8px",
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    cursor: "pointer",
-                    boxShadow: "0 4px 6px rgba(99, 102, 241, 0.4)",
-                    transition: "all 0.3s ease",
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 6px 12px rgba(99, 102, 241, 0.5)";
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 4px 6px rgba(99, 102, 241, 0.4)";
-                  }}
+                  className="btn-add-new"
+                  style={{ marginTop: "var(--space-4)" }}
                 >
-                  ➕ Create First Item
+                  <PlusIcon /> Create First Item
                 </button>
               )}
             </div>
@@ -1131,60 +749,14 @@ export default function MenuItemsManagement() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div
-              style={{
-                marginTop: "30px",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "10px",
-                padding: "20px",
-                background: "#1e293b",
-                borderRadius: "12px",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-                border: "1px solid #334155",
-              }}
-            >
+            <div className="pagination">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                style={{
-                  padding: "10px 20px",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                  background: currentPage === 1 ? "#0f172a" : "#1e293b",
-                  color: currentPage === 1 ? "#475569" : "#a5b4fc",
-                  fontWeight: "600",
-                  cursor: currentPage === 1 ? "not-allowed" : "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (currentPage !== 1) {
-                    e.currentTarget.style.background = "#334155";
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (currentPage !== 1) {
-                    e.currentTarget.style.background = "#1e293b";
-                    e.currentTarget.style.borderColor = "#334155";
-                  }
-                }}
               >
                 ← Previous
               </button>
-              <span
-                style={{
-                  padding: "10px 20px",
-                  fontWeight: "600",
-                  color: "#cbd5e1",
-                  background: "#0f172a",
-                  borderRadius: "8px",
-                  minWidth: "140px",
-                  textAlign: "center",
-                  border: "1px solid #334155",
-                }}
-              >
+              <span className="pagination-info">
                 Page {currentPage} of {totalPages}
               </span>
               <button
@@ -1192,30 +764,6 @@ export default function MenuItemsManagement() {
                   setCurrentPage(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
-                style={{
-                  padding: "10px 20px",
-                  border: "1px solid #334155",
-                  borderRadius: "8px",
-                  background:
-                    currentPage === totalPages ? "#0f172a" : "#1e293b",
-                  color: currentPage === totalPages ? "#475569" : "#a5b4fc",
-                  fontWeight: "600",
-                  cursor:
-                    currentPage === totalPages ? "not-allowed" : "pointer",
-                  transition: "all 0.2s ease",
-                }}
-                onMouseOver={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.currentTarget.style.background = "#334155";
-                    e.currentTarget.style.borderColor = "#6366f1";
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (currentPage !== totalPages) {
-                    e.currentTarget.style.background = "#1e293b";
-                    e.currentTarget.style.borderColor = "#334155";
-                  }
-                }}
               >
                 Next →
               </button>
