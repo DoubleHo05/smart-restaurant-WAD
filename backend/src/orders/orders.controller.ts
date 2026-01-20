@@ -20,7 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('api/orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) { }
+  constructor(private readonly ordersService: OrdersService) {}
 
   /**
    * POST /api/orders
@@ -46,6 +46,14 @@ export class OrdersController {
     @Query('start_date') start_date?: string,
     @Query('end_date') end_date?: string,
   ) {
+    console.log('📋 [OrdersController] GET /api/orders called');
+    console.log('📊 [OrdersController] Query params:', {
+      status,
+      restaurant_id,
+      start_date,
+      end_date,
+    });
+
     const filters: any = {};
 
     if (status) {
@@ -64,7 +72,15 @@ export class OrdersController {
       filters.end_date = new Date(end_date);
     }
 
-    return this.ordersService.findAll(filters);
+    console.log('🔍 [OrdersController] Filters applied:', filters);
+
+    const result = await this.ordersService.findAll(filters);
+    console.log(
+      '✅ [OrdersController] Orders returned:',
+      result.data?.length || 0,
+    );
+
+    return result;
   }
 
   /**

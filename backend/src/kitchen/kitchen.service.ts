@@ -212,13 +212,25 @@ export class KitchenService {
       );
     }
 
-    // Update order status to preparing
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: 'preparing',
-        preparing_at: new Date(),
-      },
+    // Update order status to preparing and all QUEUED items to COOKING
+    const updatedOrder = await this.prisma.$transaction(async (tx: any) => {
+      // Update all QUEUED items to COOKING
+      await tx.orderItem.updateMany({
+        where: {
+          order_id: orderId,
+          status: 'QUEUED',
+        },
+        data: { status: 'COOKING' },
+      });
+
+      // Update order status
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'preparing',
+          preparing_at: new Date(),
+        },
+      });
     });
 
     // Calculate estimated completion time
@@ -306,13 +318,25 @@ export class KitchenService {
       (Date.now() - preparingAt.getTime()) / 1000 / 60,
     ); // minutes
 
-    // Update order status to ready
-    const updatedOrder = await this.prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status: 'ready',
-        ready_at: new Date(),
-      },
+    // Update order status to ready and all non-rejected items to READY
+    const updatedOrder = await this.prisma.$transaction(async (tx: any) => {
+      // Update all QUEUED and COOKING items to READY
+      await tx.orderItem.updateMany({
+        where: {
+          order_id: orderId,
+          status: { in: ['QUEUED', 'COOKING'] },
+        },
+        data: { status: 'READY' },
+      });
+
+      // Update order status
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          status: 'ready',
+          ready_at: new Date(),
+        },
+      });
     });
 
     // TODO: Emit Socket.IO event to waiter (order_ready - high priority)
