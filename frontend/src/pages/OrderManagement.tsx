@@ -39,12 +39,12 @@ export default function OrderManagement() {
   const getDefaultStartDate = () => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
   const getDefaultEndDate = () => {
-    return new Date().toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   };
-  
+
   const [startDate, setStartDate] = useState(getDefaultStartDate());
   const [endDate, setEndDate] = useState(getDefaultEndDate());
   const [customerSearch, setCustomerSearch] = useState("");
@@ -90,7 +90,14 @@ export default function OrderManagement() {
 
   // Load orders
   const loadOrders = useCallback(async () => {
+    console.log("🔍 [OrderManagement] loadOrders called");
+    console.log("🏪 [OrderManagement] selectedRestaurant:", selectedRestaurant);
+    console.log("⏳ [OrderManagement] restaurantLoading:", restaurantLoading);
+
     if (!selectedRestaurant || restaurantLoading) {
+      console.log(
+        "⚠️ [OrderManagement] Skipping load - no restaurant or loading",
+      );
       return;
     }
 
@@ -99,6 +106,7 @@ export default function OrderManagement() {
       setError(null);
 
       const restaurantId = selectedRestaurant.id;
+      console.log("🆔 [OrderManagement] Using restaurant ID:", restaurantId);
 
       let response;
       let allOrdersResponse; // For badge counts
@@ -107,39 +115,39 @@ export default function OrderManagement() {
         // History uses same endpoint as active, just different date range
         const dateRangeForHistory = {
           start_date: new Date(startDate).toISOString(),
-          end_date: new Date(endDate + 'T23:59:59').toISOString(),
+          end_date: new Date(endDate + "T23:59:59").toISOString(),
         };
-        
+
         // Fetch all orders for badge counts
         const allParams: any = {
           restaurant_id: restaurantId,
           ...dateRangeForHistory,
         };
         allOrdersResponse = await ordersApi.getAll(allParams);
-        
+
         // Fetch filtered orders for display
         const params: any = {
           restaurant_id: restaurantId,
           ...dateRangeForHistory,
         };
-        
+
         if (statusFilter !== "all") {
           params.status = statusFilter;
         }
-        
-        console.log('📅 Fetching history with params:', params);
+
+        console.log("📅 Fetching history with params:", params);
         response = await ordersApi.getAll(params);
       } else {
         // Active orders (today by default)
         const dateRange = getDateRange();
-        
+
         // First, fetch all orders for badge counts
         const allParams: any = {
           restaurant_id: restaurantId,
           ...dateRange,
         };
         allOrdersResponse = await ordersApi.getAll(allParams);
-        
+
         // Then fetch filtered orders for display
         const params: any = {
           restaurant_id: restaurantId,
@@ -158,14 +166,14 @@ export default function OrderManagement() {
       // Handle both array and object response formats
       let fetchedOrders: Order[] = [];
       let allFetchedOrders: Order[] = [];
-      
+
       if (Array.isArray(response)) {
         fetchedOrders = response;
       } else {
         const data = response as OrdersResponse;
         fetchedOrders = data.data || [];
       }
-      
+
       // Store all orders for badge counting
       if (viewMode === "active" && allOrdersResponse) {
         if (Array.isArray(allOrdersResponse)) {
@@ -185,21 +193,25 @@ export default function OrderManagement() {
       } else {
         allFetchedOrders = fetchedOrders;
       }
-      
+
       // Filter orders by status on frontend (for history mode)
       if (viewMode === "history" && statusFilter !== "all") {
-        fetchedOrders = fetchedOrders.filter(order => order.status === statusFilter);
+        fetchedOrders = fetchedOrders.filter(
+          (order) => order.status === statusFilter,
+        );
       }
-      
+
       setOrders(fetchedOrders);
       setAllOrders(allFetchedOrders);
       setTotalOrders(fetchedOrders.length);
-      
+
       console.log("✅ Final orders count:", orders.length);
     } catch (err: any) {
       console.error("Failed to load orders:", err);
       console.error("Backend error details:", err.response?.data);
-      setError(err.response?.data?.message || err.message || "Failed to load orders");
+      setError(
+        err.response?.data?.message || err.message || "Failed to load orders",
+      );
       setOrders([]);
       setTotalOrders(0);
     } finally {
@@ -342,7 +354,7 @@ export default function OrderManagement() {
   const formatTimeWithDate = (dateString: string) => {
     const date = new Date(dateString);
     const today = new Date();
-    const isToday = 
+    const isToday =
       date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
       date.getFullYear() === today.getFullYear();
@@ -371,7 +383,7 @@ export default function OrderManagement() {
   // Pagination
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage
+    currentPage * ordersPerPage,
   );
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
@@ -407,14 +419,20 @@ export default function OrderManagement() {
 
       const rows = orders.map((order) => {
         const createdDate = new Date(order.created_at);
-        const itemsText = order.order_items
-          ?.map((item) => `${item.quantity}x ${item.menu_item?.name || "Item"}`)
-          .join("; ") || "N/A";
+        const itemsText =
+          order.order_items
+            ?.map(
+              (item) => `${item.quantity}x ${item.menu_item?.name || "Item"}`,
+            )
+            .join("; ") || "N/A";
 
         return [
           order.order_number,
           createdDate.toLocaleDateString("vi-VN"),
-          createdDate.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+          createdDate.toLocaleTimeString("vi-VN", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           order.table?.table_number || "N/A",
           itemsText,
           Number(order.total).toFixed(0),
@@ -434,7 +452,7 @@ export default function OrderManagement() {
               }
               return cellStr;
             })
-            .join(",")
+            .join(","),
         ),
       ].join("\n");
 
@@ -446,7 +464,7 @@ export default function OrderManagement() {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      
+
       // Generate filename with date range
       const today = new Date().toISOString().split("T")[0];
       let filename = `orders-${viewMode}-${statusFilter}`;
@@ -456,7 +474,7 @@ export default function OrderManagement() {
         filename += `-${today}`;
       }
       link.download = `${filename}.csv`;
-      
+
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -492,7 +510,7 @@ export default function OrderManagement() {
           }}
         >
           Accept
-        </button>
+        </button>,
       );
     }
 
@@ -507,7 +525,7 @@ export default function OrderManagement() {
           }}
         >
           Start Preparing
-        </button>
+        </button>,
       );
     }
 
@@ -522,7 +540,7 @@ export default function OrderManagement() {
           }}
         >
           Mark Ready
-        </button>
+        </button>,
       );
     }
 
@@ -537,7 +555,7 @@ export default function OrderManagement() {
           }}
         >
           Mark Served
-        </button>
+        </button>,
       );
     }
 
@@ -552,7 +570,7 @@ export default function OrderManagement() {
           }}
         >
           Complete
-        </button>
+        </button>,
       );
     }
 
@@ -566,7 +584,7 @@ export default function OrderManagement() {
         }}
       >
         View
-      </button>
+      </button>,
     );
 
     return buttons;
@@ -712,7 +730,9 @@ export default function OrderManagement() {
             onClick={() => setStatusFilter("completed")}
           >
             Completed
-            <span className="tab-count success">{getStatusCount("completed")}</span>
+            <span className="tab-count success">
+              {getStatusCount("completed")}
+            </span>
           </button>
         </div>
       )}

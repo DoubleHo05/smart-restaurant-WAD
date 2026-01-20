@@ -306,6 +306,17 @@ export class PaymentsService {
 
     console.log('✅ Bill request completed:', bill_request_id);
 
+    // Clean up rejected orders for this table
+    if (billRequest?.table_id) {
+      const deletedRejected = await this.prisma.order.deleteMany({
+        where: {
+          table_id: billRequest.table_id,
+          status: 'rejected',
+        },
+      });
+      console.log('🗑️  Cleaned up rejected orders:', deletedRejected.count);
+    }
+
     // Phase 4: Emit socket event 'bill-paid'
     try {
       // Lấy payment info để emit

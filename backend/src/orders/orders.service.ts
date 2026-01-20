@@ -21,7 +21,7 @@ export class OrdersService {
     private cartService: CartService,
     private notificationsGateway: NotificationsGateway,
     private notificationsService: NotificationsService,
-  ) { }
+  ) {}
 
   /**
    * Create a new order with items and modifiers
@@ -345,6 +345,11 @@ export class OrdersService {
       }
     }
 
+    console.log(
+      '🔍 [OrdersService] Prisma where condition:',
+      JSON.stringify(where, null, 2),
+    );
+
     const orders = await this.prisma.order.findMany({
       where,
       include: {
@@ -383,6 +388,17 @@ export class OrdersService {
       },
     });
 
+    console.log('✅ [OrdersService] Orders found:', orders.length);
+    if (orders.length > 0) {
+      console.log('📦 [OrdersService] Sample order:', {
+        id: orders[0].id,
+        order_number: orders[0].order_number,
+        restaurant_id: orders[0].restaurant_id,
+        status: orders[0].status,
+        created_at: orders[0].created_at,
+      });
+    }
+
     return {
       data: orders,
       total: orders.length,
@@ -391,10 +407,16 @@ export class OrdersService {
 
   /**
    * Get orders by table ID
+   * Excludes rejected orders so customers don't see them
    */
   async findByTableId(tableId: string) {
     const orders = await this.prisma.order.findMany({
-      where: { table_id: tableId },
+      where: {
+        table_id: tableId,
+        status: {
+          not: 'rejected', // Don't show rejected orders to customers
+        },
+      },
       include: {
         table: {
           select: {

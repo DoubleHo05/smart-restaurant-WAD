@@ -40,11 +40,17 @@ export default function WaiterOrders() {
   useEffect(() => {
     if (restaurantId) {
       loadOrders();
+
+      // Auto-refresh every 10 seconds
+      const intervalId = setInterval(() => {
+        console.log("🔄 [WaiterOrders] Auto-refreshing orders...");
+        loadOrders();
+      }, 10000); // 10 seconds
+
+      return () => {
+        clearInterval(intervalId);
+      };
     }
-    // TODO: Setup Socket.IO for real-time updates
-    // const socket = io(API_URL);
-    // socket.on('new_order', () => loadOrders());
-    // return () => socket.disconnect();
   }, [activeTab, restaurantId]);
 
   const loadOrders = async () => {
@@ -57,26 +63,28 @@ export default function WaiterOrders() {
     try {
       const pending = await getPendingOrders({ restaurant_id: restaurantId });
       console.log("Pending orders response:", pending);
-      setPendingOrders(Array.isArray(pending) ? pending : []);
+      // Handle both response formats: array or {data: array}
+      setPendingOrders(Array.isArray(pending) ? pending : pending?.data || []);
 
       const accepted = await getRestaurantOrders(
         restaurantId,
         "accepted,preparing",
       );
       console.log("Accepted orders response:", accepted);
-      setAcceptedOrders(Array.isArray(accepted) ? accepted : []);
+      setAcceptedOrders(
+        Array.isArray(accepted) ? accepted : accepted?.data || [],
+      );
 
       const ready = await getRestaurantOrders(restaurantId, "ready");
       console.log("Ready orders response:", ready);
-      setReadyOrders(Array.isArray(ready) ? ready : []);
+      setReadyOrders(Array.isArray(ready) ? ready : ready?.data || []);
 
       // Only load orders with status "completed" (already paid)
-      const completed = await getRestaurantOrders(
-        restaurantId,
-        "completed",
-      );
+      const completed = await getRestaurantOrders(restaurantId, "completed");
       console.log("Completed orders response:", completed);
-      setCompletedOrders(Array.isArray(completed) ? completed : []);
+      setCompletedOrders(
+        Array.isArray(completed) ? completed : completed?.data || [],
+      );
     } catch (error) {
       console.error("Error loading orders:", error);
       setPendingOrders([]);
