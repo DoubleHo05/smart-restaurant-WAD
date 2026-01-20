@@ -6,7 +6,12 @@ const connectionString =
   process.env.DATABASE_URL ||
   'postgresql://postgres.lhoiazdtwdviiwigctbo:Baodzvcl00@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres';
 
-const pool = new Pool({ connectionString });
+const pool = new Pool({
+  connectionString,
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -71,6 +76,7 @@ async function runMigration() {
     throw error;
   } finally {
     await prisma.$disconnect();
+    await pool.end(); // Close the connection pool
   }
 }
 

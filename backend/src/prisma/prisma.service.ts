@@ -39,6 +39,10 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
       ssl: {
         rejectUnauthorized: false,
       },
+      max: 20, // Maximum number of clients in the pool (default: 10)
+      idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+      connectionTimeoutMillis: 10000, // Return error after 10 seconds if no connection available
+      allowExitOnIdle: false, // Keep pool alive
     });
 
     const adapter = new PrismaPg(this.pool);
