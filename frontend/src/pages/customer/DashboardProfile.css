@@ -2,19 +2,19 @@
 
 .dashboard-profile-container {
     min-height: 100vh;
-    background: #f5f6fa;
+    background: var(--bg-color);
     padding-bottom: 80px;
 }
 
 /* Header */
 .dashboard-profile-container .profile-header {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    background: var(--gradient-primary);
     color: white;
     padding: 20px;
     display: flex;
     align-items: center;
     gap: 15px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 .dashboard-profile-container .back-btn,
@@ -41,6 +41,7 @@
 
 .dashboard-profile-container .header-content {
     flex: 1;
+    text-align: center;
 }
 
 .dashboard-profile-container .header-title {
@@ -49,11 +50,6 @@
     margin: 0;
 }
 
-.dashboard-profile-container .header-subtitle {
-    font-size: 14px;
-    opacity: 0.9;
-    margin: 5px 0 0 0;
-}
 
 /* Profile Avatar Section */
 .dashboard-profile-container .profile-avatar-section {

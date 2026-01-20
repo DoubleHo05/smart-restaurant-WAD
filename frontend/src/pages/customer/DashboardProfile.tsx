@@ -230,7 +230,6 @@ const DashboardProfile: React.FC = () => {
         </button>
         <div className="header-content">
           <h1 className="header-title">Account Settings</h1>
-          <p className="header-subtitle">Manage your account</p>
         </div>
         <button className="logout-header-btn" onClick={handleLogout}>
           <span>🚪</span>

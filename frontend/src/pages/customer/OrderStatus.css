@@ -1,16 +1,5 @@
 /* Smart Restaurant - Order Status (Mockup Style) */
-
-:root {
-  --primary: #e74c3c;
-  --primary-dark: #c0392b;
-  --success: #27ae60;
-  --warning: #f39c12;
-  --white: #ffffff;
-  --gray: #6b7280;
-  --light: #ecf0f1;
-  --border-radius: 12px;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+/* Uses global variables from index.css */
 
 /* Mobile Container */
 .mobile-container {
@@ -240,6 +229,7 @@
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(243, 156, 18, 0.7);
@@ -258,6 +248,7 @@
 }
 
 @keyframes pulse-red {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7);

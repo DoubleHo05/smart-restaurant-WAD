@@ -95,10 +95,11 @@ function ItemDetailView() {
           <img
             src={primaryPhoto.url}
             alt={item.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
         ) : (
-          <div className="hero-emoji">🍽️</div>
+          <div className="hero-placeholder">
+            <div className="hero-emoji">🍽️</div>
+          </div>
         )}
       </div>
 
@@ -121,7 +122,7 @@ function ItemDetailView() {
           <div className="item-meta">
             <span className="meta-item">
               <span className="meta-icon">⏱️</span>
-              ~{item.preparationTime} min
+              {item.preparationTime} - minutes
             </span>
             <span className={`availability-badge ${item.isAvailable ? 'available' : 'unavailable'}`}>
               {item.isAvailable ? '✓ Available' : '✗ Unavailable'}

@@ -1,14 +1,5 @@
 /* Smart Restaurant - Shopping Cart (Responsive Design) */
-
-:root {
-  --primary: #e74c3c;
-  --primary-dark: #c0392b;
-  --white: #ffffff;
-  --gray: #6b7280;
-  --light: #ecf0f1;
-  --border-radius: 12px;
-  --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
+/* Uses global variables from index.css */
 
 /* Ensure body doesn't constrain */
 body {
@@ -91,10 +82,12 @@ body {
 }
 
 .header-table {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: var(--white);
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Content */
@@ -380,7 +373,7 @@ body {
     gap: 15px;
   }
 
-  .cart-bottom-actions > * {
+  .cart-bottom-actions>* {
     max-width: 1200px;
     margin: 0 auto;
   }

@@ -89,11 +89,13 @@
 }
 
 @keyframes pulse-alert {
+
   0%,
   100% {
     transform: scale(1);
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
   }
+
   50% {
     transform: scale(1.05);
     box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
@@ -341,10 +343,12 @@
 }
 
 @keyframes pulse-badge {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -357,10 +361,12 @@
 }
 
 @keyframes pulse-red {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
   }
@@ -380,7 +386,7 @@
   color: white;
 }
 
-.table-badge {
+.order-card .table-badge {
   background: #ef4444;
   color: white;
   padding: 6px 14px;
@@ -418,11 +424,13 @@
 }
 
 @keyframes blink {
+
   0%,
   50%,
   100% {
     opacity: 1;
   }
+
   25%,
   75% {
     opacity: 0.6;
@@ -497,10 +505,12 @@
 }
 
 @keyframes flicker {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -558,6 +568,7 @@
 
 /* Tablet Portrait (768px - 1024px) */
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+
   /* Header optimizations */
   .kds-header {
     padding: 20px;
@@ -582,7 +593,8 @@
   .batch-btn {
     padding: 14px 20px;
     font-size: 15px;
-    min-height: 48px; /* iOS recommended touch target */
+    min-height: 48px;
+    /* iOS recommended touch target */
     border-radius: 10px;
     -webkit-tap-highlight-color: transparent;
   }
@@ -678,6 +690,7 @@
 
 /* Tablet Landscape (768px - 1024px) - Optimal for KDS */
 @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+
   /* Full-screen optimization */
   .kitchen-display {
     height: 100vh;
@@ -850,6 +863,7 @@
 
 /* Touch device general enhancements */
 @media (hover: none) and (pointer: coarse) {
+
   /* Remove hover effects, use active states instead */
   .action-btn:active,
   .btn-start:active,
@@ -932,10 +946,12 @@
 }
 
 @keyframes pulse-hint {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -943,6 +959,7 @@
 
 /* Tablet-specific scroll optimization */
 @media (min-width: 768px) and (max-width: 1024px) {
+
   /* Smooth momentum scrolling */
   .kds-columns,
   .column,
@@ -994,6 +1011,7 @@
 
 /* iOS Safari specific fixes */
 @supports (-webkit-touch-callout: none) {
+
   /* Fix for iOS Safari viewport height */
   .kitchen-display {
     min-height: -webkit-fill-available;
@@ -1011,6 +1029,7 @@
 
 /* Android Chrome specific fixes */
 @media (pointer: coarse) and (max-width: 1024px) {
+
   /* Better tap highlighting */
   button:active,
   .action-btn:active,
@@ -1121,10 +1140,12 @@
 }
 
 @keyframes pulse-critical {
+
   0%,
   100% {
     box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(220, 38, 38, 0.6);
   }
@@ -1162,11 +1183,9 @@
 
 /* Delayed Order Visual Alert */
 .order-card.delayed-order {
-  background: linear-gradient(
-    135deg,
-    rgba(220, 38, 38, 0.15) 0%,
-    rgba(30, 41, 59, 1) 100%
-  );
+  background: linear-gradient(135deg,
+      rgba(220, 38, 38, 0.15) 0%,
+      rgba(30, 41, 59, 1) 100%);
 }
 
 .delayed-order::before {
@@ -1182,15 +1201,19 @@
   0% {
     transform: rotate(0deg);
   }
+
   25% {
     transform: rotate(-15deg);
   }
+
   50% {
     transform: rotate(0deg);
   }
+
   75% {
     transform: rotate(15deg);
   }
+
   100% {
     transform: rotate(0deg);
   }
@@ -1210,11 +1233,13 @@
 }
 
 @keyframes pulse-badge {
+
   0%,
   100% {
     opacity: 1;
     transform: scale(1);
   }
+
   50% {
     opacity: 0.8;
     transform: scale(1.05);
