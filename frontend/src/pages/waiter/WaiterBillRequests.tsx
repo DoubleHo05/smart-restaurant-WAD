@@ -154,20 +154,25 @@ export default function WaiterBillRequests() {
       const result = await billRequestsApi.accept(billRequestId);
       console.log("Bill request accepted:", result);
 
-      // If VNPay, show payment URL
-      if (result.payment_url) {
-        const openUrl = window.confirm(
-          `Payment URL generated!\n\nClick OK to open VNPay payment page in new tab, or Cancel to copy URL.`,
-        );
+      // Open PDF bill in new tab
+      billRequestsApi.openPdf(billRequestId);
 
-        if (openUrl) {
-          window.open(result.payment_url, "_blank");
-        } else {
-          navigator.clipboard.writeText(result.payment_url);
-          alert("Payment URL copied to clipboard!");
-        }
+      // If VNPay, also show payment URL
+      if (result.payment_url) {
+        setTimeout(() => {
+          const openUrl = window.confirm(
+            `Bill PDF opened!\n\nPayment URL generated.\nClick OK to open VNPay payment page, or Cancel to copy URL.`,
+          );
+
+          if (openUrl) {
+            window.open(result.payment_url, "_blank");
+          } else {
+            navigator.clipboard.writeText(result.payment_url);
+            alert("Payment URL copied to clipboard!");
+          }
+        }, 500);
       } else {
-        alert("Bill request accepted! Order will be marked as completed.");
+        alert("Bill accepted & PDF generated!");
       }
 
       // Reload list
@@ -532,9 +537,17 @@ export default function WaiterBillRequests() {
                       <span className="status-badge accepted">✅ Accepted</span>
                     </div>
 
-                    {/* Only show Complete button for CASH payments */}
-                    {billRequest.payment_method_code?.toLowerCase() === "cash" && (
-                      <div className="bill-actions">
+                    {/* Print Bill Button - Always available for accepted bills */}
+                    <div className="bill-actions">
+                      <button
+                        className="btn-print-bill"
+                        onClick={() => billRequestsApi.openPdf(billRequest.id)}
+                      >
+                        🖨️ Print Bill
+                      </button>
+
+                      {/* Only show Complete button for CASH payments */}
+                      {billRequest.payment_method_code?.toLowerCase() === "cash" && (
                         <button
                           className="btn-complete-payment"
                           onClick={() => handleCompleteCashPayment(billRequest.id)}
@@ -544,8 +557,8 @@ export default function WaiterBillRequests() {
                             ? "Processing..."
                             : "💵 Complete Cash Payment"}
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* For VNPay, show waiting message */}
                     {billRequest.payment_method_code?.toLowerCase() === "vnpay" && (

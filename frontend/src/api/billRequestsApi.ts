@@ -166,6 +166,22 @@ export const billRequestsApi = {
     );
     return response.data;
   },
+
+  /**
+   * Get PDF bill URL
+   */
+  getPdfUrl: (billRequestId: string): string => {
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    return `${baseUrl}/api/bill-requests/${billRequestId}/pdf`;
+  },
+
+  /**
+   * Open PDF in new tab
+   */
+  openPdf: (billRequestId: string): void => {
+    const url = billRequestsApi.getPdfUrl(billRequestId);
+    window.open(url, '_blank');
+  },
 };
 
 export default billRequestsApi;

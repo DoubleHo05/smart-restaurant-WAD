@@ -682,4 +682,97 @@ export class BillRequestsService {
       throw error;
     }
   }
+
+  /**
+   * Get bill data formatted for PDF generation
+   */
+  async getBillDataForPdf(billRequestId: string) {
+    const billRequest = await this.prisma.bill_requests.findUnique({
+      where: { id: billRequestId },
+      include: {
+        tables: {
+          select: {
+            table_number: true,
+          },
+        },
+        restaurants: {
+          select: {
+            name: true,
+            address: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!billRequest) {
+      throw new NotFoundException('Bill request not found');
+    }
+
+    // Get orders with items
+    const orders = await this.prisma.order.findMany({
+      where: {
+        id: { in: billRequest.order_ids as string[] },
+      },
+      include: {
+        order_items: {
+          include: {
+            menu_item: {
+              select: {
+                name: true,
+                price: true,
+              },
+            },
+            modifiers: {
+              include: {
+                modifier_option: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Format orders for PDF
+    const formattedOrders = orders.map((order) => ({
+      order_number: order.order_number,
+      items: order.order_items
+        .filter((item) => item.status !== 'REJECTED')
+        .map((item) => ({
+          name: item.menu_item?.name || 'Unknown Item',
+          quantity: item.quantity,
+          price: Number(item.unit_price),
+          subtotal: Number(item.subtotal),
+          modifiers: item.modifiers?.map((m) => m.modifier_option?.name).filter(Boolean) || [],
+        })),
+    }));
+
+    return {
+      id: billRequest.id,
+      restaurant: {
+        name: billRequest.restaurants?.name || 'Restaurant',
+        address: billRequest.restaurants?.address,
+        phone: billRequest.restaurants?.phone,
+      },
+      table: {
+        table_number: billRequest.tables?.table_number || 'N/A',
+      },
+      orders: formattedOrders,
+      subtotal: Number(billRequest.subtotal),
+      tips_amount: Number(billRequest.tips_amount),
+      discount_type: billRequest.discount_type,
+      discount_value: billRequest.discount_value ? Number(billRequest.discount_value) : undefined,
+      discount_amount: billRequest.discount_amount ? Number(billRequest.discount_amount) : undefined,
+      tax_rate: billRequest.tax_rate ? Number(billRequest.tax_rate) : undefined,
+      tax_amount: billRequest.tax_amount ? Number(billRequest.tax_amount) : undefined,
+      final_amount: Number(billRequest.final_amount || billRequest.total_amount),
+      payment_method: billRequest.payment_method_code,
+      created_at: billRequest.created_at,
+      accepted_at: billRequest.accepted_at,
+    };
+  }
 }

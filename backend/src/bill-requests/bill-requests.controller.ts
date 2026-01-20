@@ -8,8 +8,12 @@ import {
   ValidationPipe,
   UseGuards,
   Request,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { BillRequestsService } from './bill-requests.service';
+import { BillPdfService } from './bill-pdf.service';
 import { CreateBillRequestDto } from './dto/create-bill-request.dto';
 import { AcceptBillRequestDto } from './dto/accept-bill-request.dto';
 import { ApplyDiscountDto } from './dto/apply-discount.dto';
@@ -19,7 +23,10 @@ import { Roles } from '../auth/decorators/roles.decorator';
 
 @Controller('api/bill-requests')
 export class BillRequestsController {
-  constructor(private readonly billRequestsService: BillRequestsService) {}
+  constructor(
+    private readonly billRequestsService: BillRequestsService,
+    private readonly billPdfService: BillPdfService,
+  ) {}
 
   /**
    * POST /api/bill-requests
@@ -123,5 +130,31 @@ export class BillRequestsController {
     @Body() body: { received_amount: number },
   ) {
     return this.billRequestsService.completeCashPayment(id, body.received_amount);
+  }
+
+  /**
+   * GET /api/bill-requests/:id/pdf
+   * Generate and download bill as PDF
+   */
+  @Get(':id/pdf')
+  async downloadPdf(@Param('id') id: string, @Res() res: Response) {
+    try {
+      const billData = await this.billRequestsService.getBillDataForPdf(id);
+      const pdfBuffer = await this.billPdfService.generateBillPdf(billData);
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `inline; filename="bill-${id.slice(-8)}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+
+      res.status(HttpStatus.OK).send(pdfBuffer);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+        message: 'Failed to generate PDF',
+        error: error.message,
+      });
+    }
   }
 }
