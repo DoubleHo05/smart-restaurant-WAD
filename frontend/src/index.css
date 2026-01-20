@@ -1,24 +1,27 @@
 /* Global Styles & Variables - Mockup Palette */
 :root {
   /* Core Colors */
-  --primary: #e74c3c;
-  --primary-dark: #c0392b;
-  --secondary: #2c3e50;
-  --accent: #3498db;
+  --primary: #d32f2f;
+  --primary-dark: #b71c1c;
+  --secondary: #1a202c;
+  --accent: #2980b9;
 
   /* Status Colors */
-  --success: #27ae60;
-  --warning: #f39c12;
-  --danger: #c0392b;
-  --info: #3498db;
+  --success: #2e7d32;
+  --warning: #f57f17;
+  --danger: #c62828;
+  --info: #0288d1;
 
   /* Neutrals */
-  --bg-color: #f5f5f5;
+  --bg-color: #f8f9fa;
   --white: #ffffff;
-  --text-primary: #2c3e50;
-  --text-secondary: #6b7280;
-  --text-light: #9ca3af;
-  --border-color: #e0e0e0;
+  --text-primary: #111827;
+  /* Darker, almost black */
+  --text-secondary: #374151;
+  /* Dark gray, high contrast */
+  --text-light: #6b7280;
+  /* Medium gray */
+  --border-color: #d1d5db;
 
   /* Gradients */
   --gradient-primary: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);

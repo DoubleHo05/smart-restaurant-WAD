@@ -7,6 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 import RelatedItems from '../../components/RelatedItems';
 import { ReviewsList } from '../../components/ReviewsList';
 import { ReviewModal } from '../../components/ReviewModal';
+import ImageGallery from '../../components/ImageGallery';
 import './ItemDetail.css';
 
 interface ModifierOption {
@@ -234,16 +235,12 @@ function ItemDetail() {
         </span>
       </div>
 
-      {/* Hero Image */}
+      {/* Hero Image / Gallery */}
       <div className="item-hero">
-        {item.photos && item.photos.length > 0 ? (
-          <img
-            src={item.photos.find(p => p.isPrimary)?.url || item.photos[0].url}
-            alt={item.name}
-          />
-        ) : (
-          <div className="hero-placeholder">🍽️</div>
-        )}
+        <ImageGallery
+          photos={item.photos || []}
+          altText={item.name}
+        />
       </div>
 
       {/* Item Content */}
